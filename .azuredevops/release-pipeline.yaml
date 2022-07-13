@@ -40,27 +40,27 @@ stages:
   - stage: helmChartRelease
     displayName: Create a new release tag and Helm Chart release
     jobs:
-      # - job: createOciRelease
-      #   displayName: Publish Helm Chart OCI Fragment
-      #   steps:
-      #     - task: HelmInstaller@0
-      #       displayName: Install Helm 3.8.2
-      #       inputs:
-      #         helmVersion: 3.8.2
-      #         checkLatestHelmVersion: false
+      - job: createOciRelease
+        displayName: Publish Helm Chart OCI Fragment
+        steps:
+          - task: HelmInstaller@0
+            displayName: Install Helm 3.8.2
+            inputs:
+              helmVersion: 3.8.2
+              checkLatestHelmVersion: false
 
-      #     - task: Docker@2
-      #       displayName: Login into container registry
-      #       inputs:
-      #         command: 'login'
-      #         containerRegistry: $(azureContainerRegistry)
+          - task: Docker@2
+            displayName: Login into container registry
+            inputs:
+              command: 'login'
+              containerRegistry: $(azureContainerRegistry)
 
-      #     - bash: |
-      #         helm version
-      #         helmChartVersion="$(yq e '.version' Chart.yaml)"
-      #         echo "Helm Chart" $(chartName) "version:" $helmChartVersion
-      #         helm package --dependency-update  . 
-      #         helm push ./$(chartName)-$helmChartVersion.tgz oci://$(ACRName)/$(ACRPath)
+          - bash: |
+              helm version
+              helmChartVersion="$(yq e '.version' Chart.yaml)"
+              echo "Helm Chart" $(chartName) "version:" $helmChartVersion
+              helm package --dependency-update  . 
+              helm push ./$(chartName)-$helmChartVersion.tgz oci://$(ACRName)/$(ACRPath)
       - job: createGithubRelease
         displayName: Publish Helm Chart Github repo
         steps:
