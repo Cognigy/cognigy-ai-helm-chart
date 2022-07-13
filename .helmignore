@@ -22,3 +22,6 @@
 *.tmproj
 .vscode/
 local-temp-files
+
+# Don't package + expose CHANGELOG folder
+CHANGELOG/
