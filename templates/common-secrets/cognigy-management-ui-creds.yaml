@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-management-ui-creds
+  namespace: {{ $.Release.Namespace | quote }}
+type: Opaque
+data:
+  # the management ui credentials should contain a base64 encoded JSON string,
+  # which consists of an array of {"username": "example_username", "password": "example_password"} pairs
+  management-ui-creds.json: {{ .Values.managementUiCredentials | b64enc | quote }}

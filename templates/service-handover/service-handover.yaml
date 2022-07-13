@@ -1,0 +1,70 @@
+{{- with .Values.serviceHandover }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-handover
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-handover
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-handover
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-handover") }}{{ include (print $.Template.BasePath "/service-handover/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-handover").data | sha256sum }}{{ end }}
+    spec:
+      containers:
+        - name: service-handover
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8002
+          volumeMounts:
+            - name: rabbitmq-connection-string
+              mountPath: /var/run/secrets/rabbitmqConnectionString
+              subPath: rabbitmqConnectionString
+            - name: mongodb-connection-string
+              mountPath: /var/run/secrets/mongodbConnectionString
+              subPath: mongodbConnectionString
+            - name: redis-password
+              mountPath: /var/run/secrets/redis-password.conf
+              subPath: redis-password.conf
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          livenessProbe:
+            exec:
+              command:
+                - node
+                - /opt/healthcheck.js
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+        - name: rabbitmq-connection-string
+          secret:
+            secretName: cognigy-rabbitmq
+            items:
+              - key: connection-string
+                path: rabbitmqConnectionString
+        - name: redis-password
+          secret:
+            secretName: cognigy-redis-password
+        - name: mongodb-connection-string
+          secret:
+            secretName: cognigy-service-handover
+            items:
+              - key: connection-string
+                path: mongodbConnectionString
+      imagePullSecrets:
+        - name: cognigy-registry-token
+{{- end }}

@@ -1,0 +1,755 @@
+# If cognigy provided mongodb helm chart(https://github.com/Cognigy/cognigy-mongodb-helm-chart) is not in use then set "mongodb.enabled" to false. It will skip doing all corresponding task related to mongodb helm chart, such as creating necessary database. By default it is always enabled.
+# mongodb:
+#   enabled: false
+
+# This MongoDB user and password should have the permission to create users and databases, so normally it is admin or root
+# It does NOT have to be root user. We use these key names to be compatible with Bitnami MongoDB Helm Chert
+mongodb:
+  enabled: true 
+  auth:
+    rootUser: root
+    rootPassword: ""
+  # Default value for the MongoDB replica set deployed by Cognigy MongoDB Helm Chart into 3 availability zones:
+  # hosts: mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-1.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-2.mongodb-headless.mongodb.svc.cluster.local:27017
+  # for development and testing purposes with a single replica MongoDB installation in "mongodb" namespace use:
+  # hosts: "mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017"
+  hosts: mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-1.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-2.mongodb-headless.mongodb.svc.cluster.local:27017
+imageCredentials:
+  registry: "cognigy.azurecr.io"
+  username: ""
+  password: ""
+
+# Cognigy supports 3 cloud providers:
+# - aws
+# - azure
+# - generic for on-premises installation e.g. with OpenShift
+cloud:
+  provider: aws
+  region: ""
+
+# For AWS cloud provider only:
+efs:
+  flowModules:
+    id: ""
+  functions:
+    id: ""
+
+cognigyLiveAgent:
+  platformToken: ""
+
+# Install Management UI on the cluster.
+# It is not required, since if not installed and the API endpoint is accessible from the Internet, you can still use the provided Management UI at https://management-ui-v4.cognigy.ai/
+managementUi:
+  enabled: false
+  ingress:
+    enabled: true
+    host: ""
+  image: cognigy.azurecr.io/management-ui:49120040ac4bd68a2a03175bbe2a5cd334285339
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "30Mi"
+      cpu: "20m"
+    requests:
+      memory: "10Mi"
+      cpu: "10m"
+
+# managementUiCredentials: '[{"username": "example_username", "password": "example_password"}]'
+managementUiCredentials: '[]'
+
+smtpPassword: ""
+
+tls:
+  # Careful with the indentation
+  # For more information, see https://helm.sh/docs/chart_template_guide/yaml_techniques/#strings-in-yaml
+  crt: |
+    -----BEGIN CERTIFICATE-----
+    -----END CERTIFICATE-----
+  key: |
+    -----BEGIN PRIVATE KEY-----
+    -----END PRIVATE KEY-----
+
+# If ingress is not required to deploy then you can set "ingress.enabled" to false. By default it is always enabled.
+# ingress:
+#   enabled: false
+
+ingress:
+  enabled: true
+  serviceAnalyticsOdata:
+    host: ""
+    ipWhiteListMiddleware: 
+      enabled: true
+      ipWhiteList:
+        sourceRange:
+          - 0.0.0.0/0
+        ipStrategy:
+          depth: 0
+  serviceApi:
+    host: ""
+    ipWhiteListMiddleware: 
+      enabled: true
+      ipWhiteList:
+        sourceRange:
+          - 0.0.0.0/0
+        ipStrategy:
+          depth: 0
+  serviceEndpoint:
+    host: ""
+    ipWhiteListMiddleware: 
+      enabled: true
+      ipWhiteList:
+        sourceRange:
+          - 0.0.0.0/0
+        ipStrategy:
+          depth: 0
+  serviceUi:
+    host: ""
+    ipWhiteListMiddleware: 
+      enabled: true
+      ipWhiteList:
+        sourceRange:
+          - 0.0.0.0/0
+        ipStrategy:
+          depth: 0
+  serviceWebchat:
+    host: ""
+    ipWhiteListMiddleware: 
+      enabled: true
+      ipWhiteList:
+        sourceRange:
+          - 0.0.0.0/0
+        ipStrategy:
+          depth: 0
+    
+
+
+cognigyEnv:
+  NODE_ENV: production
+
+  # Enable the creation of metrics which will then get consumed
+  # by our 'service-monitoring'.
+  MONITOR_RPC_CALLS: "true"
+
+  # Redis configuration, will soon be a connection string
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+
+  # Redis (persistent) configuration, will soon be a connection string
+  REDIS_PERSISTENT_PORT: "6379"
+  REDIS_PERSISTENT_HOST: redis-persistent
+
+  # limits (api requests, db queries, context-size)
+  MESSAGE_TTL_SECONDS: "120"
+  MAX_MEMORY_OBJECT_SIZE: "65536"
+  HTTP_JSON_BODY_LIMIT: "65536"
+  MAX_BYTE_SIZE: "524288"
+  RESPONSE_BYTES_LIMIT: "524288"
+
+  # features (enable / disable)
+  FEATURE_CUSTOM_NODES: "true"
+
+  # log cleanup
+  LOG_ENTRIES_TTL_IN_MINUTES: "1440"
+  LOG_ENTRIES_BUFFER_IN_SECONDS: "5"
+
+  # SMTP server for 'forgot password' functionality
+  SYSTEM_SMTP_HOST: "test"
+  SYSTEM_SMTP_PORT: "test"
+  SYSTEM_SMTP_USERNAME: "test"
+  SYSTEM_SMTP_FROM: "test"
+  SYSTEM_SMTP_CONNECTION_TYPE: "starttls"
+  # SYSTEM_SMTP_PASSWORD is a secret!
+
+  # Domains to whitelist for cors for the API (service-api)
+  API_CORS_WHITELIST: ""
+
+  # Execution relevant configuration (service-execution)
+  MODULE_MAX_EVENT_EMISSIONS: "10"
+  MAX_MODULE_EXECUTION_TIME_IN_SECONDS: "20"
+
+  # Endpoint configuration for Alexa
+  ALEXA_END_SESSION_AFTER_EACH_REPLY: "true"
+
+  # Enable max contact profile TTL in minutes
+  MAX_CONTACT_PROFILE_TTL_IN_MINUTES: "43200"
+
+  # Enable max conversation TTL in minutes
+  MAX_CONVERSATION_TTL_IN_MINUTES: "43200"
+
+  # Enable max conversation TTL in minutes
+  MAX_SESSION_STATE_TTL_IN_MINUTES: "10080"
+
+amazonCredentials:
+  clientId: ""
+  clientSecret: ""
+
+# Stateful Backend Components
+statefulRabbitMq:
+  image: cognigy.azurecr.io/rabbitmq:3.8.3_cognigy-4.X
+  replicaCount: 1
+  resources:
+    limits:
+      memory: 2Gi
+      cpu: "2"
+    requests:
+      memory: 1Gi
+      cpu: "1"
+
+# If redis is not required to deploy then you can set the "statefulRedis.enabled" flag to false. By default it is always enabled. 
+# statefulRedis:
+#   enabled: false
+
+statefulRedis:
+  enabled: true
+  image: cognigy.azurecr.io/redis:5.0.8_cognigy_4.X
+  replicaCount: 1
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: "0.5"
+    requests:
+      memory: 100Mi
+      cpu: "0.2"
+
+# If redis-persistent is not required to deploy then you can set the "statefulRedis.enabled" flag to false. By default it is always enabled.
+# statefulRedisPersistent: 
+#   enabled: false
+
+statefulRedisPersistent:
+  enabled: true
+  image: cognigy.azurecr.io/redis:5.0.8_cognigy_4.X
+  replicaCount: 1
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: "0.5"
+    requests:
+      memory: 100Mi
+      cpu: "0.2"
+
+# Cognigy.AI components images
+serviceAi:
+  image: cognigy.azurecr.io/service-ai:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.4'
+      memory: 400M
+    limits:
+      cpu: '0.4'
+      memory: 500M
+serviceAlexaManagement:
+  image: cognigy.azurecr.io/service-alexa-management:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceAnalyticsCollector:
+  image: cognigy.azurecr.io/service-analytics-collector:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.300'
+      memory: 160M
+    limits:
+      cpu: '0.300'
+      memory: 200M
+serviceAnalyticsConversations:
+  image: cognigy.azurecr.io/service-analytics-conversations:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  requests:
+    cpu: '0.1'
+    memory: 120M
+  limits:
+    cpu: '0.1'
+    memory: 150M
+serviceAnalyticsOdata:
+  image: cognigy.azurecr.io/service-analytics-odata:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 360M
+    limits:
+      cpu: '0.5'
+      memory: 450M
+serviceAnalyticsRealtime:
+  image: cognigy.azurecr.io/service-analytics-realtime:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceAnalyticsReporter:
+  image: cognigy.azurecr.io/service-analytics-reporter:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.5'
+      memory: 500M
+    limits:
+      cpu: '0.5'
+      memory: 750M
+serviceApi:
+  image: cognigy.azurecr.io/service-api:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.2'
+      memory: 280M
+    limits:
+      cpu: '0.2'
+      memory: 350M
+serviceCustomModules:
+  image: cognigy.azurecr.io/service-custom-modules:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.3'
+      memory: 512M
+    limits:
+      cpu: '0.3'
+      memory: 512M
+serviceEndpoint:
+  image: cognigy.azurecr.io/service-endpoint:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.2'
+      memory: 120M
+    limits:
+      cpu: '0.2'
+      memory: 150M
+serviceExecution:
+  image: cognigy.azurecr.io/service-execution:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.500'
+      memory: 240M
+    limits:
+      cpu: '0.500'
+      memory: 300M
+serviceFunctionExecution:
+  image: cognigy.azurecr.io/service-function-execution:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '1'
+      memory: 512M
+    limits:
+      cpu: '2'
+      memory: 512M
+serviceFunctionScheduler:
+  image: cognigy.azurecr.io/service-function-scheduler:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceHandover:
+  image: cognigy.azurecr.io/service-handover:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceHttp:
+  image: cognigy.azurecr.io/service-http:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceJourneys:
+  image: cognigy.azurecr.io/service-journeys:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 100M
+    limits:
+      cpu: '0.1'
+      memory: 120M
+serviceLogs:
+  image: cognigy.azurecr.io/service-logs:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 100M
+    limits:
+      cpu: '0.1'
+      memory: 120M
+serviceNlpMatcher:
+  image: cognigy.azurecr.io/service-nlp-matcher:7827180c2bca2460d952a5006d8ec3ef4520c370
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.2'
+      memory: 300M
+    limits:
+      cpu: '0.5'
+      memory: 500M
+serviceNlpNer:
+  image: cognigy.azurecr.io/service-nlp-ner:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.3'
+      memory: 100M
+    limits:
+      cpu: '1.0'
+      memory: 150M
+serviceParser:
+  image: cognigy.azurecr.io/service-parser:e1cc06a2307785d4f7735a1e6ad0a48fe2ff7416
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+servicePlaybookExecution:
+  image: cognigy.azurecr.io/service-playbook-execution:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceProfiles:
+  image: cognigy.azurecr.io/service-profiles:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceResources:
+  image: cognigy.azurecr.io/service-resources:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.2'
+      memory: 512M
+    limits:
+      cpu: '0.5'
+      memory: 512M
+serviceSecurity:
+  image: cognigy.azurecr.io/service-security:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.2'
+      memory: 60M
+    limits:
+      cpu: '0.2'
+      memory: 75M
+serviceSessionStateManager:
+  image: cognigy.azurecr.io/service-session-state-manager:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.4'
+      memory: 400M
+    limits:
+      cpu: '0.4'
+      memory: 500M
+serviceTaskManager:
+  image: cognigy.azurecr.io/service-task-manager:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceTrainer:
+  image: cognigy.azurecr.io/service-trainer:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceUi:
+  image: cognigy.azurecr.io/service-ui:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceWebchat:
+  image: cognigy.azurecr.io/service-webchat:2655676815931f8c7094a2dbc88a883ee5b80809
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.1'
+      memory: 75M
+serviceNlpQaDe:
+  enabled: false
+  image: cognigy.azurecr.io/service-nlp-qa-de:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '1'
+      memory: 3G
+    limits:
+      cpu: '1'
+      memory: 3G
+serviceNlpScoreDe:
+  image: cognigy.azurecr.io/service-nlp:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 800M
+    limits:
+      cpu: '1'
+      memory: 2500M
+serviceNlpTrainDe:
+  image: cognigy.azurecr.io/service-nlp:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 800M
+    limits:
+      cpu: '1'
+      memory: 2500M
+serviceNlpQaEn:
+  enabled: false
+  image: cognigy.azurecr.io/service-nlp-qa-en:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '1'
+      memory: 3G
+    limits:
+      cpu: '1'
+      memory: 3G
+serviceNlpScoreEn:
+  image: cognigy.azurecr.io/service-nlp-en:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 960M
+    limits:
+      cpu: '1'
+      memory: 2500M
+serviceNlpTrainEn:
+  image: cognigy.azurecr.io/service-nlp-en:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 960M
+    limits:
+      cpu: '1.0'
+      memory: 2500M
+serviceNlpQaGe:
+  enabled: false
+  image: cognigy.azurecr.io/service-nlp-qa-ge:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '1'
+      memory: 3G
+    limits:
+      cpu: '1'
+      memory: 3G
+serviceNlpScoreGe:
+  image: cognigy.azurecr.io/service-nlp-ge:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 3000M
+    limits:
+      cpu: '2'
+      memory: 4000M
+serviceNlpTrainGe:
+  image: cognigy.azurecr.io/service-nlp-ge:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 3000M
+    limits:
+      cpu: '2'
+      memory: 4000M
+serviceNlpScoreJa:
+  image: cognigy.azurecr.io/service-nlp-ja:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 960M
+    limits:
+      cpu: '1'
+      memory: 2500M
+serviceNlpTrainJa:
+  image: cognigy.azurecr.io/service-nlp-ja:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 960M
+    limits:
+      cpu: '1'
+      memory: 2500M
+serviceNlpScoreKo:
+  image: cognigy.azurecr.io/service-nlp-ko:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 960M
+    limits:
+      cpu: '1'
+      memory: 2500M
+serviceNlpTrainKo:
+  image: cognigy.azurecr.io/service-nlp-ko:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 960M
+    limits:
+      cpu: '1'
+      memory: 2500M
+serviceNlpScoreXx:
+  image: cognigy.azurecr.io/service-nlp:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 800M
+    limits:
+      cpu: '1'
+      memory: 2500M
+serviceNlpTrainXx:
+  image: cognigy.azurecr.io/service-nlp:f33c3ec5761b504f8fe16dc9e58103a93d2e62cd
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: '0.350'
+      memory: 800M
+    limits:
+      cpu: '1'
+      memory: 2500M
+
+# The values below are used for Traefik Helm chart. For more information, see
+# https://github.com/traefik/traefik-helm-chart
+traefik:
+  enabled: true
+  fullnameOverride: traefik
+  image: 
+    name: cognigy.azurecr.io/traefik
+    tag: "2.6.3"
+    pullPolicy: IfNotPresent
+  deployment: 
+    imagePullSecrets: 
+      - name: cognigy-registry-token
+    replicas: 3
+  logs:
+    general:
+      level: INFO
+    access:
+      enabled: true
+      filters: {}
+      fields:
+        general:
+          defaultmode: keep
+          names: {}
+        headers:
+          defaultmode: drop
+          names: {}
+  ingressClass:
+    enabled: true
+    isDefaultClass: true
+    fallbackApiVersion: ""
+  globalArguments: []
+  additionalArguments:
+    - "--api.insecure=true"
+    - "--entrypoints.web.http.redirections.entrypoint.to=:443"
+    - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+    - "--entryPoints.web.forwardedHeaders.insecure"
+    - "--entryPoints.websecure.forwardedHeaders.insecure"
+    - "--entryPoints.web.proxyProtocol.insecure"
+    - "--entryPoints.websecure.proxyProtocol.insecure"
+  ports:
+    traefik:
+      port: 9000
+      expose: true
+      exposedPort: 9000
+      protocol: TCP
+    web:
+      port: 8000
+      expose: true
+      exposedPort: 80
+      protocol: TCP
+    websecure:
+      port: 8443
+      expose: true
+      exposedPort: 443
+      protocol: TCP
+      tls:
+        enabled: true
+        options: ""
+        certResolver: ""
+        domains: []
+    metrics:
+      port: 9100
+      expose: true
+      exposedPort: 9100
+      protocol: TCP
+  service:
+    enabled: true
+    type: LoadBalancer
+    annotations: {}
+    annotationsTCP: {}
+    annotationsUDP: {}
+    labels: {}
+    spec: {}
+    loadBalancerSourceRanges: []
+    externalIPs: []
+  tlsOptions:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384

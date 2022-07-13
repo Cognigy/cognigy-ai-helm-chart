@@ -1,0 +1,104 @@
+{{- with .Values.serviceAnalyticsOdata }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-analytics-odata
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-analytics-odata
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-analytics-odata
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
+        checksum/service-analytics-collector: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-analytics-collector") }}{{ include (print $.Template.BasePath "/service-analytics-collector/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-analytics-collector").data | sha256sum }}{{ end }}
+        checksum/service-security: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-security") }}{{ include (print $.Template.BasePath "/service-security/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-security").data | sha256sum }}{{ end }}
+        checksum/service-analytics-conversation: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-analytics-conversation") }}{{ include (print $.Template.BasePath "/service-analytics-conversation/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-analytics-conversation").data | sha256sum }}{{ end }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-analytics-odata") }}{{ include (print $.Template.BasePath "/service-analytics-odata/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-analytics-odata").data | sha256sum }}{{ end }}
+
+    spec:
+      containers:
+        - name: service-analytics-odata
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: ANALYTICS_COLLECTOR_DB_NAME
+              value: service-analytics-collector
+            - name: SECURITY_DB_NAME
+              value: service-security
+            - name: CONVERSATION_COLLECTOR_DB_NAME
+              value: service-analytics-conversation
+            - name: ODATA_SUPER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-odata
+                  key: odata-super-api-key
+          volumeMounts:
+            - name: rabbitmq-connection-string
+              mountPath: /var/run/secrets/rabbitmqConnectionString
+              subPath: rabbitmqConnectionString
+            - name: analytics-collector-connection-string
+              mountPath: /run/secrets/analyticsCollectorConnectionString
+              subPath: analyticsCollectorConnectionString
+            - name: security-connection-string
+              mountPath: /run/secrets/securityConnectionString
+              subPath: securityConnectionString
+            - name: conversations-connection-string
+              mountPath: /run/secrets/conversationsConnectionString
+              subPath: conversationsConnectionString
+            - name: redis-password
+              mountPath: /var/run/secrets/redis-password.conf
+              subPath: redis-password.conf
+          livenessProbe:
+            exec:
+              command:
+                - node
+                - /opt/healthcheck.js
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+        - name: rabbitmq-connection-string
+          secret:
+            secretName: cognigy-rabbitmq
+            items:
+              - key: connection-string
+                path: rabbitmqConnectionString
+        - name: analytics-collector-connection-string
+          secret:
+            secretName: cognigy-service-analytics-collector
+            items:
+              - key: connection-string
+                path: analyticsCollectorConnectionString
+        - name: security-connection-string
+          secret:
+            secretName: cognigy-service-security
+            items:
+              - key: connection-string
+                path: securityConnectionString
+        - name: conversations-connection-string
+          secret:
+            secretName: cognigy-service-analytics-conversation
+            items:
+              - key: connection-string
+                path: conversationsConnectionString
+        - name: redis-password
+          secret:
+            secretName: cognigy-redis-password
+      imagePullSecrets:
+        - name: cognigy-registry-token
+{{- end }}

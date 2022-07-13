@@ -1,0 +1,97 @@
+{{- with .Values.serviceResources }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-resources
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-resources
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
+        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-persistent-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password").data | sha256sum }}{{ end }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-resources") }}{{ include (print $.Template.BasePath "/service-resources/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-resources").data | sha256sum }}{{ end }}
+
+      labels:
+        app: service-resources
+    spec:
+      containers:
+        - name: service-resources
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          volumeMounts:
+            - name: rabbitmq-connection-string
+              mountPath: /var/run/secrets/rabbitmqConnectionString
+              subPath: rabbitmqConnectionString
+            - name: mongodb-connection-string
+              mountPath: /var/run/secrets/mongodbConnectionString
+              subPath: mongodbConnectionString
+            - name: nlu-db-connection-string
+              mountPath: /var/run/secrets/nluDBConnectionString
+              subPath: nluDBConnectionString
+            - name: redis-password
+              mountPath: /var/run/secrets/redis-password.conf
+              subPath: redis-password.conf
+            - name: redis-persistent-password
+              mountPath: /var/run/secrets/redis-persistent-password.conf
+              subPath: redis-persistent-password.conf
+            - name: flow-modules
+              mountPath: /app/flowModules
+            - name: functions
+              mountPath: /app/functions
+          livenessProbe:
+            exec:
+              command:
+                - node
+                - /opt/healthcheck.js
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+        - name: rabbitmq-connection-string
+          secret:
+            secretName: cognigy-rabbitmq
+            items:
+              - key: connection-string
+                path: rabbitmqConnectionString
+        - name: mongodb-connection-string
+          secret:
+            secretName: cognigy-service-resources
+            items:
+              - key: connection-string
+                path: mongodbConnectionString
+        - name: nlu-db-connection-string
+          secret:
+            secretName: cognigy-service-nlp
+            items:
+              - key: connection-string
+                path: nluDBConnectionString
+        - name: redis-password
+          secret:
+            secretName: cognigy-redis-password
+        - name: redis-persistent-password
+          secret:
+            secretName: cognigy-redis-persistent-password
+        - name: flow-modules
+          persistentVolumeClaim:
+            claimName: flow-modules
+        - name: functions
+          persistentVolumeClaim:
+            claimName: functions
+      imagePullSecrets:
+        - name: cognigy-registry-token
+{{- end }}

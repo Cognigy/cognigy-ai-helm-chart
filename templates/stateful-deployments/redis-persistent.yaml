@@ -1,0 +1,50 @@
+{{- if .Values.statefulRedisPersistent.enabled }}
+{{- with .Values.statefulRedisPersistent }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-persistent
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: redis-persistent
+  replicas: {{ .replicaCount }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: redis-persistent
+    spec:
+      containers:
+        - name: redis-persistent
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+          - containerPort: 6379
+          volumeMounts:
+          - name: redis-data
+            mountPath: /data
+          - name: redis-password-config
+            mountPath: /var/run/secrets/
+          - name: redis-persistent-config
+            mountPath: /var/run/config
+      volumes:
+        - name: redis-password-config
+          secret:
+            secretName: cognigy-redis-persistent-password
+            items:
+            - key: redis-persistent-password.conf
+              path: redis-password.conf
+        - name: redis-persistent-config
+          configMap:
+            name: redis-persistent
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-persistent
+      imagePullSecrets:
+      - name: cognigy-registry-token
+{{- end }}
+{{- end }}

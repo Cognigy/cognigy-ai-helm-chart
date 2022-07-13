@@ -1,0 +1,13 @@
+{{- if eq .Values.cloud.provider "aws" }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: redis-persistent
+provisioner: kubernetes.io/aws-ebs
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: gp2
+  fsType: ext4
+  encrypted: "true"
+{{ end }}

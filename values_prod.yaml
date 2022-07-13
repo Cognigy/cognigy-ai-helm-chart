@@ -1,0 +1,79 @@
+# This MongoDB user and password should have the permission to create users and databases, so normally it is admin or root
+# It does NOT have to be root user. We use these key names to be compatible with Bitnami MongoDB Helm Chert
+mongodb:
+  auth:
+    rootUser: root
+    rootPassword: ""
+  # Default value for the MongoDB replica set deployed by Cognigy MongoDB Helm Chart into 3 availability zones:
+  # hosts: mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-1.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-2.mongodb-headless.mongodb.svc.cluster.local:27017
+  # for development and testing purposes with a single replica MongoDB installation in "mongodb" namespace use:
+  # hosts: "mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017"
+  hosts: mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-1.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-2.mongodb-headless.mongodb.svc.cluster.local:27017
+imageCredentials:
+  registry: "cognigy.azurecr.io"
+  username: ""
+  password: ""
+
+# Cognigy supports 3 cloud providers:
+# - aws
+# - azure
+# - generic for on-premises installation e.g. with OpenShift
+cloud:
+  provider: aws
+  region: ""
+
+# For AWS cloud provider only:
+efs:
+  flowModules:
+    id: ""
+  functions:
+    id: ""
+
+cognigyLiveAgent:
+  platformToken: ""
+
+# Install Management UI on the cluster.
+# It is not required, since if not installed and the API endpoint is accessible from the Internet, you can still use the provided Management UI at https://management-ui-v4.cognigy.ai/
+managementUi:
+  enabled: false
+  ingress:
+    enabled: true
+    host: ""
+
+# managementUiCredentials: '[{"username": "example_username", "password": "example_password"}]'
+managementUiCredentials: '[]'
+
+smtpPassword: ""
+
+tls:
+  # Careful with the indentation
+  # For more information, see https://helm.sh/docs/chart_template_guide/yaml_techniques/#strings-in-yaml
+  crt: |
+    -----BEGIN CERTIFICATE-----
+    -----END CERTIFICATE-----
+  key: |
+    -----BEGIN PRIVATE KEY-----
+    -----END PRIVATE KEY-----
+
+ingress:
+  serviceAnalyticsOdata: 
+    host: ""
+  serviceApi: 
+    host: ""
+  serviceEndpoint: 
+    host: ""
+  serviceUi: 
+    host: ""
+  serviceWebchat: 
+    host: ""
+
+amazonCredentials:
+  clientId: ""
+  clientSecret: ""
+
+# You can use the x-forwarded-for header to collect the source IP on EKS cluster configured with classic load balancer following the below code. For other system this part needs to be configured with proper annotation specified with the Load balancer you are using. 
+
+# traefik:
+#   service:
+#     annotations: 
+#       "service.beta.kubernetes.io/aws-load-balancer-proxy-protocol" : "*"

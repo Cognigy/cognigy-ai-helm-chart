@@ -1,0 +1,44 @@
+{{- if .Values.statefulRedis.enabled }}
+{{- with .Values.statefulRedis }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+          - name: redis
+            containerPort: 6379
+          volumeMounts:
+          - name: redis-password-config
+            mountPath: /var/run/secrets/
+          - name: redis-config
+            mountPath: /var/run/config
+      volumes:
+        - name: redis-password-config
+          secret:
+            secretName: cognigy-redis-password
+            items:
+            - key: redis-password.conf
+              path: redis-password.conf
+        - name: redis-config
+          configMap:
+            name: redis
+      imagePullSecrets:
+      - name: cognigy-registry-token
+{{- end }}
+{{- end }}

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cognigy-env
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  # DNS names
+  FRONTEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceUi.host | quote}}
+  BACKEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceApi.host | quote}}
+  ENDPOINT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceEndpoint.host | quote}}
+  WEBCHAT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceWebchat.host | quote}}
+  ODATA_HOSTNAME: {{ .Values.ingress.serviceAnalyticsOdata.host | quote }}
+  ODATA_PROTOCOL: "https"
+{{- range $key, $value := .Values.cognigyEnv }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}

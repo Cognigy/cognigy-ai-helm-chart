@@ -1,0 +1,27 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-webchat
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      {{- if .Values.ingress.serviceWebchat.ipWhiteListMiddleware.enabled }}
+      traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistservicewebchat@kubernetescrd
+      {{- end }}
+spec:
+  ingressClassName: traefik
+  tls:
+  - secretName: cognigy-traefik
+  rules:
+  - host: {{ .Values.ingress.serviceWebchat.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: service-webchat
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+{{- end }}

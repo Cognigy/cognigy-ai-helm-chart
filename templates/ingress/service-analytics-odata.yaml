@@ -1,0 +1,27 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-analytics-odata
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- if .Values.ingress.serviceAnalyticsOdata.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistserviceanalyticsodata@kubernetescrd
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  tls:
+  - secretName: cognigy-traefik
+  rules:
+  - host: {{ .Values.ingress.serviceAnalyticsOdata.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: service-analytics-odata
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+{{- end }}

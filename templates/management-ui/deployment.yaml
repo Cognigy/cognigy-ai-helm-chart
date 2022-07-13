@@ -1,0 +1,31 @@
+{{- if .Values.managementUi.enabled }}
+{{- with .Values.managementUi }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: management-ui
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: management-ui
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: management-ui
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+    spec:
+      containers:
+      - name: management-ui
+        image: {{ .image }}
+        resources: {{- toYaml .resources | nindent 10 }}
+        envFrom:
+        - configMapRef:
+            name: cognigy-env
+      imagePullSecrets:
+      - name: cognigy-registry-token
+{{- end }}
+{{- end }}

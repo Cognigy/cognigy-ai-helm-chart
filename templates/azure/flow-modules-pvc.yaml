@@ -1,0 +1,16 @@
+{{- if eq .Values.cloud.provider "azure" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: flow-modules
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: flow-modules
+  resources:
+    requests:
+      storage: 100Gi
+
+{{ end }}

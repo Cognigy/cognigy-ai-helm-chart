@@ -1,0 +1,22 @@
+{{- if .Values.statefulRedisPersistent.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-persistent
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+{{- if eq .Values.cloud.provider "aws" }}
+  storageClassName: redis-persistent
+{{- else if eq .Values.cloud.provider "azure" }}
+  storageClassName: managed-premium
+{{- else if eq .Values.cloud.provider "generic" }}
+  storageClassName: redis-persistent
+{{- else if eq .Values.cloud.provider "local" }}
+  storageClassName: local-path
+{{ end }}
+  resources:
+    requests:
+      storage: 10Gi
+{{- end }}

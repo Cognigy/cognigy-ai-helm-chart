@@ -1,0 +1,26 @@
+{{- if and (.Values.managementUi.enabled) (.Values.managementUi.ingress.enabled) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: management-ui
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  tls:
+  - secretName: cognigy-traefik
+  rules:
+  - host: {{ .Values.managementUi.ingress.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: management-ui
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+
+{{- end }}

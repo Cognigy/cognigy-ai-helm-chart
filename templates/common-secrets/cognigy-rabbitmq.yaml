@@ -1,0 +1,23 @@
+{{- $rabbitmq_password := printf "%x" (randAlphaNum 64) -}}
+
+{{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-rabbitmq
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  # The RabbitMQ connection string (amqp://user:password@host:port)
+  connection-string: "{{ printf "amqp://cognigy:%s@rabbitmq:5672" $rabbitmq_password | b64enc }}"
+
+  # The RabbitMQ password. Is the same as the password in the connection string
+  # but is used by RabbitMQ itself to intialize password protection.
+  rabbitmq-password: "{{ $rabbitmq_password | b64enc }}"
+
+  # The connection string to the RabbitMQ API (http(s)://user:password@host:port/api)
+  connection-string-api: "{{ printf "http://cognigy:%s@rabbitmq:15672/api" $rabbitmq_password | b64enc }}"
+{{- end }}

@@ -1,0 +1,32 @@
+{{- with .Values.serviceUi }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-ui
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-ui
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+      labels:
+        app: service-ui
+    spec:
+      containers:
+        - name: service-ui
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+      imagePullSecrets:
+        - name: cognigy-registry-token
+{{- end }}

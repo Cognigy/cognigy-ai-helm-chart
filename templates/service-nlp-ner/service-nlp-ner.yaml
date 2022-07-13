@@ -1,0 +1,65 @@
+{{- with .Values.serviceNlpNer }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-nlp-ner
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-nlp-ner
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
+      labels:
+        app: service-nlp-ner
+    spec:
+      containers:
+        - name: service-nlp-ner
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          volumeMounts:
+            - name: rabbitmq-connection-string
+              mountPath: /var/run/secrets/rabbitmqConnectionString
+              subPath: rabbitmqConnectionString
+            - name: rabbitmq-api-connection-string
+              mountPath: /var/run/secrets/rabbitmqAPIConnectionString
+              subPath: rabbitmqAPIConnectionString
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8001
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+        - name: rabbitmq-connection-string
+          secret:
+            secretName: cognigy-rabbitmq
+            items:
+              - key: connection-string
+                path: rabbitmqConnectionString
+        - name: rabbitmq-api-connection-string
+          secret:
+            secretName: cognigy-rabbitmq
+            items:
+              - key: connection-string-api
+                path: rabbitmqAPIConnectionString
+      imagePullSecrets:
+        - name: cognigy-registry-token
+{{- end }}

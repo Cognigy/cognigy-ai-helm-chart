@@ -1,0 +1,16 @@
+{{- if .Values.managementUi.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: management-ui
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: management-ui
+spec:
+  ports:
+    - port: 8000
+  selector:
+    app: management-ui
+
+{{- end }}

@@ -1,0 +1,14 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-traefik
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.tls.crt | b64enc | quote }}
+
+  # your base64 encoded private key
+  tls.key: {{ .Values.tls.key | b64enc | quote }}
+{{- end }}

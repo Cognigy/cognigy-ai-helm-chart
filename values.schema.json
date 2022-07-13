@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "properties": {
+    "cloud": {
+      "description": "Cloud which the cluster is running on",
+      "type": "object",
+      "anyOf": [
+        {
+          "properties": {
+            "provider": {
+              "description": "Cloud provider",
+              "type": "string",
+              "enum": [
+                "aws"
+              ]
+            },
+            "region": {
+              "description": "Cloud region",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "provider": {
+              "description": "Cloud provider",
+              "type": "string",
+              "enum": [
+                "azure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "provider": {
+              "description": "Cloud provider",
+              "type": "string",
+              "enum": [
+                "generic"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "provider": {
+              "description": "Cloud provider",
+              "type": "string",
+              "enum": [
+                "local"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "imageCredentials": {
+      "description": "Docker registry credentials",
+      "type": "object",
+      "properties": {
+        "registry": {
+          "description": "URL for the registry",
+          "type": "string",
+          "minLength": 1
+        },
+        "username": {
+          "description": "Username for the registry",
+          "type": "string",
+          "minLength": 1
+        },
+        "password": {
+          "description": "Password for the registry",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "efs": {
+      "type": "object",
+      "properties": {
+        "flowModules": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          }
+        },
+        "functions": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "cloud",
+    "imageCredentials",
+    "serviceAi",
+    "serviceAlexaManagement",
+    "serviceAnalyticsCollector",
+    "serviceAnalyticsConversations",
+    "serviceAnalyticsOdata",
+    "serviceAnalyticsRealtime",
+    "serviceAnalyticsReporter",
+    "serviceApi",
+    "serviceCustomModules",
+    "serviceEndpoint",
+    "serviceExecution",
+    "serviceFunctionExecution",
+    "serviceFunctionScheduler",
+    "serviceHandover",
+    "serviceHttp",
+    "serviceJourneys",
+    "serviceLogs",
+    "serviceNlpMatcher",
+    "serviceNlpNer",
+    "serviceParser",
+    "servicePlaybookExecution",
+    "serviceProfiles",
+    "serviceResources",
+    "serviceSecurity",
+    "serviceSessionStateManager",
+    "serviceTaskManager",
+    "serviceTrainer",
+    "serviceUi",
+    "serviceWebchat",
+    "serviceNlpScoreDe",
+    "serviceNlpTrainDe",
+    "serviceNlpScoreEn",
+    "serviceNlpTrainEn",
+    "serviceNlpScoreGe",
+    "serviceNlpTrainGe",
+    "serviceNlpScoreJa",
+    "serviceNlpTrainJa",
+    "serviceNlpScoreKo",
+    "serviceNlpTrainKo",
+    "serviceNlpScoreXx",
+    "serviceNlpTrainXx"
+  ],
+  "title": "Values",
+  "type": "object"
+}

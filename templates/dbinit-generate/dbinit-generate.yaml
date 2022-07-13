@@ -1,0 +1,169 @@
+{{- if .Values.mongodb.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cognigy-ai-db-init
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-3"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+spec:
+  template:
+    metadata:
+      name: cognigy-ai-db-init
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: cognigy-ai-db-init
+        image: bitnami/mongodb:4.2.5-debian-10-r54
+        command: ["/bin/bash"]
+        args: ["/cognigy-ai-dbinit/dbinit-generate/dbinit-generate.sh"]
+        volumeMounts:
+        - name: dbinit-generate
+          mountPath: /cognigy-ai-dbinit/dbinit-generate
+        - name: mongodb-connection-strings
+          mountPath: "/cognigy-ai-dbinit/mongodb-connection-strings"
+          readOnly: true
+        env:
+          - name: MONGODB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-connection
+                key: username
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-connection
+                key: password
+          - name: MONGODB_HOSTS
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-connection
+                key: hosts
+      volumes:
+      - name: dbinit-generate
+        configMap:
+          name: dbinit-generate
+      - name: mongodb-connection-strings
+        projected:
+          sources:
+          - secret:
+              name: cognigy-service-ai
+              items:
+              - key: connection-string
+                path: cognigy-service-ai
+          - secret:
+              name: cognigy-service-alexa-management
+              items:
+              - key: connection-string
+                path: cognigy-service-alexa-management
+          - secret:
+              name: cognigy-service-analytics-collector
+              items:
+              - key: connection-string
+                path: cognigy-service-analytics-collector
+          - secret:
+              name: cognigy-service-analytics-conversation
+              items:
+              - key: connection-string
+                path: cognigy-service-analytics-conversation
+          - secret:
+              name: cognigy-service-api
+              items:
+              - key: connection-string
+                path: cognigy-service-api
+          - secret:
+              name: cognigy-service-custom-modules
+              items:
+              - key: connection-string
+                path: cognigy-service-custom-modules
+          - secret:
+              name: cognigy-service-function-scheduler
+              items:
+              - key: connection-string
+                path: cognigy-service-function-scheduler
+          - secret:
+              name: cognigy-service-handover
+              items:
+              - key: connection-string
+                path: cognigy-service-handover
+          - secret:
+              name: cognigy-service-journeys
+              items:
+              - key: connection-string
+                path: cognigy-service-journeys
+          - secret:
+              name: cognigy-service-logs
+              items:
+              - key: connection-string
+                path: cognigy-service-logs
+          - secret:
+              name: cognigy-service-nlp
+              items:
+              - key: connection-string
+                path: cognigy-service-nlp
+          - secret:
+              name: cognigy-service-profiles
+              items:
+              - key: connection-string
+                path: cognigy-service-profiles
+          - secret:
+              name: cognigy-service-resources
+              items:
+              - key: connection-string
+                path: cognigy-service-resources
+          - secret:
+              name: cognigy-service-security
+              items:
+              - key: connection-string
+                path: cognigy-service-security
+          - secret:
+              name: cognigy-service-task-manager
+              items:
+              - key: connection-string
+                path: cognigy-service-task-manager
+          - secret:
+              name: cognigy-service-trainer
+              items:
+              - key: connection-string
+                path: cognigy-service-trainer
+{{- end }}
+{{- if .Values.mongodb.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-connection
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+type: Opaque
+data:
+  username: "{{- .Values.mongodb.auth.rootUser | b64enc }}"
+  password: "{{- .Values.mongodb.auth.rootPassword | b64enc }}"
+  hosts: "{{- .Values.mongodb.hosts | b64enc }}"
+{{- end }}
+{{- if .Values.mongodb.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbinit-generate
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+data:
+{{ (.Files.Glob "scripts/dbinit-generate.sh").AsConfig | indent 2 }}
+{{- end }}

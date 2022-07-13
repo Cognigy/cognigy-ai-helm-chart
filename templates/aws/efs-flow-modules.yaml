@@ -1,0 +1,82 @@
+{{- if eq .Values.cloud.provider "aws" }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: efs-provisioner-flow-modules
+  name: efs-provisioner-flow-modules
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: efs-provisioner-flow-modules
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: efs-provisioner-flow-modules
+    spec:
+      containers:
+      - env:
+        - name: FILE_SYSTEM_ID
+          value: {{ .Values.efs.flowModules.id }}
+        - name: AWS_REGION
+          value: {{ .Values.cloud.region }}
+        - name: PROVISIONER_NAME
+          value: efs-provisioner-flow-modules
+        image: quay.io/external_storage/efs-provisioner:latest
+        name: efs-provisioner-flow-modules
+        volumeMounts:
+        - mountPath: /persistentvolumes
+          name: pv-volume
+      volumes:
+      - name: pv-volume
+        nfs:
+          path: /
+          server: {{ .Values.efs.flowModules.id }}.efs.{{ .Values.cloud.region }}.amazonaws.com
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: flow-modules
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "aws-efs-flow-modules"
+spec:
+  storageClassName: aws-efs-flow-modules
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      # The storage request has no effect for NFS
+      storage: 1Mi
+
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: aws-efs-flow-modules
+provisioner: efs-provisioner-flow-modules
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: efs-provisioner-flow-modules
+subjects:
+  - kind: ServiceAccount
+    # Reference to upper's `metadata.name`
+    name: default
+    # Reference to upper's `metadata.namespace`
+    namespace: {{ $.Release.Namespace | quote }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+{{ end }}

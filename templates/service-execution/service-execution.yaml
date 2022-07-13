@@ -1,0 +1,56 @@
+{{- with .Values.serviceExecution }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-execution
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-execution
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-execution
+      annotations:
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
+    spec:
+      containers:
+        - name: service-execution
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8002
+          volumeMounts:
+            - name: flow-modules
+              mountPath: /app/flowModules
+            - name: rabbitmq-connection-string
+              mountPath: /var/run/secrets
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8001
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+        - name: flow-modules
+          persistentVolumeClaim:
+            claimName: flow-modules
+        - name: rabbitmq-connection-string
+          secret:
+            secretName: cognigy-rabbitmq
+            items:
+              - key: connection-string
+                path: rabbitmqConnectionString
+      imagePullSecrets:
+        - name: cognigy-registry-token
+{{- end }}

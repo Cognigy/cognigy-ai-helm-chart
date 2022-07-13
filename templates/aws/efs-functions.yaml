@@ -1,0 +1,81 @@
+{{- if eq .Values.cloud.provider "aws" }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: efs-provisioner-functions
+  name: efs-provisioner-functions
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: efs-provisioner-functions
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: efs-provisioner-functions
+    spec:
+      containers:
+      - env:
+        - name: FILE_SYSTEM_ID
+          value: {{ .Values.efs.functions.id }}
+        - name: AWS_REGION
+          value: {{ .Values.cloud.region }}
+        - name: PROVISIONER_NAME
+          value: efs-provisioner-functions
+        image: quay.io/external_storage/efs-provisioner:latest
+        name: efs-provisioner-functions
+        volumeMounts:
+        - mountPath: /persistentvolumes
+          name: pv-volume
+      volumes:
+      - name: pv-volume
+        nfs:
+          path: /
+          server: {{ .Values.efs.functions.id }}.efs.{{ .Values.cloud.region }}.amazonaws.com
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: functions
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "aws-efs-functions"
+spec:
+  storageClassName: aws-efs-functions
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      # The storage request has no effect for NFS
+      storage: 1Mi
+
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: aws-efs-functions
+provisioner: efs-provisioner-functions
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: efs-provisioner-functions
+subjects:
+  - kind: ServiceAccount
+    # Reference to upper's `metadata.name`
+    name: default
+    # Reference to upper's `metadata.namespace`
+    namespace: {{ $.Release.Namespace | quote }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+{{ end }}

@@ -1,0 +1,15 @@
+{{- if eq .Values.cloud.provider "local" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: functions
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi
+{{ end }}
