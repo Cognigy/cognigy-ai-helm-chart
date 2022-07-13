@@ -39,6 +39,7 @@ pool:
 stages:
   - stage: helmChartRelease
     displayName: Create a new release tag and Helm Chart release
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/')
     jobs:
       - job: createOciRelease
         displayName: Publish Helm Chart OCI Fragment
