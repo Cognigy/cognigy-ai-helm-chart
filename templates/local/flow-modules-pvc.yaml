@@ -1,4 +1,4 @@
-{{- if eq .Values.cloud.provider "local" }}
+{{- if or (eq .Values.cloud.provider "local-microk8s") (eq .Values.cloud.provider "local-rancher") }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -8,7 +8,11 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: local-path
+{{- if eq .Values.cloud.provider "local-microk8s" }}
+  storageClassName: "microk8s-hostpath"
+{{- else if eq .Values.cloud.provider "local-rancher" }}
+  storageClassName: "local-path"
+{{- end }}
   resources:
     requests:
       storage: 5Gi

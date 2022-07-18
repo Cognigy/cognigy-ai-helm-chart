@@ -49,7 +49,18 @@
               "description": "Cloud provider",
               "type": "string",
               "enum": [
-                "local"
+                "local-rancher"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "provider": {
+              "description": "Cloud provider",
+              "type": "string",
+              "enum": [
+                "local-microk8s"
               ]
             }
           }

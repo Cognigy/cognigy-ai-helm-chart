@@ -13,9 +13,11 @@ spec:
   storageClassName: managed-premium
 {{- else if eq .Values.cloud.provider "generic" }}
   storageClassName: redis-persistent
-{{- else if eq .Values.cloud.provider "local" }}
-  storageClassName: local-path
-{{ end }}
+{{- else if eq .Values.cloud.provider "local-microk8s" }}
+  storageClassName: "microk8s-hostpath"
+{{- else if eq .Values.cloud.provider "local-rancher" }}
+  storageClassName: "local-path"
+{{- end }}
   resources:
     requests:
       storage: 10Gi
