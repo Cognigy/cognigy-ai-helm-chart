@@ -194,6 +194,7 @@ statefulRabbitMq:
     requests:
       memory: 1Gi
       cpu: "1"
+  securityContext: {}
 
 # If redis is not required to deploy then you can set the "statefulRedis.enabled" flag to false. By default it is always enabled. 
 # statefulRedis:
@@ -210,6 +211,7 @@ statefulRedis:
     requests:
       memory: 100Mi
       cpu: "0.2"
+  securityContext: {}
 
 # If redis-persistent is not required to deploy then you can set the "statefulRedis.enabled" flag to false. By default it is always enabled.
 # statefulRedisPersistent: 
@@ -226,10 +228,11 @@ statefulRedisPersistent:
     requests:
       memory: 100Mi
       cpu: "0.2"
+  securityContext: {}
 
 # Cognigy.AI components images
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-ai:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -238,8 +241,15 @@ serviceAi:
     limits:
       cpu: '0.4'
       memory: 500M
+## Optionally specify extra list of preconfigured additional configMaps for example for custom email template
+## Example:
+##   - name: email-template
+##     mountPath: /app/build/custom/theme/email_template.html
+##     subPath: email_template.html
+  additionalConfigMaps: []
+  securityContext: {}
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-alexa-management:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -248,8 +258,9 @@ serviceAlexaManagement:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceAnalyticsCollector:
-  image: cognigy.azurecr.io/service-analytics-collector:9bfcbdd-1657624162
+  image: cognigy.azurecr.io/service-analytics-collector:cf27828-1657707291
   replicaCount: 3
   resources:
     requests:
@@ -258,8 +269,9 @@ serviceAnalyticsCollector:
     limits:
       cpu: '0.300'
       memory: 200M
+  securityContext: {}
 serviceAnalyticsConversations:
-  image: cognigy.azurecr.io/service-analytics-conversations:fff90d4-1657624200
+  image: cognigy.azurecr.io/service-analytics-conversations:195cb95-1657707302
   replicaCount: 3
   requests:
     cpu: '0.1'
@@ -267,8 +279,9 @@ serviceAnalyticsConversations:
   limits:
     cpu: '0.1'
     memory: 150M
+  securityContext: {}
 serviceAnalyticsOdata:
-  image: cognigy.azurecr.io/service-analytics-odata:8e13d34-1657878988
+  image: cognigy.azurecr.io/service-analytics-odata:d99de39-1657881263
   replicaCount: 3
   resources:
     requests:
@@ -277,8 +290,9 @@ serviceAnalyticsOdata:
     limits:
       cpu: '0.5'
       memory: 450M
+  securityContext: {}
 serviceAnalyticsRealtime:
-  image: cognigy.azurecr.io/service-analytics-realtime:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-analytics-realtime:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -287,8 +301,9 @@ serviceAnalyticsRealtime:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceAnalyticsReporter:
-  image: cognigy.azurecr.io/service-analytics-reporter:4646cd3-1657623973
+  image: cognigy.azurecr.io/service-analytics-reporter:df3c8bd-1657894925
   replicaCount: 3
   resources:
     requests:
@@ -297,8 +312,9 @@ serviceAnalyticsReporter:
     limits:
       cpu: '0.5'
       memory: 750M
+  securityContext: {}
 serviceApi:
-  image: cognigy.azurecr.io/service-api:80ee14930b391a914f63d2ed6feae4b3c203946f
+  image: cognigy.azurecr.io/service-api:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -307,8 +323,9 @@ serviceApi:
     limits:
       cpu: '0.2'
       memory: 350M
+  securityContext: {}
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-custom-modules:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -317,8 +334,9 @@ serviceCustomModules:
     limits:
       cpu: '0.3'
       memory: 512M
+  securityContext: {}
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:d1583c36a57ba89efa4f7a25a8b940d997ab52ff
+  image: cognigy.azurecr.io/service-endpoint:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -327,18 +345,20 @@ serviceEndpoint:
     limits:
       cpu: '0.2'
       memory: 150M
+  securityContext: {}
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-execution:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
-      cpu: '0.500'
+      cpu: '1'
       memory: 240M
     limits:
-      cpu: '0.500'
+      cpu: '1'
       memory: 300M
+  securityContext: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-function-execution:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -347,8 +367,9 @@ serviceFunctionExecution:
     limits:
       cpu: '2'
       memory: 512M
+  securityContext: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-function-scheduler:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -357,8 +378,9 @@ serviceFunctionScheduler:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-handover:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -367,8 +389,9 @@ serviceHandover:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-http:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -377,8 +400,9 @@ serviceHttp:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceJourneys:
-  image: cognigy.azurecr.io/service-journeys:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-journeys:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -387,8 +411,9 @@ serviceJourneys:
     limits:
       cpu: '0.1'
       memory: 120M
+  securityContext: {}
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-logs:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -397,8 +422,9 @@ serviceLogs:
     limits:
       cpu: '0.1'
       memory: 120M
+  securityContext: {}
 serviceNlpMatcher:
-  image: cognigy.azurecr.io/service-nlp-matcher:eb679350de5ffad1c56d4133984dc409725d6b7a
+  image: cognigy.azurecr.io/service-nlp-matcher:801bfeaae149ca52d13157f5fdefd439d5119ef1
   replicaCount: 3
   resources:
     requests:
@@ -407,8 +433,9 @@ serviceNlpMatcher:
     limits:
       cpu: '0.5'
       memory: 500M
+  securityContext: {}
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-nlp-ner:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -417,8 +444,9 @@ serviceNlpNer:
     limits:
       cpu: '1.0'
       memory: 150M
+  securityContext: {}
 serviceParser:
-  image: cognigy.azurecr.io/service-parser:843e733d6f45167307aba5429ba91be54e12f6fd
+  image: cognigy.azurecr.io/service-parser:d7fdc67a411e296cc3c075ebc40b63cf1b18e38e
   replicaCount: 3
   resources:
     requests:
@@ -427,8 +455,9 @@ serviceParser:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-playbook-execution:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -437,8 +466,9 @@ servicePlaybookExecution:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-profiles:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -447,8 +477,9 @@ serviceProfiles:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-resources:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -457,8 +488,9 @@ serviceResources:
     limits:
       cpu: '0.5'
       memory: 512M
+  securityContext: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-security:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -467,8 +499,9 @@ serviceSecurity:
     limits:
       cpu: '0.2'
       memory: 75M
+  securityContext: {}
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-session-state-manager:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -477,8 +510,9 @@ serviceSessionStateManager:
     limits:
       cpu: '0.4'
       memory: 500M
+  securityContext: {}
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-task-manager:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -487,8 +521,9 @@ serviceTaskManager:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:8970cf782f738b9e9ec10dcbaafd10cdac1fdcc2
+  image: cognigy.azurecr.io/service-trainer:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -497,8 +532,9 @@ serviceTrainer:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:2d390a9d6765e504ae2e2e6f83582c9366c5e718
+  image: cognigy.azurecr.io/service-ui:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -507,8 +543,15 @@ serviceUi:
     limits:
       cpu: '0.1'
       memory: 75M
+## Optionally specify extra list of preconfigured additional configMaps for example for custom theme
+## Example:
+##   - name: theme-favicon-ico
+##     mountPath: /app/build/custom/theme/favicon/favicon.ico
+##     subPath: favicon.ico
+  additionalConfigMaps: []
+  securityContext: {}
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:ef8637d4f18a6bb0c87ed420039c02e8e08ce843
+  image: cognigy.azurecr.io/service-webchat:e8e8894d151878aaf286c6e3ceda2e40eb546c5a
   replicaCount: 3
   resources:
     requests:
@@ -517,10 +560,11 @@ serviceWebchat:
     limits:
       cpu: '0.1'
       memory: 75M
+  securityContext: {}
 serviceNlpQaDe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-qa-de:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 1
   resources:
     requests:
       cpu: '1'
@@ -528,9 +572,10 @@ serviceNlpQaDe:
     limits:
       cpu: '1'
       memory: 3G
+  securityContext: {}
 serviceNlpScoreDe:
   image: cognigy.azurecr.io/service-nlp:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -538,9 +583,10 @@ serviceNlpScoreDe:
     limits:
       cpu: '1'
       memory: 2500M
+  securityContext: {}
 serviceNlpTrainDe:
   image: cognigy.azurecr.io/service-nlp:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -548,10 +594,11 @@ serviceNlpTrainDe:
     limits:
       cpu: '1'
       memory: 2500M
+  securityContext: {}
 serviceNlpQaEn:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-qa-en:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 1
   resources:
     requests:
       cpu: '1'
@@ -559,9 +606,10 @@ serviceNlpQaEn:
     limits:
       cpu: '1'
       memory: 3G
+  securityContext: {}
 serviceNlpScoreEn:
   image: cognigy.azurecr.io/service-nlp-en:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -569,9 +617,10 @@ serviceNlpScoreEn:
     limits:
       cpu: '1'
       memory: 2500M
+  securityContext: {}
 serviceNlpTrainEn:
   image: cognigy.azurecr.io/service-nlp-en:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -579,10 +628,11 @@ serviceNlpTrainEn:
     limits:
       cpu: '1.0'
       memory: 2500M
+  securityContext: {}
 serviceNlpQaGe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-qa-ge:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 1
   resources:
     requests:
       cpu: '1'
@@ -590,9 +640,10 @@ serviceNlpQaGe:
     limits:
       cpu: '1'
       memory: 3G
+  securityContext: {}
 serviceNlpScoreGe:
   image: cognigy.azurecr.io/service-nlp-ge:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -600,9 +651,10 @@ serviceNlpScoreGe:
     limits:
       cpu: '2'
       memory: 4000M
+  securityContext: {}
 serviceNlpTrainGe:
   image: cognigy.azurecr.io/service-nlp-ge:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -610,9 +662,10 @@ serviceNlpTrainGe:
     limits:
       cpu: '2'
       memory: 4000M
+  securityContext: {}
 serviceNlpScoreJa:
   image: cognigy.azurecr.io/service-nlp-ja:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -620,9 +673,10 @@ serviceNlpScoreJa:
     limits:
       cpu: '1'
       memory: 2500M
+  securityContext: {}
 serviceNlpTrainJa:
   image: cognigy.azurecr.io/service-nlp-ja:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -630,9 +684,10 @@ serviceNlpTrainJa:
     limits:
       cpu: '1'
       memory: 2500M
+  securityContext: {}
 serviceNlpScoreKo:
   image: cognigy.azurecr.io/service-nlp-ko:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -640,9 +695,10 @@ serviceNlpScoreKo:
     limits:
       cpu: '1'
       memory: 2500M
+  securityContext: {}
 serviceNlpTrainKo:
   image: cognigy.azurecr.io/service-nlp-ko:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -650,9 +706,10 @@ serviceNlpTrainKo:
     limits:
       cpu: '1'
       memory: 2500M
+  securityContext: {}
 serviceNlpScoreXx:
   image: cognigy.azurecr.io/service-nlp:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -660,9 +717,10 @@ serviceNlpScoreXx:
     limits:
       cpu: '1'
       memory: 2500M
+  securityContext: {}
 serviceNlpTrainXx:
   image: cognigy.azurecr.io/service-nlp:b984c2f293e7c4eb757ba71761ef49ece092d6d2
-  replicaCount: 3
+  replicaCount: 2
   resources:
     requests:
       cpu: '0.350'
@@ -670,6 +728,7 @@ serviceNlpTrainXx:
     limits:
       cpu: '1'
       memory: 2500M
+  securityContext: {}
 
 # The values below are used for Traefik Helm chart. For more information, see
 # https://github.com/traefik/traefik-helm-chart
@@ -753,3 +812,6 @@ traefik:
         - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
         - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
         - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+## For the securityContext config of traefik, please refer to the official values.yaml file of the traefik
+## This is the link for chart v10.19.4 for example
+## https://github.com/traefik/traefik-helm-chart/blob/f24ac3c53579e0889b53a29f23a76d359ad54803/traefik/values.yaml#L490-L501

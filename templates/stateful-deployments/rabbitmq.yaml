@@ -36,4 +36,6 @@ spec:
                 key: rabbitmq-password
       imagePullSecrets:
       - name: cognigy-registry-token
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

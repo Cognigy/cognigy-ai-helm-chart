@@ -103,4 +103,6 @@ spec:
             secretName: cognigy-management-ui-creds
       imagePullSecrets:
         - name: cognigy-registry-token
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

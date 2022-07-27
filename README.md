@@ -5,7 +5,7 @@
 
 This chart installs a Cognigy.AI deployment on a [Kubernetes](https://kubernetes.io/) cluster using the [Helm](https://helm.sh/) package manager.
 
-### Prerequisites
+## Prerequisites
 - Kubernetes v1.19-1.23 running on either:
   - AWS EKS
   - Azure AKS
@@ -29,12 +29,12 @@ This chart installs a Cognigy.AI deployment on a [Kubernetes](https://kubernetes
    Provisioning of such PVCs depends on [Storage Class Provisioners](https://kubernetes.io/docs/concepts/storage/storage-classes/#provisioner) with `ReadWriteMany` access mode supported by your underlying infrastructure (typically NFS). Please, contact official documentation of your cloud provider for that.
    2. `redis-persistent` `StorageClass` for `redis-persistent` PVC. The requirements are the same as for `mongodb` `StorageClass` created during installation of MongoDB Helm Chart. StorageClass must support high IO throughput, see [AWS example](templates/aws/redis-persistent-sc.yaml) for reference.
 
-### Configuration
+## Configuration
 To deploy a new Cognigy.AI setup you need to create a separate file with Helm release values. You can use `values_prod.yaml` as a baseline, we recommend to start with it:
 1. Make a copy of `values_prod.yaml` into a new file and name it accordingly, we refer to it as `YOUR_VALUES_FILE.yaml` later in this document. 
 2. **Do not make** a copy of default `values.yaml` file as it contains hardcoded docker images references for all microservices, and in this case you will need to change all of them manually during upgrades. However, you can add some variables from default `values.yaml` file into your customized `YOUR_VALUES_FILE.yaml` later on, e.g. for tweaking CPU/RAM resources of Cognigy.AI microservices. We describe this process later in the document.
 
-#### Setting Essential Parameters
+### Setting Essential Parameters
 You need to set at least following parameters in `YOUR_VALUES_FILE.yaml`:
 1. Cognigy.AI Image repository credentials: set `imageCredentials.username` and `imageCredentials.password` accordingly.
 2. Cloud Provider and Region: set `cloud.provider` and `cloud.region` variables accordingly. You do not need to set `cloud.region` for `generic` cloud provider.
@@ -43,8 +43,25 @@ You need to set at least following parameters in `YOUR_VALUES_FILE.yaml`:
 5. Management UI: if you are going to use Management UI component:
    1. create `username` and `password` for Management UI interface in `managementUiCredentials` variable.
    2. follow the section [Install Management-UI](#install-management-ui) below
-6. TLS Settings: you need to provide an SSL certificate for the domain in which DNS records for Cognigy.AI will be created, for this put the SSL certificate under `tls.crt` and its private key under `tls.key`. If you have a certificate chain, make sure you provide the whole certificate chain under `tls.crt` in PEM format.
-7. Cognigy.AI URLs: set public URLs (FQDNs) for your Cognigy.AI installation under `ingress` section, see official Cognigy.AI installation documentation for details.
+
+### Cognigy.AI DNS and TLS Settings
+Cognigy.AI exposes several web services for which you will need to assign DNS records in a public domain operated by your organization. These DNS records must be added into your DNS system before you continue with the installation process. Replace `yourdomain.com` according to the domain (subdomain) of your organization under `ingress` section as below:
+```
+ingress:
+  serviceAnalyticsOdata: 
+    host: "odata-yourdomain.com"
+  serviceApi: 
+    host: "api-yourdomain.com"
+  serviceEndpoint: 
+    host: "endpoint-yourdomain.com"
+  serviceUi: 
+    host: "yourdomain.com"
+  serviceWebchat: 
+    host: "webchat-yourdomain.com"
+```
+Cognigy.AI relies on SSL-encrypted connection between the client and the services You need to provide an SSL certificate for the domain in which DNS records for Cognigy.AI will be created, for this put the SSL certificate under `tls.crt` and its private key under `tls.key`. If you have a certificate chain, make sure you provide the whole certificate chain under `tls.crt` in [.pem format](https://www.digicert.com/kb/ssl-support/pem-ssl-creation.htm).
+
+**Note: Make sure you install a publicly trusted TLS certificate signed by a Certificate Authority. Although using of self-signed certificates is possible in test environments, Cognigy does not recommend usage of self-signed certificates, does not guarantee full compatibility with our products and will not support such installations.**
 
 ### Installing the Chart
 1. Download chart dependencies:
@@ -90,7 +107,7 @@ managementUi:
   enabled: true # `true` to install Management UI
   ingress:
     enabled: true # `true` to create an Ingress for Management UI
-    host: "management-ui.example.com" # `host` value for the Management UI Ingress
+    host: "management-ui.yourdomain.com" # `host` value for the Management UI Ingress
 ```
 Then update the Helm release:
 ```bash
@@ -115,6 +132,20 @@ For example, for `service-ai` microservice copy from `values.yaml` and adjust in
          memory: 500M
    ```
 
+### NLP Configuration
+To disable NLP capabilities for additional languages, you can set `replicaCount: 0`
+for related `Train` and `Score` components, for example to disable NLP capabilities for Japanese:
+```
+serviceNlpScoreJa
+  replicaCount: 0
+serviceNlpTrainJa:
+  replicaCount: 0
+```
+### Cognigy.AI Secrets Backup
+During the installation process `dbinit-generate.sh` initialization script generates connection strings for Cognigy.AI microservices to MongoDB, RabbitMQ and Redis backends and stores these connection strings in form of [Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in `cognigy-ai` installation namespace. In case you loose the cluster where Cognigy.AI is running or accidentally delete these secrets, there will be no possibility to connect to the existing databases anymore. 
+
+**Thus, it is crucial to make a consistent backup of the secrets in `cognigy-ai` namespace and to store them securely**. Execute this [script](scripts/backup_cognigy_ai_secrets.sh) to perform a backup of secrets. Set `LIVE_AGENT_ENABLED=true` in case Live Agent product is installed alongside with Cognigy.AI. Store the folder with the secrets securely as it contains sensitive data.
+
 ### Uninstalling the Release
 **IMPORTANT:** If you uninstall the Cognigy.AI Helm release, `traefik` Ingress deployment will also be removed. Consequently, a dynamically provisioned `External IP` of the cloud provider's load balancer (e.g. ELB on AWS) will also be freed up. It will affect static DNS settings configured during DNS setup and will cause a downtime of your installation. If you recreate a release you will also have to update DNS, make sure DNS timeouts are set properly, to avoid long outages.
 
@@ -123,7 +154,7 @@ To uninstall a release execute:
 helm uninstall --namespace cognigy-ai cognigy-ai
 ```
 
-#### Clean-up
+### Clean-up
 Please keep in mind that Persistent Volume Claims (PVC) and Secrets are not removed when you delete the Helm release. However, please also keep in mind that:
 
 - Some Secrets contain the MongoDB credentials, so if they are gone, the services cannot access MongoDB anymore

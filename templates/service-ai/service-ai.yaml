@@ -49,6 +49,9 @@ spec:
               subPath: redis-password.conf
             - name: flow-modules
               mountPath: /app/flowModules
+          {{- if .additionalConfigMaps }}
+            {{- toYaml .additionalConfigMaps | nindent 12 }}
+          {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -89,6 +92,15 @@ spec:
         - name: flow-modules
           persistentVolumeClaim:
             claimName: flow-modules
+        {{- if .additionalConfigMaps }}
+        {{- range .additionalConfigMaps }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .name }}
+        {{- end }}
+        {{- end }}
       imagePullSecrets:
         - name: cognigy-registry-token
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

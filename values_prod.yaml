@@ -71,6 +71,13 @@ amazonCredentials:
   clientId: ""
   clientSecret: ""
 
+## Configure Container or Pod Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+
+# serviceAi:
+#   securityContext: {}
+
+
 # You can use the x-forwarded-for header to collect the source IP on EKS cluster configured with classic load balancer following the below code. For other system this part needs to be configured with proper annotation specified with the Load balancer you are using. 
 
 # traefik:
