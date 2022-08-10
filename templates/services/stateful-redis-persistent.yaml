@@ -6,6 +6,10 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: redis-persistent
+  annotations:
+  {{- if .Values.service.statefulRedisPersistent.annotations }}
+    {{- toYaml .Values.service.statefulRedisPersistent.annotations | nindent 4 }}
+  {{- end }}
 spec:
   ports:
     - port: 6379

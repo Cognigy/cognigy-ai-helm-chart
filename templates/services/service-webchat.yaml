@@ -5,6 +5,10 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: service-webchat
+  annotations:
+  {{- if .Values.service.serviceWebchat.annotations }}
+    {{- toYaml .Values.service.serviceWebchat.annotations | nindent 4 }}
+  {{- end }}
 spec:
   ports:
     - name: service-webchat

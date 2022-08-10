@@ -5,6 +5,10 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: rabbitmq
+  annotations:
+  {{- if .Values.service.statefulRabbitMq.annotations }}
+    {{- toYaml .Values.service.statefulRabbitMq.annotations | nindent 4 }}
+  {{- end }}
 spec:
   ports:
     - name: rabbitmq

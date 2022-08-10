@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-insights-ui
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-insights-ui
+  annotations:
+  {{- if .Values.service.serviceInsightsUi.annotations }}
+    {{- toYaml .Values.service.serviceInsightsUi.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: service-insights-ui
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-insights-ui

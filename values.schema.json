@@ -73,20 +73,25 @@
       "properties": {
         "registry": {
           "description": "URL for the registry",
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "username": {
           "description": "Username for the registry",
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "password": {
           "description": "Password for the registry",
-          "type": "string",
-          "minLength": 1
+          "type": "string"
+        },
+        "pullSecrets": {
+          "description": "Existing secrets for the registry login",
+          "type": "array"
         }
-      }
+      },
+      "anyOf": [
+        {"required": ["registry", "username", "password"]},
+        {"required": ["pullSecrets"]}
+      ]
     },
     "efs": {
       "type": "object",

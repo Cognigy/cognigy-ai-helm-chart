@@ -60,3 +60,59 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+
+{{/*
+Return the proper Docker Image Registry Secret Names
+*/}}
+{{- define "image.pullSecrets" -}}
+  {{- $pullSecrets := list -}}
+
+  {{- if and (.Values.imageCredentials.registry) (.Values.imageCredentials.username) (.Values.imageCredentials.password) -}}
+      {{- $pullSecrets = append $pullSecrets "cognigy-registry-token" -}}
+  {{- else if .Values.imageCredentials.pullSecrets -}}
+    {{- range .Values.imageCredentials.pullSecrets -}}
+      {{- $pullSecrets = append $pullSecrets . -}}
+    {{- end -}}
+  {{- else -}}
+    {{ required "A valid value for .Values.imageCredentials is required!" .Values.imageCredentials.registry }}
+    {{ required "A valid value for .Values.imageCredentials is required!" .Values.imageCredentials.username }}
+    {{ required "A valid value for .Values.imageCredentials is required!" .Values.imageCredentials.password }}
+    {{ required "A valid value for .Values.imageCredentials is required!" .Values.imageCredentials.pullSecrets }}
+  {{- end -}}
+
+  {{- if (not (empty $pullSecrets)) -}}
+imagePullSecrets:
+    {{- range $pullSecrets }}
+  - name: {{ . }}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Return the proper smtp password Secret Name
+*/}}
+{{- define "smtp.password.secretName" -}}
+  {{- $smtpPasswordName := "" -}}
+
+  {{- if .Values.smtpPasswordExistingSecret -}}
+    {{- $smtpPasswordName = .Values.smtpPasswordExistingSecret -}}
+  {{- else -}}
+    {{- $smtpPasswordName = "cognigy-smtp" -}}
+  {{- end -}}
+
+  {{- printf "%s" (tpl $smtpPasswordName $) -}}
+{{- end -}}
+
+{{/*
+Renders a value that contains template.
+Usage:
+{{ include "common.tplvalues.render" ( dict "value" .Values.path.to.the.Value "context" $) }}
+*/}}
+{{- define "common.tplvalues.render" -}}
+    {{- if typeIs "string" .value }}
+        {{- tpl .value .context }}
+    {{- else }}
+        {{- tpl (.value | toYaml) .context }}
+    {{- end }}
+{{- end -}}

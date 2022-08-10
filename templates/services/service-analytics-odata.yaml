@@ -5,6 +5,11 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: service-analytics-odata
+  annotations:
+  {{- if .Values.service.serviceAnalyticsOdata.annotations }}
+    {{- toYaml .Values.service.serviceAnalyticsOdata.annotations | nindent 4 }}
+  {{- end }}
+
 spec:
   ports:
     - name: service-analytics-odata

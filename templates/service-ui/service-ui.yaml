@@ -27,21 +27,21 @@ spec:
           envFrom:
             - configMapRef:
                 name: cognigy-env
-          {{- if .additionalConfigMaps }}
+          env:
+            - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-live-agent-credentials
+                  key: cognigy-live-agent-platform-token
           volumeMounts:
-            {{- toYaml .additionalConfigMaps | nindent 12 }}
-          {{- end }}
-
-      {{- if .additionalConfigMaps }}
+            {{- if .extraVolumeMounts }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
+            {{- end }}
       volumes:
-      {{- range .additionalConfigMaps }}
-        - name: {{ .name }}
-          configMap:
-            name: {{ .name }}
-          {{- end }}
-          {{- end }}
-      imagePullSecrets:
-        - name: cognigy-registry-token
+        {{- if .extraVolumes }}
+        {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
+        {{- end }}
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

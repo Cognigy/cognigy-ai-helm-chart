@@ -32,6 +32,12 @@ efs:
 cognigyLiveAgent:
   platformToken: ""
 
+## Enable your choice of NLU service by following the below example
+# serviceNlpScoreEn:
+#   enabled: true
+# serviceNlpTrainEn:
+#   enabled: true
+
 # Install Management UI on the cluster.
 # It is not required, since if not installed and the API endpoint is accessible from the Internet, you can still use the provided Management UI at https://management-ui-v4.cognigy.ai/
 managementUi:

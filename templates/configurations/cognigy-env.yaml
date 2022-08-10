@@ -7,6 +7,7 @@ data:
   # DNS names
   FRONTEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceUi.host | quote}}
   BACKEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceApi.host | quote}}
+  INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceInsightsApi.host | quote}}
   ENDPOINT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceEndpoint.host | quote}}
   WEBCHAT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceWebchat.host | quote}}
   ODATA_HOSTNAME: {{ .Values.ingress.serviceAnalyticsOdata.host | quote }}

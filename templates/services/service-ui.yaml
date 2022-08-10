@@ -5,6 +5,10 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: service-ui
+  annotations:
+  {{- if .Values.service.serviceUi.annotations }}
+    {{- toYaml .Values.service.serviceUi.annotations | nindent 4 }}
+  {{- end }}
 spec:
   ports:
     - name: service-ui

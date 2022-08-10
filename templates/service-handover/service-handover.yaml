@@ -40,6 +40,12 @@ spec:
           envFrom:
             - configMapRef:
                 name: cognigy-env
+          env:
+            - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-live-agent-credentials
+                  key: cognigy-live-agent-platform-token
           livenessProbe:
             exec:
               command:
@@ -65,8 +71,7 @@ spec:
             items:
               - key: connection-string
                 path: mongodbConnectionString
-      imagePullSecrets:
-        - name: cognigy-registry-token
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

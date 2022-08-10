@@ -25,7 +25,6 @@ spec:
         envFrom:
         - configMapRef:
             name: cognigy-env
-      imagePullSecrets:
-      - name: cognigy-registry-token
+      {{- include "image.pullSecrets" $ | nindent 6 }}
 {{- end }}
 {{- end }}

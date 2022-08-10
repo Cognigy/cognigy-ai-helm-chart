@@ -1,3 +1,4 @@
+{{- if and (.Values.imageCredentials.registry) (.Values.imageCredentials.username) (.Values.imageCredentials.password) }}
 ---
 apiVersion: v1
 kind: Secret
@@ -7,3 +8,4 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 data:
   .dockerconfigjson: {{ template "imagePullSecret" . }}
+{{- end }}

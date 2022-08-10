@@ -6,6 +6,10 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: redis
+  annotations:
+  {{- if .Values.service.statefulRedis.annotations }}
+    {{- toYaml .Values.service.statefulRedis.annotations | nindent 4 }}
+  {{- end }}
 spec:
   ports:
     - name: redis

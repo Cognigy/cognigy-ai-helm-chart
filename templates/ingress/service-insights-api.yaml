@@ -1,0 +1,27 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-insights-api
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- if .Values.ingress.serviceInsightsApi.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistserviceinsightsapi@kubernetescrd
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  tls:
+  - secretName: cognigy-traefik
+  rules:
+  - host: {{ .Values.ingress.serviceInsightsApi.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: service-insights-api
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+{{- end }}

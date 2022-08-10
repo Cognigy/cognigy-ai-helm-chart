@@ -44,8 +44,7 @@ spec:
         - name: redis-data
           persistentVolumeClaim:
             claimName: redis-persistent
-      imagePullSecrets:
-      - name: cognigy-registry-token
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

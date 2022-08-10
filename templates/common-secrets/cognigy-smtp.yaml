@@ -1,3 +1,4 @@
+{{- if (not .Values.smtpPasswordExistingSecret) }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -6,3 +7,4 @@ metadata:
 type: Opaque
 data:
   system-smtp-password: {{ .Values.smtpPassword | b64enc | quote }}
+{{- end }}

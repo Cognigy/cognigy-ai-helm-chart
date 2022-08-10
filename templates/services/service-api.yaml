@@ -17,6 +17,9 @@ metadata:
     traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
     traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "true"
     traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: "none"
+    {{- if .Values.service.serviceApi.annotations }}
+      {{- toYaml .Values.service.serviceApi.annotations | nindent 4 }}
+    {{- end }}
 spec:
   ports:
     - name: service-api

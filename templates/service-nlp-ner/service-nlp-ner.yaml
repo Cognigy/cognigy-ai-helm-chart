@@ -60,8 +60,7 @@ spec:
             items:
               - key: connection-string-api
                 path: rabbitmqAPIConnectionString
-      imagePullSecrets:
-        - name: cognigy-registry-token
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

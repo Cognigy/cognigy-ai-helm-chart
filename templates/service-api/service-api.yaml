@@ -34,6 +34,11 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: INSIGHTS_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-insights-jwt
+                  key: secret
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -52,7 +57,7 @@ spec:
             - name: SYSTEM_SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-smtp
+                  name: {{- include "smtp.password.secretName" $ | indent 1 }}
                   key: system-smtp-password
           volumeMounts:
             - name: rabbitmq-connection-string
@@ -70,6 +75,9 @@ spec:
             - name: management-ui-creds
               mountPath: /var/run/secrets/management-ui-creds.json
               subPath: management-ui-creds.json
+            {{- if .extraVolumeMounts }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
+            {{- end }}
           livenessProbe:
             exec:
               command:
@@ -101,8 +109,10 @@ spec:
         - name: management-ui-creds
           secret:
             secretName: cognigy-management-ui-creds
-      imagePullSecrets:
-        - name: cognigy-registry-token
+        {{- if .extraVolumes }}
+        {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
+        {{- end }}
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}
