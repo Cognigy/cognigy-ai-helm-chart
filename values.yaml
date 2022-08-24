@@ -300,7 +300,7 @@ statefulRedisPersistent:
 
 # Cognigy.AI components images
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-ai:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -334,7 +334,7 @@ serviceAi:
   extraVolumeMounts: []
   securityContext: {}
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-alexa-management:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -377,7 +377,7 @@ serviceAnalyticsOdata:
       memory: 450M
   securityContext: {}
 serviceAnalyticsRealtime:
-  image: cognigy.azurecr.io/service-analytics-realtime:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-analytics-realtime:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -399,7 +399,7 @@ serviceAnalyticsReporter:
       memory: 750M
   securityContext: {}
 serviceApi:
-  image: cognigy.azurecr.io/service-api:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-api:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -412,7 +412,7 @@ serviceApi:
   extraVolumeMounts: []
   securityContext: {}
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-custom-modules:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -423,7 +423,7 @@ serviceCustomModules:
       memory: 512M
   securityContext: {}
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-endpoint:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -434,7 +434,7 @@ serviceEndpoint:
       memory: 150M
   securityContext: {}
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-execution:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -445,7 +445,7 @@ serviceExecution:
       memory: 300M
   securityContext: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-function-execution:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -456,7 +456,7 @@ serviceFunctionExecution:
       memory: 512M
   securityContext: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-function-scheduler:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -467,7 +467,7 @@ serviceFunctionScheduler:
       memory: 150M
   securityContext: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-handover:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -478,7 +478,7 @@ serviceHandover:
       memory: 150M
   securityContext: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-http:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -511,7 +511,7 @@ serviceInsightsUi:
       memory: 150M
   securityContext: {}
 serviceJourneys:
-  image: cognigy.azurecr.io/service-journeys:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-journeys:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -522,7 +522,7 @@ serviceJourneys:
       memory: 150M
   securityContext: {}
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-logs:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -544,7 +544,7 @@ serviceNlpMatcher:
       memory: 500M
   securityContext: {}
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-nlp-ner:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -566,7 +566,7 @@ serviceParser:
       memory: 150M
   securityContext: {}
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-playbook-execution:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -577,7 +577,7 @@ servicePlaybookExecution:
       memory: 150M
   securityContext: {}
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-profiles:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -588,7 +588,7 @@ serviceProfiles:
       memory: 150M
   securityContext: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:92fecc24fa013e5f68b5a648d0448cb8e2e06fb0
+  image: cognigy.azurecr.io/service-resources:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -599,7 +599,7 @@ serviceResources:
       memory: 512M
   securityContext: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-security:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -610,7 +610,7 @@ serviceSecurity:
       memory: 150M
   securityContext: {}
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-session-state-manager:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -621,7 +621,7 @@ serviceSessionStateManager:
       memory: 500M
   securityContext: {}
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-task-manager:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -632,7 +632,7 @@ serviceTaskManager:
       memory: 150M
   securityContext: {}
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-trainer:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -643,7 +643,7 @@ serviceTrainer:
       memory: 150M
   securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-ui:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
@@ -656,7 +656,7 @@ serviceUi:
   extraVolumeMounts: []
   securityContext: {}
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:9d93186ba57dcaffa88ecc160399906557dac509
+  image: cognigy.azurecr.io/service-webchat:3f7f21353fd01d96559f9789f771c0332eaabd10
   replicaCount: 3
   resources:
     requests:
