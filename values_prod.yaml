@@ -72,6 +72,8 @@ ingress:
     host: ""
   serviceWebchat: 
     host: ""
+  serviceInsightsApi:
+    host: ""
 
 amazonCredentials:
   clientId: ""

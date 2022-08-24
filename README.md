@@ -58,6 +58,8 @@ ingress:
     host: "yourdomain.com"
   serviceWebchat: 
     host: "webchat-yourdomain.com"
+  serviceInsightsApi:
+    host: "insights-api-yourdomain.com"
 ```
 Cognigy.AI relies on SSL-encrypted connection between the client and the services You need to provide an SSL certificate for the domain in which DNS records for Cognigy.AI will be created, for this put the SSL certificate under `tls.crt` and its private key under `tls.key`. If you have a certificate chain, make sure you provide the whole certificate chain under `tls.crt` in [.pem format](https://www.digicert.com/kb/ssl-support/pem-ssl-creation.htm).
 
