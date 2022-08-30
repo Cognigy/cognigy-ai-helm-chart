@@ -56,6 +56,9 @@ spec:
               value: ge-GE,sv-SE,fi-FI,da-DK,nn-NO,vi-VN,hi-IN,bn-IN,ta-IN
             - name: TRAIN
               value: 'true'
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
       volumes:
         - name: rabbitmq-connection-string
           secret:

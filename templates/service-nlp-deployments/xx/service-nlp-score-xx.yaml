@@ -56,6 +56,9 @@ spec:
               value: ar-AE,es-ES,fr-FR,nl-NL,it-IT,pl-PL,pt-PT,pt-BR,th-TH,ru-RU,tr-TR,zh-CN
             - name: SCORE
               value: 'true'
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
       volumes:
         - name: rabbitmq-connection-string
           secret:

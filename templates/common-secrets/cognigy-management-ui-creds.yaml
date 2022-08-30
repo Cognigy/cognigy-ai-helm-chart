@@ -1,3 +1,4 @@
+{{- if (not .Values.managementUiCredentialsExistingSecret) }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -8,3 +9,4 @@ data:
   # the management ui credentials should contain a base64 encoded JSON string,
   # which consists of an array of {"username": "example_username", "password": "example_password"} pairs
   management-ui-creds.json: {{ .Values.managementUiCredentials | b64enc | quote }}
+{{- end }}

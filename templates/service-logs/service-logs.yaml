@@ -33,6 +33,9 @@ spec:
           env:
             - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
               value: 'true'
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString

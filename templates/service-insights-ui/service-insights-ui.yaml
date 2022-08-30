@@ -24,9 +24,21 @@ spec:
           ports:
             - name: metrics
               containerPort: 8002
+          env:
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
+          volumeMounts:
+            {{- if .extraVolumeMounts }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- if .extraVolumes }}
+        {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
+        {{- end }}
       {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

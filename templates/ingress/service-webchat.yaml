@@ -5,14 +5,17 @@ metadata:
   name: service-webchat
   namespace: {{ $.Release.Namespace | quote }}
   annotations:
-      traefik.ingress.kubernetes.io/router.entrypoints: websecure
-      {{- if .Values.ingress.serviceWebchat.ipWhiteListMiddleware.enabled }}
-      traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistservicewebchat@kubernetescrd
-      {{- end }}
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+    {{- if .Values.ingress.serviceWebchat.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistservicewebchat@kubernetescrd
+    {{- end }}
 spec:
   ingressClassName: traefik
-  tls:
-  - secretName: cognigy-traefik
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
   rules:
   - host: {{ .Values.ingress.serviceWebchat.host }}
     http:

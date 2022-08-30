@@ -32,17 +32,17 @@ spec:
           - name: MONGODB_USERNAME
             valueFrom:
               secretKeyRef:
-                name: mongodb-connection
+                name: {{- include "mongodbCredentials.secretName.render" $ | indent 1 }}
                 key: username
           - name: MONGODB_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: mongodb-connection
+                name: {{- include "mongodbCredentials.secretName.render" $ | indent 1 }}
                 key: password
           - name: MONGODB_HOSTS
             valueFrom:
               secretKeyRef:
-                name: mongodb-connection
+                name: mongodb-connection-hosts
                 key: hosts
       volumes:
       - name: dbinit-generate
@@ -132,12 +132,12 @@ spec:
               - key: connection-string
                 path: cognigy-service-trainer
 {{- end }}
-{{- if .Values.mongodb.enabled }}
+{{- if and (.Values.mongodb.enabled) (not .Values.mongodb.auth.existingSecret) }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: mongodb-connection
+  name: mongodb-connection-creds
   namespace: {{ $.Release.Namespace | quote }}
   annotations:
     # This is what defines this resource as a hook. Without these lines, the
@@ -149,6 +149,22 @@ type: Opaque
 data:
   username: "{{- .Values.mongodb.auth.rootUser | b64enc }}"
   password: "{{- .Values.mongodb.auth.rootPassword | b64enc }}"
+{{- end }}
+{{- if .Values.mongodb.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-connection-hosts
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+type: Opaque
+data:
   hosts: "{{- .Values.mongodb.hosts | b64enc }}"
 {{- end }}
 {{- if .Values.mongodb.enabled }}

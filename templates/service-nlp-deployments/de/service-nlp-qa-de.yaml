@@ -47,6 +47,9 @@ spec:
           env:
             - name: LANGUAGES_TO_RUN
               value: de-DE
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env

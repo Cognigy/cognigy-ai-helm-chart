@@ -46,6 +46,9 @@ spec:
                 secretKeyRef:
                   name: cognigy-odata
                   key: odata-super-api-key
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString

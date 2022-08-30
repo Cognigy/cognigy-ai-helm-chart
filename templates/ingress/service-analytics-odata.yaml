@@ -5,14 +5,17 @@ metadata:
   name: service-analytics-odata
   namespace: {{ $.Release.Namespace | quote }}
   annotations:
+    {{- if .Values.tls.enabled }}
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
     {{- if .Values.ingress.serviceAnalyticsOdata.ipWhiteListMiddleware.enabled }}
     traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistserviceanalyticsodata@kubernetescrd
     {{- end }}
 spec:
   ingressClassName: traefik
-  tls:
-  - secretName: cognigy-traefik
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
   rules:
   - host: {{ .Values.ingress.serviceAnalyticsOdata.host }}
     http:

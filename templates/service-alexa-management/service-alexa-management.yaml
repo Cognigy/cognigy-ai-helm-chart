@@ -18,7 +18,7 @@ spec:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
-        checksum/amazon-credentials: {{ include (print $.Template.BasePath "/common-secrets/cognigy-amazon-credentials.yaml") $ | sha256sum }}
+        checksum/amazon-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "amazonCredentials.secretName.render" $ ))) }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-amazon-credentials.yaml") $ | sha256sum }}{{ else }}{{ range $key, $value := (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "amazonCredentials.secretName.render" $ ))).data }}{{ $value | sha256sum }}{{ end }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-alexa-management") }}{{ include (print $.Template.BasePath "/service-alexa-management/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-alexa-management").data | sha256sum }}{{ end }}
     spec:
       containers:
@@ -35,13 +35,16 @@ spec:
             - name: AMAZON_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-amazon-credentials
+                  name: {{- include "amazonCredentials.secretName.render" $ | indent 1 }}
                   key: amazon-client-id
             - name: AMAZON_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-amazon-credentials
+                  name: {{- include "amazonCredentials.secretName.render" $ | indent 1 }}
                   key: amazon-client-secret
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString

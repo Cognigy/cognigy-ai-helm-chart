@@ -116,3 +116,88 @@ Usage:
         {{- tpl (.value | toYaml) .context }}
     {{- end }}
 {{- end -}}
+
+{{/*
+Return the proper Management Ui Credentials Secret Name
+*/}}
+{{- define "managementUiCredentials.secretName.render" -}}
+  {{- $managementUiCredentialsName := "" -}}
+
+  {{- if .Values.managementUiCredentialsExistingSecret -}}
+    {{- $managementUiCredentialsName = .Values.managementUiCredentialsExistingSecret -}}
+  {{- else -}}
+    {{- $managementUiCredentialsName = "cognigy-management-ui-creds" -}}
+  {{- end -}}
+
+  {{- printf "%s" (tpl $managementUiCredentialsName $) -}}
+{{- end -}}
+
+{{/*
+Return the proper mongodb credentials Secret Name
+*/}}
+{{- define "mongodbCredentials.secretName.render" -}}
+  {{- $mongodbCredentialsSecretName := "" -}}
+
+  {{- if .Values.mongodb.auth.existingSecret -}}
+    {{- $mongodbCredentialsSecretName = .Values.mongodb.auth.existingSecret -}}
+  {{- else -}}
+    {{- $mongodbCredentialsSecretName = "mongodb-connection-creds" -}}
+  {{- end -}}
+
+  {{- printf "%s" (tpl $mongodbCredentialsSecretName $) -}}
+{{- end -}}
+
+{{/*
+Return the proper tls certificate Secret Name
+*/}}
+{{- define "tlsCertificate.secretName.render" -}}
+  {{- $tlsCertificateSecretName := "" -}}
+
+  {{- if and (.Values.tls.enabled) (.Values.traefik.enabled) -}}
+    {{- if .Values.tls.existingSecret -}}
+      {{- $tlsCertificateSecretName = .Values.tls.existingSecret -}}
+    {{- else if and (.Values.tls.crt) (.Values.tls.key) -}}
+      {{- $tlsCertificateSecretName = "cognigy-traefik" -}}
+    {{- else -}}
+      {{ required "A valid value for .Values.tls is required!" .Values.tls.crt }}
+      {{ required "A valid value for .Values.tls is required!" .Values.tls.key }}
+      {{ required "A valid value for .Values.tls is required!" .Values.tls.existingSecret }}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if (not (empty $tlsCertificateSecretName)) -}}
+tls:
+  - secretName: {{- printf "%s" (tpl $tlsCertificateSecretName $) | indent 1 -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Return the proper amazonCredentials Secret Name
+*/}}
+{{- define "amazonCredentials.secretName.render" -}}
+  {{- $amazonCredentialsSecretName := "" -}}
+
+  {{- if .Values.amazonCredentials.existingSecret -}}
+    {{- $amazonCredentialsSecretName = .Values.amazonCredentials.existingSecret -}}
+  {{- else -}}
+    {{- $amazonCredentialsSecretName = "cognigy-amazon-credentials" -}}
+  {{- end -}}
+
+  {{- printf "%s" (tpl $amazonCredentialsSecretName $) -}}
+{{- end -}}
+
+{{/*
+Return the proper cognigyLiveAgent Credentials Secret Name
+*/}}
+{{- define "liveAgentCredentials.secretName.render" -}}
+  {{- $liveAgentCredentialsSecretName := "" -}}
+
+  {{- if .Values.cognigyLiveAgent.existingSecret -}}
+    {{- $liveAgentCredentialsSecretName = .Values.cognigyLiveAgent.existingSecret -}}
+  {{- else -}}
+    {{- $liveAgentCredentialsSecretName = "cognigy-live-agent-credentials" -}}
+  {{- end -}}
+
+  {{- printf "%s" (tpl $liveAgentCredentialsSecretName $) -}}
+{{- end -}}
+

@@ -24,6 +24,10 @@ spec:
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
           - containerPort: 6379
+          env:
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
           - name: redis-data
             mountPath: /data

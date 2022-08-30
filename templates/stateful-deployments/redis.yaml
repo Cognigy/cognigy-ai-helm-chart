@@ -23,6 +23,10 @@ spec:
           ports:
           - name: redis
             containerPort: 6379
+          env:
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
           - name: redis-password-config
             mountPath: /var/run/secrets/

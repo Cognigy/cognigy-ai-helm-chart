@@ -34,8 +34,11 @@ spec:
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-live-agent-credentials
+                  name: {{- include "liveAgentCredentials.secretName.render" $ | indent 1 }}
                   key: cognigy-live-agent-platform-token
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString

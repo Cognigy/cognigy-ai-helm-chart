@@ -27,6 +27,10 @@ spec:
           ports:
             - name: metrics
               containerPort: 8002
+          env:
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env

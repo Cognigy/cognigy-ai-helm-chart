@@ -57,6 +57,9 @@ spec:
               value: ja-JP
             - name: SCORE
               value: 'true'
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
       volumes:
         - name: rabbitmq-connection-string
           secret:

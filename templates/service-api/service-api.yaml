@@ -19,7 +19,7 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-persistent-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password").data | sha256sum }}{{ end }}
-        checksum/management-ui: {{ include (print $.Template.BasePath "/common-secrets/cognigy-management-ui-creds.yaml") $ | sha256sum }}
+        checksum/management-ui: {{ if not (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))) }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-management-ui-creds.yaml") $ | sha256sum }}{{ else }}{{ range $key, $value := (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))).data }}{{ $value | sha256sum }}{{ end }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-api") }}{{ include (print $.Template.BasePath "/service-api/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-api").data | sha256sum }}{{ end }}
 
     spec:
@@ -47,18 +47,21 @@ spec:
             - name: AMAZON_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-amazon-credentials
+                  name: {{- include "amazonCredentials.secretName.render" $ | indent 1 }}
                   key: amazon-client-id
             - name: AMAZON_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-amazon-credentials
+                  name: {{- include "amazonCredentials.secretName.render" $ | indent 1 }}
                   key: amazon-client-secret
             - name: SYSTEM_SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{- include "smtp.password.secretName" $ | indent 1 }}
                   key: system-smtp-password
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -108,7 +111,7 @@ spec:
             secretName: cognigy-redis-persistent-password
         - name: management-ui-creds
           secret:
-            secretName: cognigy-management-ui-creds
+            secretName: {{- include "managementUiCredentials.secretName.render" $ | indent 1 }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

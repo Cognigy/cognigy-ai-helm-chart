@@ -35,7 +35,10 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: cognigy-insights-jwt
-                  key: secret          
+                  key: secret
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -43,6 +46,9 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            {{- if .extraVolumeMounts }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
+            {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -54,7 +60,7 @@ spec:
             failureThreshold: 3
             initialDelaySeconds: 90
             periodSeconds: 60
-            timeoutSeconds: 10              
+            timeoutSeconds: 10
       volumes:
         - name: rabbitmq-connection-string
           secret:
@@ -65,6 +71,9 @@ spec:
         - name: redis-password
           secret:
             secretName: cognigy-redis-password
+        {{- if .extraVolumes }}
+        {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
+        {{- end }}
       {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

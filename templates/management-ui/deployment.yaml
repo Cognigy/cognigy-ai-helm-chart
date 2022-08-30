@@ -19,12 +19,16 @@ spec:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
     spec:
       containers:
-      - name: management-ui
-        image: {{ .image }}
-        resources: {{- toYaml .resources | nindent 10 }}
-        envFrom:
-        - configMapRef:
-            name: cognigy-env
+        - name: management-ui
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          env:
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
       {{- include "image.pullSecrets" $ | nindent 6 }}
 {{- end }}
 {{- end }}

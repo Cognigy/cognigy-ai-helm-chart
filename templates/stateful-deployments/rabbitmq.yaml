@@ -27,13 +27,16 @@ spec:
           - name: metrics
             containerPort: 15692
           env:
-          - name: RABBITMQ_DEFAULT_USER
-            value: cognigy
-          - name: RABBITMQ_DEFAULT_PASS
-            valueFrom:
-              secretKeyRef:
-                name: cognigy-rabbitmq
-                key: rabbitmq-password
+            - name: RABBITMQ_DEFAULT_USER
+              value: cognigy
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-rabbitmq
+                  key: rabbitmq-password
+              {{- if .extraEnvVars }}
+              {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+              {{- end }}
       {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
