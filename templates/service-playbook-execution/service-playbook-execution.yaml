@@ -23,13 +23,17 @@ spec:
         - name: service-playbook-execution
           image: {{ .image }}
           resources: {{- toYaml .resources | nindent 12 }}
-          ports:
-            - name: metrics
-              containerPort: 8002
           env:
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"		  
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
+          ports:
+            - name: metrics
+              containerPort: 8002
           envFrom:
             - configMapRef:
                 name: cognigy-env
@@ -40,6 +44,14 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8001			  
       volumes:
         - name: rabbitmq-connection-string
           secret:

@@ -62,17 +62,19 @@ tls:
     -----END PRIVATE KEY-----
 
 ingress:
-  serviceAnalyticsOdata: 
+  serviceAnalyticsOdata:
     host: ""
-  serviceApi: 
+  serviceApi:
     host: ""
-  serviceEndpoint: 
-    host: ""
-  serviceUi: 
-    host: ""
-  serviceWebchat: 
+  serviceEndpoint:
     host: ""
   serviceInsightsApi:
+    host: ""
+  serviceRuntimeFileManager:
+    host: ""
+  serviceUi:
+    host: ""
+  serviceWebchat:
     host: ""
 
 amazonCredentials:

@@ -1,0 +1,21 @@
+{{- if .Values.cognigyApps.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-static-files
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-static-files
+  annotations:
+  {{- if .Values.service.serviceStaticFiles.annotations }}
+    {{- toYaml .Values.service.serviceStaticFiles.annotations | nindent 4 }}
+  {{- end }}   
+spec:
+  ports:
+    - name: service-static-files
+      port: 8000
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app: service-static-files
+{{- end }}

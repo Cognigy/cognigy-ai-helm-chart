@@ -24,13 +24,17 @@ spec:
         - name: service-nlp-matcher
           image: {{ .image }}
           resources: {{- toYaml .resources | nindent 12 }}
-          ports:
-            - name: metrics
-              containerPort: 8002
           env:
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"		  
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
+          ports:
+            - name: metrics
+              containerPort: 8002
           envFrom:
             - configMapRef:
                 name: cognigy-env
@@ -44,9 +48,13 @@ spec:
             - name: redis-persistent-password
               mountPath: /var/run/secrets/redis-persistent-password.conf
               subPath: redis-persistent-password.conf
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
           livenessProbe:
             httpGet:
-              path: /
+              path: /health/liveness
               port: 8001
             failureThreshold: 3
             initialDelaySeconds: 90

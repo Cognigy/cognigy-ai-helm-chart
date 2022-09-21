@@ -9,7 +9,13 @@ data:
   BACKEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceApi.host | quote}}
   INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceInsightsApi.host | quote}}
   ENDPOINT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceEndpoint.host | quote}}
+  RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceRuntimeFileManager.host | quote}}
   WEBCHAT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceWebchat.host | quote}}
+  {{- if .Values.cognigyApps.enabled }}
+  APPS_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceAppSessionManager.host | quote}}
+  FEATURE_USE_COGNIGY_APPS: "true"
+  {{- end }}
+  STATIC_FILES_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceStaticFiles.host | quote}}
   ODATA_HOSTNAME: {{ .Values.ingress.serviceAnalyticsOdata.host | quote }}
   ODATA_PROTOCOL: "https"
 {{- range $key, $value := .Values.cognigyEnv }}

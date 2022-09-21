@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clamd
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: clamd
+spec:
+  ports:
+    - name: clamd
+      port: 3310
+      targetPort: 3310
+      protocol: TCP
+  selector:
+    app: clamd

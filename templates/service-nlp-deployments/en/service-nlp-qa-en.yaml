@@ -36,9 +36,13 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
           livenessProbe:
             httpGet:
-              path: /
+              path: /health/liveness
               port: 8001
             failureThreshold: 1
             initialDelaySeconds: 120

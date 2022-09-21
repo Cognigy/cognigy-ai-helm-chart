@@ -1,0 +1,36 @@
+{{- if .Values.cognigyApps.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-app-session-manager
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-app-session-manager
+  annotations:
+    # Annotation our traefik reverse-proxy uses to enable
+    # sticky-sessions. If you are not using traefik, this
+    # annotation will do nothing.
+    traefik.ingress.kubernetes.io/affinity: "true"
+    traefik.ingress.kubernetes.io/session-secure: "true"
+    traefik.ingress.kubernetes.io/session-same-site: "none"
+
+    # Traefik v2:
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: "none"
+    {{- if .Values.service.serviceAppSessionManager.annotations }}
+      {{- toYaml .Values.service.serviceAppSessionManager.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: api
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+    - name: socketio
+      port: 8010
+      targetPort: 8010
+      protocol: TCP
+  selector:
+    app: service-app-session-manager
+{{- end }}

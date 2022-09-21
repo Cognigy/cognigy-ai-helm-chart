@@ -27,5 +27,6 @@ if (db.getSiblingDB("$DB").getUser("$USER") == null) {
 }
 EOF
 done
-
-mongo -u $MONGODB_USERNAME -p $MONGODB_PASSWORD --authenticationDatabase admin $MONGODB_HOSTS /tmp/dbinit-scripts/*
+MONGODB_PRIMARY_HOST=`mongo -u $MONGODB_USERNAME -p $MONGODB_PASSWORD --authenticationDatabase admin $MONGODB_HOSTS --eval "rs.status().members.find(r=>r.state===1).name" --quiet`
+echo "MongoDB primay host: $MONGODB_PRIMARY_HOST"
+mongo -u $MONGODB_USERNAME -p $MONGODB_PASSWORD --authenticationDatabase admin $MONGODB_PRIMARY_HOST /tmp/dbinit-scripts/*

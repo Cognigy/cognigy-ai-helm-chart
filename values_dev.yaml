@@ -41,7 +41,7 @@ managementUi:
     host: "management-ui.test"
 
 # managementUiCredentials: '[{"username": "example_username", "password": "example_password"}]'
-managementUiCredentials: '[]'
+managementUiCredentials: "[]"
 
 smtpPassword: ""
 
@@ -62,6 +62,10 @@ ingress:
     host: "api.test"
   serviceEndpoint:
     host: "endpoint.test"
+  serviceInsightsApi:
+    host: "insights-api"
+  serviceRuntimeFileManager:
+    host: "files-api.test"
   serviceUi:
     host: "ui.test"
   serviceWebchat:
@@ -113,6 +117,8 @@ servicePlaybookExecution:
 serviceProfiles:
   replicaCount: 1
 serviceResources:
+  replicaCount: 1
+serviceRuntimeFileManager:
   replicaCount: 1
 serviceSecurity:
   replicaCount: 1

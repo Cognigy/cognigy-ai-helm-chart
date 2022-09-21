@@ -1,33 +1,41 @@
-{{- if .Values.serviceNlpScoreXx.enabled }}
-{{- with .Values.serviceNlpScoreXx }}
+{{- if .Values.cognigyApps.enabled }}
+{{- with .Values.serviceAppSessionManager }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-nlp-score-xx
+  name: service-app-session-manager
   namespace: {{ $.Release.Namespace | quote }}
 spec:
   selector:
     matchLabels:
-      app: service-nlp-score-xx
+      app: service-app-session-manager
   replicas: {{ .replicaCount }}
   template:
     metadata:
+      labels:
+        app: service-app-session-manager
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
-        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-nlp") }}{{ include (print $.Template.BasePath "/service-nlp-deployments/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-nlp").data | sha256sum }}{{ end }}
-      labels:
-        app: service-nlp-score-xx
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-app-session-manager") }}{{ include (print $.Template.BasePath "/service-app-session-manager/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-app-session-manager").data | sha256sum }}{{ end }}
     spec:
       containers:
-        - name: service-nlp-score-xx
+        - name: service-app-session-manager
           image: {{ .image }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
             - name: metrics
               containerPort: 8002
+          env:
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -35,11 +43,12 @@ spec:
             - name: mongodb-connection-string
               mountPath: /var/run/secrets/mongodbConnectionString
               subPath: mongodbConnectionString
-            - name: local
-              mountPath: /data/local
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
           startupProbe:
             httpGet:
               path: /health/startup
@@ -48,21 +57,10 @@ spec:
             httpGet:
               path: /health/liveness
               port: 8001
-            failureThreshold: 1
-            initialDelaySeconds: 120
+            failureThreshold: 3
+            initialDelaySeconds: 90
             periodSeconds: 60
-            timeoutSeconds: 60
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
-          env:
-            - name: LANGUAGES_TO_RUN
-              value: ar-AE,es-ES,fr-FR,nl-NL,it-IT,pl-PL,pt-PT,pt-BR,th-TH,ru-RU,tr-TR,zh-CN
-            - name: SCORE
-              value: 'true'
-            {{- if .extraEnvVars }}
-            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}
+            timeoutSeconds: 10
       volumes:
         - name: rabbitmq-connection-string
           secret:
@@ -72,12 +70,10 @@ spec:
                 path: rabbitmqConnectionString
         - name: mongodb-connection-string
           secret:
-            secretName: cognigy-service-nlp
+            secretName: cognigy-service-app-session-manager
             items:
               - key: connection-string
                 path: mongodbConnectionString
-        - name: local
-          emptyDir: {}
         - name: redis-password
           secret:
             secretName: cognigy-redis-password

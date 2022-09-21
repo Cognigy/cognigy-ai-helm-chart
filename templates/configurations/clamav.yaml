@@ -1,0 +1,69 @@
+# https://gist.github.com/jhunt/21190d872fced7f45ac2b7adc83c67c3
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clamav
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  clamd.conf: |-
+    Foreground yes
+    Debug no
+    LeaveTemporaryFiles no
+
+    {{ if .Values.clamd.streamMaxLength }}
+    {{- printf "StreamMaxLength %s" .Values.clamd.streamMaxLength -}}
+    {{end}}
+    
+    LogFile /dev/stdout
+    LogFileMaxSize 0
+    LogTime yes
+    LogClean no
+
+    TCPSocket 3310
+    TCPAddr 0.0.0.0
+
+    ExcludePath ^/proc/
+    ExcludePath ^/sys/
+    ExcludePath ^/host/proc/
+    ExcludePath ^/host/sys/
+
+    MaxDirectoryRecursion 64
+    FollowDirectorySymlinks no
+    FollowFileSymlinks no
+    CrossFilesystems no
+
+    AllowAllMatchScan no
+    HeuristicAlerts no
+    HeuristicScanPrecedence no
+
+    ScanELF yes
+    ScanPDF yes
+    ScanSWF yes
+    ScanXMLDOCS yes
+    ScanArchive yes
+
+  freshclam.conf: |-
+    Foreground yes
+    DatabaseDirectory /var/lib/clamav
+    UpdateLogFile /dev/stdout
+    Debug no
+
+    LogFileMaxSize 0
+    LogTime yes
+
+    DatabaseOwner root
+    DNSDatabaseInfo current.cvd.clamav.net
+    DatabaseMirror database.clamav.net
+    MaxAttempts 3
+
+    ScriptedUpdates yes
+    CompressLocalDatabase no
+    TestDatabases yes
+    SafeBrowsing no
+    Bytecode no
+
+    Checks 24
+    NotifyClamd /etc/clamav/clamd.conf
+
+    ConnectTimeout 30
+    ReceiveTimeout 60

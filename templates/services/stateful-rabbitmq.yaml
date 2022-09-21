@@ -15,6 +15,9 @@ spec:
       port: 5672
       targetPort: 5672
       protocol: TCP
+      {{- if eq .Values.service.statefulRabbitMq.type "NodePort" }}
+      nodePort: {{ .Values.service.statefulRabbitMq.nodePort | default 30002 }}
+      {{- end }}
     - name: rabbitmq-man
       port: 15672
       targetPort: 15672
@@ -23,5 +26,8 @@ spec:
       port: 15692
       protocol: TCP
       targetPort: 15692
+  {{- if .Values.service.statefulRabbitMq.type }}
+  type: {{ .Values.service.statefulRabbitMq.type | default "ClusterIP" }}
+  {{- end }}
   selector:
     app: rabbitmq

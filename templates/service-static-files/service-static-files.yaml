@@ -1,0 +1,38 @@
+{{- if .Values.cognigyApps.enabled }}
+{{- with .Values.serviceStaticFiles }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-static-files
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-static-files
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-static-files
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+    spec:
+      containers:
+        - name: service-static-files
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+      {{- include "image.pullSecrets" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
+{{- end }}

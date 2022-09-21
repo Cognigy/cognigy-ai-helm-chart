@@ -16,6 +16,12 @@ spec:
       port: 6379
       targetPort: 6379
       protocol: TCP
+      {{- if eq .Values.service.statefulRedis.type "NodePort" }}
+      nodePort: {{ .Values.service.statefulRedis.nodePort | default 30003 }}
+      {{- end }}
+  {{- if .Values.service.statefulRedis.type }}
+  type: {{ .Values.service.statefulRedis.type | default "ClusterIP" }}
+  {{- end }}
   selector:
     app: redis
 {{- end }}

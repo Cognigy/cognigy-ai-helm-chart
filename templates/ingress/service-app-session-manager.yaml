@@ -1,0 +1,30 @@
+{{- if and (.Values.ingress.enabled) (.Values.cognigyApps.enabled) }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-app-session-manager
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+    {{- if .Values.ingress.serviceAppSessionManager.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistserviceappsessionmanager@kubernetescrd
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  rules:
+  - host: {{ .Values.ingress.serviceAppSessionManager.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: service-app-session-manager
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+{{- end }}
