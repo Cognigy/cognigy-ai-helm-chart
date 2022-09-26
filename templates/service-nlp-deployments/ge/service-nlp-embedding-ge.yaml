@@ -1,0 +1,67 @@
+{{- if .Values.serviceNlpEmbeddingGe.enabled }}
+{{- with .Values.serviceNlpEmbeddingGe }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-nlp-embedding-ge
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-nlp-embedding-ge
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-nlp-embedding-ge
+    spec:
+      containers:
+        - name: service-nlp-embedding-ge
+          image: {{ .image }}
+          args:
+            - tritonserver
+            - '--model-repository=/models'
+            - '--model-control-mode=explicit'
+            - '--load-model=labse'
+            - '--strict-readiness=true'
+            - '--backend-config=tensorflow,version=2'
+            - '--response-cache-byte-size=0'
+            - '--log-verbose=1'
+            - '--log-info=true'
+            - '--log-warning=true'
+            - '--log-error=true'
+            - '--allow-grpc=false'
+            - '--allow-sagemaker=false'
+            - '--allow-vertex-ai=false'
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8000
+            - name: metrics
+              containerPort: 8002
+          startupProbe:
+            httpGet:
+              path: /v2/health/ready
+              port: 8000
+            failureThreshold: 5
+            periodSeconds: 60
+          livenessProbe:
+            httpGet:
+              path: /v2/health/live
+              port: 8000
+            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 10
+            initialDelaySeconds: 90
+          volumeMounts:
+          - name: model-config
+            mountPath: /models/labse/config.pbtxt
+            subPath: labse-config
+      volumes:
+        - name: model-config
+          configMap:
+            name: embedding-model-config
+      {{- include "image.pullSecrets" $ | nindent 6 }}
+{{- end }}
+{{- end }}

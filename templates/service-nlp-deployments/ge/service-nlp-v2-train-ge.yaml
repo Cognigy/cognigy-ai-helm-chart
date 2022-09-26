@@ -1,0 +1,85 @@
+{{- if .Values.serviceNlpV2TrainGe.enabled }}
+{{- with .Values.serviceNlpV2TrainGe }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-nlp-v2-train-ge
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-nlp-v2-train-ge
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-nlp-v2-train-ge
+    spec:
+      containers:
+        - name: service-nlp-v2-train-ge
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8002
+          volumeMounts:
+            - name: rabbitmq-connection-string
+              mountPath: /var/run/secrets/rabbitmqConnectionString
+              subPath: rabbitmqConnectionString
+            - name: local
+              mountPath: /data/local
+            - name: redis-password
+              mountPath: /var/run/secrets/redis-password.conf
+              subPath: redis-password.conf
+            - name: model-config
+              mountPath: /models/labse/config.pbtxt
+              subPath: labse-config
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8001
+            failureThreshold: 1
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 60
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: LANGUAGES_TO_RUN
+              value: ge-GE,sv-SE,fi-FI,da-DK,nn-NO,vi-VN,hi-IN,bn-IN,ta-IN
+            - name: TRAIN
+              value: 'true'
+            - name: DEFAULT_EMBEDDING_MODEL
+              value: labse
+            - name: MODEL_CONFIG_FILE
+              value: /models/labse/config.pbtxt
+            - name: EMBEDDING_SERVER_ADDRESS
+              value: service-nlp-embedding-ge:8000
+            - name: LABSE_VOCAB_FILE
+              value: /labse_vocab/cased_vocab.txt
+      volumes:
+        - name: rabbitmq-connection-string
+          secret:
+            secretName: cognigy-rabbitmq
+            items:
+              - key: connection-string
+                path: rabbitmqConnectionString
+        - name: local
+          emptyDir: {}
+        - name: redis-password
+          secret:
+            secretName: cognigy-redis-password
+        - name: model-config
+          configMap:
+            name: embedding-model-config
+      {{- include "image.pullSecrets" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
+{{- end }}

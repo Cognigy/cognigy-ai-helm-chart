@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: embedding-model-config
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  usev4-config: |
+    max_batch_size: 256
+
+    dynamic_batching {
+      max_queue_delay_microseconds: 100
+    }
+
+    response_cache {
+      enable: True
+    }
+
+    instance_group [
+      {
+        count: 1
+        kind: KIND_AUTO
+      }
+    ]
+
+    model_warmup [{
+        name : "warmup sample"
+        batch_size: 1
+        inputs {
+            key: "inputs"
+            value: {
+                data_type: TYPE_STRING
+                dims: 1
+                random_data: true
+            }
+        }
+        count: 5 # '0' here would mean '1' iteration
+    }]
+
+  usev3-config: |
+    max_batch_size: 256
+
+    dynamic_batching {
+      max_queue_delay_microseconds: 100
+    }
+
+    response_cache {
+      enable: True
+    }
+
+    instance_group [
+      {
+        count: 1
+        kind: KIND_AUTO
+      }
+    ]
+
+    model_warmup [{
+        name : "warmup sample"
+        batch_size: 1
+        inputs {
+            key: "inputs"
+            value: {
+                data_type: TYPE_STRING
+                dims: 1
+                random_data: true
+            }
+        }
+        count: 5 # '0' here would mean '1' iteration
+    }]
+
+  labse-config: |
+    max_batch_size: 256
+
+    dynamic_batching {
+      max_queue_delay_microseconds: 100
+    }
+
+    response_cache {
+      enable: True
+    }
+
+    instance_group [
+      {
+        count: 1
+        kind: KIND_AUTO
+      }
+    ]
+
+    model_warmup [{
+        name : "warmup sample"
+        batch_size: 1
+        inputs {
+            key: "input_type_ids"
+            value: {
+                data_type: TYPE_INT32
+                dims: 64
+                zero_data: true
+            }
+        }
+        inputs {
+            key: "input_mask"
+            value: {
+                data_type: TYPE_INT32
+                dims: 64
+                zero_data: true
+            }
+        }
+        inputs {
+            key: "input_word_ids"
+            value: {
+                data_type: TYPE_INT32
+                dims: 64
+                zero_data: true
+            }
+        }
+        count: 5 # '0' here would means '1' iteration
+    }]

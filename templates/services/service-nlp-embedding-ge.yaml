@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-nlp-embedding-ge
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-nlp-embedding-ge
+  annotations:
+  {{- if .Values.service.serviceNlpEmbeddingGe.annotations }}
+    {{- toYaml .Values.service.serviceNlpEmbeddingGe.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-nlp-embedding-ge
