@@ -15,7 +15,7 @@ spec:
     - port: 6379
       targetPort: 6379
       protocol: TCP
-      {{- if eq .Values.service.statefulRedisPersistent.type "NodePort" }}
+      {{- if and (eq .Values.service.statefulRedisPersistent.type "NodePort") .Values.service.statefulRedisPersistent.type }}
       nodePort: {{ .Values.service.statefulRedisPersistent.nodePort | default 30004 }}
       {{- end }}
   {{- if .Values.service.statefulRedisPersistent.type }}

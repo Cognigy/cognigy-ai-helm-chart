@@ -328,7 +328,7 @@ cognigyEnv:
   # Path to files containing pre-computed noise embeddings
   NLP_PRECOMPUTED_EMBEDDINGS_PATH: "/embedding/precomputed_embeddings"
 
-  ### Platfrom Integration ENV Variables ###
+  ### Platform Integration ENV Variables ###
   
   # A link to an online instance of the adaptive cards designer
     # ADAPTIVE_CARDS_DESIGNER_URL:
@@ -522,7 +522,290 @@ cognigyEnv:
     # WORKPLACE_APP_ID:
     # WORKPLACE_APP_REDIRECT:
     # WORKPLACE_APP_SECRET:
+
+  ### service-ai env variables ###
+
+  # max number of queues for consistent-hash-exchange in service-ai. default is 20.
+  # AI_MESSAGE_QUEUES_AMOUNT: "20"
+
+  # queue TTL in seconds Queues will expire after a period of time
+  # only when they are not used (e.g. do not have consumers). default is 30 seconds.
+  # AI_MESSAGE_QUEUES_TTL_IN_SECONDS: "30"
+
+  # maximum byte size for context, contact profiles, input data
+  # MAX_MEMORY_OBJECT_SIZE: ""
+
+  # defaults to 'false', needs to be set to 'true'
+  # FEATURE_ALLOW_ADDITIONAL_ACTIONS_IN_CODE_NODES: ""
+
+  # maximum loops to allow in Flows
+  # MAX_LOOPS: "4"
+
+  # Use NLU 2.0 for short utterances
+  # SHORT_UTTERANCES_V2: ""
+
+  # Can be set to 0 to never expire session states
+  # MAX_SESSION_STATE_TTL_IN_MINUTES: "0"
+
+  # The TTL of the session state in redis. Default is 10 minutes
+  # SESSION_STATE_REDIS_TTL_IN_SECONDS: "600"
+
+  # The TTL of the session storage in the NLU transformers in seconds.
+  # NLU_TRANSFORMER_SESSION_STORAGE_TTL: ""
+
+  # The max outgoing hhtp requests that can be executed in a NLU transformer
+  # NLU_TRANSFORMER_MAX_OUTGOING_REQUESTS: ""
+
+  # The amount of times we will retry sending an email
+  # SMTP_RETRY_ATTEMPTS: ""
+
+  # The maximum attachment size allowed when sending an email
+  # SMTP_MAX_ATTACHMENT_SIZE: ""
+
+  # The amount of entries to be buffered, till the batch get sent
+  # BULK_CREATE_TRAINER_MAX_BATCH_SIZE: ""
+
+  # Timeout for 'getNluResultsRpc' call
+  # RPC_TIMEOUT_GET_NLU_RESULTS_IN_MS: "5000"
+
+  # The path to the HTMLTemplate for the email notification Node.
+  # if not provided the value defaults to cognigy internal email html template
+  # EMAIL_NOTIFICATION_HTML_TEMPLATE_FILE_PATH: ""
+
+  # Maximum size for Fuzzy Search Node source data (in bytes)
+  # FUZZYSEARCH_MAX_OBJECT_SIZE: ""
+
+  # The amount of messages one AI should handle in parallel
+  # AI_MESSAGE_PREFETCH_COUNT: ""
+
+  # Whether to use the new queueing concept that better handles messages in parallel
+  # FEATURE_USE_QUEUEING_V2: ""
+
+  # Controls the LRU cache for the chart executable
+  # AI_LRU_CACHE_CHART_EXECUTABLE_ENABLED: "true"
+  # AI_LRU_CACHE_CHART_EXECUTABLE_MAX_SIZE: "1000"
+  # AI_LRU_CACHE_CHART_EXECUTABLE_MAX_AGE_IN_SECONDS: "86400"
+
+  # Controls the LRU cache for the project data
+  # AI_LRU_CACHE_PROJECT_ENABLED: "true"
+  # AI_LRU_CACHE_PROJECT_MAX_SIZE: "1000"
+  # AI_LRU_CACHE_PROJECT_MAX_AGE_IN_SECONDS: "86400"
+
+  # Controls the LRU cache for connections
+  # AI_LRU_CACHE_CONNECTIONS_MAX_AGE_IN_SECONDS: "86400"
+  # AI_LRU_CACHE_CONNECTIONS_ENABLED: "true"
+  # AI_LRU_CACHE_CONNECTIONS_MAX_SIZE: "1000"
+
+  # Whether to refresh the Profile on each input
+  # AI_REFRESH_PROFILES_ENABLED: ""
+
+  # Max timeout fot the loadSessionStateRpc call
+  # AI_LOAD_SESSION_STATE_RPC_TIMEOUT_IN_SECONDS: "2"
+
+  # Timeout for HTTP requests for the httpRequest Node
+  # HTTP_NODE_TIMEOUT_IN_SECONDS: ""
+
+  # The TTL of Brains in AI. Default is 10 minutes
+  # AI_BRAIN_TTL: ""
+
+  # The cleanup interval of Brains in AI. Default is 30s
+  # AI_BRAIN_CLEANUP_INTERVAL: ""
+
+  # Timeout for Question node datepicker function.
+  # AI_DATEPICKER_FUNCTION_VM_TIMEOUT_IN_MS: "150"
+
+  ### service-execution env variables ###
+
+  # Default value is 512 MiB
+  # MAX_EXTENSIONS_CACHE_DIR_SIZE_IN_MB: "512"
+
+  # Path to extensions cache directory
+  # PATH_TO_EXTENSIONS_CACHE_DIR: ""
+
+  # Amount of extensions that will be dropped from extensions map if the max dir size exceeds
+  # AMOUNT_TO_DROP_IF_MAX_EXTENSIONS_DIR_SIZE_EXCEEDS: ""
+
+  # Whether Extensions should be executed in a VM. Default is true
+  # EXECUTE_EXTENSIONS_IN_VM: "true"
+
+  ### service-function-execution env variables ###
+
+  # The total number of http requests a customer can send via the httpRequest API
+  # FUNCTION_MAX_OUTGOING_HTTP_REQUESTS: ""
+
+  # The total amount of data (in bytes) a http response can contain - used for the
+  # httpRequest API
+  # FUNCTION_MAX_HTTP_REQUEST_RESPONSE_SIZE_BYTES: ""
+
+  # The maximum amount of minutes a function instance is allowed to run
+  # FUNCTION_EXECUTION_MAX_EXECUTION_TIME_IN_MINUTES: ""
+
+  ### service-function-scheduler env variables ###
+
+  # how long should we store instance information in the database -
+  # we use a time-based index in order to rotate the data
+  # FUNCTION_INSTANCE_EXPIRATION_IN_MINUTES: ""
+
+  # the maximum number of active/running function instances per
+  # organisation
+  # FUNCTION_INSTANCE_MAX_RUNNING_NUMBER_PER_ORGANIZATION: ""
+
+  # the maximum size (in bytes) for the parameters object with which
+  # a function instance can be started, default 128 KB
+  # FUNCTION_PARAMETERS_SIZE_MAX_IN_BYTES: ""
+
+  ### service-http env variables ###
+
+  # The amount of messages service-http can handle in parallel
+  # SERVICE_HTTP_PREFETCH: ""
+
+  # The max limit of a response object in bytes
+  # RESPONSE_BYTES_LIMIT: ""
+
+  ### service-parser env variables ###
   
+  # The timeout for rpc calls made by service-parser
+  # SERVICE_PARSER_RPC_TIMEOUT_IN_SEC: "20"
+
+  # The chunk size for intent sentences to send to service-resources
+  # SERVICE_PARSER_INTENT_SENTENCE_CHUNKSIZE: "300"
+
+  # The chunk size for lexicon entries to send to service-resources
+  # SERVICE_PARSER_LEXICON_ENTRY_CHUNKSIZE: "300"
+
+  # The max amount of lexicon entries service-parser can import
+  # SERVICE_PARSER_MAXIMUM_LEXICONS_ENTRIES_IMPORT: "1000000"
+
+  ### service-playbook-execution env variables ###
+
+  # Maximum excutions Default=10
+  # MAX_CONCURRENT_PLAYBOOK_EXECUTIONS: "10"
+
+  ### service-profiles env variables ###
+
+  # Can be set to 0 to never expire contact profiles
+  # MAX_CONTACT_PROFILE_TTL_IN_MINUTES: "0"
+
+  # maximum number of unacknowledged messages in Events queues
+  # SERVICE_EVENTS_PREFETCH: "100"
+
+  ### service-runtime-file-manager env variables ###
+
+  # Allows our customers to specify CORS origins. If you want to specify CORS origins,
+  # add all of your origins into a comma-delimited list like so:
+  # "http://example1.com, http://example2.com"
+  # RUNTIME_FILE_MANAGER_CORS_WHITELIST: ""
+
+  # Max file size of a runtime file in bytes. default =1024*1024*10 (10MB) 
+  # RUNTIME_FILE_MANAGER_MAX_FILE_SIZE: "10485760"
+
+  ### service-session-state-manager env variables ###
+ 
+  # The amount of time to buffer events before saving them. Can be set to 0 to disable buffering
+  # SESSION_STATE_MANAGER_BUFFER_TIME_IN_SECONDS: "10"
+
+  # The amount of events to buffer before saving them. Can be set to 0 to disable buffering
+  # SESSION_STATE_MANAGER_BUFFER_COUNT: 100
+
+  ### service-nlp env variables ###
+
+  # Optional log level string: INFO | DEBUG | ERROR
+  # NLP_LOG_LEVEL: ""
+
+  # The amqp client prefetch count for parallel processing of TRAIN messages.
+  # NLP_PREFETCH_COUNT: "1"
+
+  # The amqp client prefetch count for parallel processing of SCORE messages
+  # NLP_SCORE_PREFETCH_COUNT: "5"
+
+  # The maximum number of classes considered for deep training. Defaults to 2000.
+  # NLP_MAX_STATE_CONDITION_TRAINING_CLASSES: ""
+
+  # The maximum number of classes considered for deep training. Defaults to 100.
+  # NLP_STATE_CONDITION_MASKED_CLASSIFICATION_THRESHOLD: ""
+
+  # The maximum length of inputs/example sentences for exact matching. Defaults to 2048.
+  # NLP_MAX_MATCHER_LEN: ""
+
+  # Whether to use featurization script or not. Defaults to False.
+  # NLP_ENCODER_SCRIPT: ""
+
+  # Score cache TTL in seconds. Defaults to 600.
+  # NLP_CACHE_TTL: ""
+
+  # Score ttl cache size. Defaults to 128.
+  # NLP_CACHE_SIZE: ""
+
+  # NLP_SCORE_DISABLE_CACHE_EVICTION="False"
+
+  # Maximum size of a 'small' training batch for direct featurization. Defaults to 20.
+  # NLP_SMALL_TRAINING_BATCH_SIZE: ""
+
+  # Use the legacy ttl cache for intent train groups. New caching as opt-out. Defaults to False
+  # NLP_SCORE_USE_PRIORITY_EVICTION_CACHE: ""
+
+  # The percentage of available memory the traingroup cache can use. Defaults to 75.
+  # NLP_SCORE_CACHE_PERCENTAGE_OF_AVAILABLE_MEMORY: ""
+
+  # Interval for recalculating eviction priority and removal of unused data. Defaults to 60
+  # NLP_SCORE_CACHE_UPDATE_INTERVAL_IN_MINUTES: ""
+
+  # How many interval timeframes are used for recalculating eviction priority and removal of unused data. Defaults to 24
+  # NLP_SCORE_CACHE_AMOUNT_OF_TIMEFRAMES: ""
+
+  # Log memory consumption on every hourly update. Defaults to False
+  # NLP_SCORE_LOG_CACHE_MEM: ""
+
+  # Not case sensitive.
+  # "All" when all possible Any Slot matches should be returned. 
+  # "Exact" when only the exact Any Slot match should be returned, i.e. the exact sentence 
+  # structure with the Any Slot.
+  # Defaults to "Default".
+  # Default behaviour of Any Slot matching is to return the last found match, regardless of the exact sentence structure.
+  # NLP_ANYSLOT_RETURN_MODE: "Default"
+
+  # "True" to enable the logger to print timing information in some log messages, defaults to "False"
+  # NLP_ENABLE_PERFORMANCE_LOGS: "True"
+
+  # "True" to print debug log messages as info log messages. Defaults to "False"
+  # NLP_DEBUG_IS_INFO: "False"
+
+  ### service-nlp-matcher env variables ###
+  
+  # amount of items we store in the memory cache, default 20000
+  # NLP_MATCHER_CACHE_ITEMS: ""
+
+  # batch size for get keyphrase tokens
+  # GET_TOKENS_BATCH_SIZE: ""
+
+  # log level
+  # NLP_MATCHER_LOG_LEVEL: ""
+
+  # Prefetch & TTL on the read and write queues.
+  # When you change this in a rolling update, you will have to scale down service matcher first, so that the existing queues are gone.
+  # You cannot change queues properties of existing queues.
+  # NLP_MATCHER_PREFETCH_COUNT_READ: ""
+  # NLP_MATCHER_PREFETCH_COUNT_WRITE: ""
+  # NLP_MATCHER_QUEUE_TTL_IN_SECS_READ: ""
+  # NLP_MATCHER_QUEUE_TTL_IN_SECS_WRITE: ""
+
+  ### service-nlp-ner env variables ###
+
+  # Maximum restarts of child process before process exit
+  # NER_MAX_CHILD_PROCESS_RESTARTS: ""
+
+  # Timeout in ms before restarting the child process on error
+  # NER_CHILD_PROCESS_RESTART_TIMEOUT: ""
+
+  # Timeout in ms for getting the results from duckling & rustling
+  # NER_CHILD_PROCESS_REPLY_TIMEOUT: ""
+
+  # rabbitmq prefetch for getNer call
+  # GET_NER_PREFETCH: ""
+
+  # disable starting rustling & duckling http severs as child processes
+  # NLP_NER_DISABLE_CHILD_PROCESSES: ""
+
 amazonCredentials:
   ## The client id from amazon.developers.com
   clientId: ""
@@ -631,7 +914,7 @@ statefulRedisPersistent:
 ## Cognigy.AI components
 ##
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-ai:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -672,7 +955,7 @@ serviceAi:
   extraEnvVars: []
   securityContext: {}
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-alexa-management:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -719,7 +1002,7 @@ serviceAnalyticsOdata:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsRealtime:
-  image: cognigy.azurecr.io/service-analytics-realtime:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-analytics-realtime:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 1
   resources:
     requests:
@@ -743,7 +1026,7 @@ serviceAnalyticsReporter:
   extraEnvVars: []
   securityContext: {}
 serviceApi:
-  image: cognigy.azurecr.io/service-api:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-api:9e0022bb179b3141e168e8bb23e48f95520cc2a0
   replicaCount: 3
   resources:
     requests:
@@ -757,7 +1040,7 @@ serviceApi:
   extraEnvVars: []
   securityContext: {}
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-app-session-manager:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -769,7 +1052,7 @@ serviceAppSessionManager:
   extraEnvVars: []
   securityContext: {}
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-custom-modules:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -781,7 +1064,7 @@ serviceCustomModules:
   extraEnvVars: []
   securityContext: {}
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-endpoint:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -793,7 +1076,7 @@ serviceEndpoint:
   extraEnvVars: []
   securityContext: {}
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-execution:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -805,7 +1088,7 @@ serviceExecution:
   extraEnvVars: []
   securityContext: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-function-execution:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -817,7 +1100,7 @@ serviceFunctionExecution:
   extraEnvVars: []
   securityContext: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-function-scheduler:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -829,7 +1112,7 @@ serviceFunctionScheduler:
   extraEnvVars: []
   securityContext: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-handover:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -841,7 +1124,7 @@ serviceHandover:
   extraEnvVars: []
   securityContext: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-http:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -881,7 +1164,7 @@ serviceInsightsUi:
   extraEnvVars: []
   securityContext: {}
 serviceJourneys:
-  image: cognigy.azurecr.io/service-journeys:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-journeys:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -893,7 +1176,7 @@ serviceJourneys:
   extraEnvVars: []
   securityContext: {}
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-logs:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -917,7 +1200,7 @@ serviceNlpMatcher:
   extraEnvVars: []
   securityContext: {}
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-nlp-ner:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -941,7 +1224,7 @@ serviceParser:
   extraEnvVars: []
   securityContext: {}
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-playbook-execution:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -953,7 +1236,7 @@ servicePlaybookExecution:
   extraEnvVars: []
   securityContext: {}
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-profiles:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -965,7 +1248,7 @@ serviceProfiles:
   extraEnvVars: []
   securityContext: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-resources:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -977,7 +1260,7 @@ serviceResources:
   extraEnvVars: []
   securityContext: {}
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-runtime-file-manager:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -989,7 +1272,7 @@ serviceRuntimeFileManager:
   extraEnvVars: []
   securityContext: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-security:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1001,7 +1284,7 @@ serviceSecurity:
   extraEnvVars: []
   securityContext: {}
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-session-state-manager:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1025,7 +1308,7 @@ serviceStaticFiles:
   extraEnvVars: []
   securityContext: {}
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-task-manager:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1037,7 +1320,7 @@ serviceTaskManager:
   extraEnvVars: []
   securityContext: {}
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-trainer:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1049,7 +1332,7 @@ serviceTrainer:
   extraEnvVars: []
   securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-ui:c463c0067c81bbe98a6da020ec5cc64225b1890a
   replicaCount: 3
   resources:
     requests:
@@ -1063,7 +1346,7 @@ serviceUi:
   extraEnvVars: []
   securityContext: {}
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:33e694c4f740cf8927c4b2fdd210d66cd78d6b35
+  image: cognigy.azurecr.io/service-webchat:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1575,16 +1858,20 @@ podMonitors:
 
 # Anti Virus Scanning
 clamd:
-  streamMaxLength: 4096M
-  image: filefrog/clamav:latest
+  # 4000M is the maximum
+  streamMaxLength: 4000M
+  maxScanSize: 300M
+  maxFileSize: 100M
+  tcpAddr: 0.0.0.0
+  image: cognigy.azurecr.io/clamav:0.105
   replicaCount: 1
   resources:
     limits:
       cpu: 1000m
-      memory: 1700Mi
+      memory: 4000Mi
     requests:
       cpu: 800m
-      memory: 1400Mi
+      memory: 3000Mi
 
 # The values below are used for Traefik Helm chart. For more information, see
 # https://github.com/traefik/traefik-helm-chart

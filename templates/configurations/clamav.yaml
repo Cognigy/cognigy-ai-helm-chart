@@ -1,26 +1,85 @@
-# https://gist.github.com/jhunt/21190d872fced7f45ac2b7adc83c67c3
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: clamav
   namespace: {{ $.Release.Namespace | quote }}
 data:
+# https://github.com/Cisco-Talos/clamav/blob/c389dfa4c3af92b006ada4f7595bbc3e6df3f356/etc/clamd.conf.sample
   clamd.conf: |-
+    ###############
+    # General
+    ###############
+
+    DatabaseDirectory /var/lib/clamav
+    TemporaryDirectory /tmp
+    LogTime yes
+    PidFile /run/clamav/clamd.pid
+    LocalSocket /run/clamav/clamd.sock
     Foreground yes
-    Debug no
-    LeaveTemporaryFiles no
+
+    TCPSocket 3310    
+    {{ if .Values.clamd.tcpAddr }}
+    {{- printf "TCPAddr %s" .Values.clamd.tcpAddr -}}
+    {{end}} 
+
+    ###############
+    # Results
+    ###############
+
+    DetectPUA yes
+    ExcludePUA NetTool
+    ExcludePUA PWTool
+    AlgorithmicDetection yes
+    Bytecode yes
+
+    ###############
+    # Scan Types
+    ###############
+
+    ScanPE yes
+    DisableCertCheck yes
+    ScanELF yes
+    AlertBrokenExecutables yes
+    ScanOLE2 yes
+    ScanPDF yes
+    ScanSWF yes
+    ScanMail yes
+    PhishingSignatures yes
+    PhishingScanURLs yes
+    ScanHTML yes
+    ScanArchive yes
+    ScanXMLDOCS yes
+
+    ###############
+    # Scan config
+    ###############
 
     {{ if .Values.clamd.streamMaxLength }}
     {{- printf "StreamMaxLength %s" .Values.clamd.streamMaxLength -}}
     {{end}}
-    
-    LogFile /dev/stdout
-    LogFileMaxSize 0
-    LogTime yes
-    LogClean no
+    {{ if .Values.clamd.maxScanSize }}
+    {{- printf "MaxScanSize %s" .Values.clamd.maxScanSize -}}
+    {{end}}
+    {{ if .Values.clamd.maxFileSize }}
+    {{- printf "MaxFileSize %s" .Values.clamd.maxFileSize -}}
+    {{end}}
+    MaxRecursion 30
+    MaxFiles 50000
+    MaxEmbeddedPE 40M
+    MaxHTMLNormalize 40M
+    MaxHTMLNoTags 2M
+    MaxScriptNormalize 5M
+    MaxZipTypeRcg 1M
+    MaxPartitions 128
+    MaxIconsPE 200
+    PCREMatchLimit 10000
+    PCRERecMatchLimit 10000
 
-    TCPSocket 3310
-    TCPAddr 0.0.0.0
+    Foreground yes
+    LeaveTemporaryFiles no
+
+    # https://github.com/Cisco-Talos/clamav/issues/330
+    ConcurrentDatabaseReload no
 
     ExcludePath ^/proc/
     ExcludePath ^/sys/
@@ -36,34 +95,51 @@ data:
     HeuristicAlerts no
     HeuristicScanPrecedence no
 
-    ScanELF yes
-    ScanPDF yes
-    ScanSWF yes
-    ScanXMLDOCS yes
-    ScanArchive yes
-
+# https://github.com/Cisco-Talos/clamav/blob/c389dfa4c3af92b006ada4f7595bbc3e6df3f356/etc/freshclam.conf.sample
   freshclam.conf: |-
-    Foreground yes
-    DatabaseDirectory /var/lib/clamav
-    UpdateLogFile /dev/stdout
-    Debug no
+    ###############
+    # General
+    ###############
 
-    LogFileMaxSize 0
+    DatabaseDirectory /var/lib/clamav
+    PidFile /run/clamav/freshclam.pid
+    LogSyslog false
     LogTime yes
+    Foreground yes
+
+    ###############
+    # Updates
+    ###############
 
     DatabaseOwner root
-    DNSDatabaseInfo current.cvd.clamav.net
+    DatabaseMirror db.local.clamav.net
     DatabaseMirror database.clamav.net
-    MaxAttempts 3
-
     ScriptedUpdates yes
-    CompressLocalDatabase no
-    TestDatabases yes
-    SafeBrowsing no
-    Bytecode no
-
-    Checks 24
     NotifyClamd /etc/clamav/clamd.conf
+    
+    # This option enables downloading of bytecode.cvd, which includes additional
+    # detection mechanisms and improvements to the ClamAV engine.
+    # Default: yes
+    Bytecode yes
 
+    # With this option enabled, freshclam will attempt to load new databases into
+    # memory to make sure they are properly handled by libclamav before replacing
+    # the old ones.
+    # Tip: This feature uses a lot of RAM. If your system has limited RAM and you
+    # are actively running ClamD or ClamScan during the update, then you may need
+    # to set `TestDatabases no`.
+    # Default: yes
+    TestDatabases yes
+    
+    # Number of database checks per day.
+    # Default: 12 (every two hours)
+    Checks 12
+
+    # Timeout in seconds when connecting to database server
     ConnectTimeout 30
+    
+    # Maximum time in seconds for each download operation. 0 means no timeout.
     ReceiveTimeout 60
+
+    MaxAttempts 3
+    CompressLocalDatabase no

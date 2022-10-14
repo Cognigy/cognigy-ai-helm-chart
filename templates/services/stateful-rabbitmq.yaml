@@ -15,7 +15,7 @@ spec:
       port: 5672
       targetPort: 5672
       protocol: TCP
-      {{- if eq .Values.service.statefulRabbitMq.type "NodePort" }}
+      {{- if and (eq .Values.service.statefulRabbitMq.type "NodePort") .Values.service.statefulRabbitMq.type }}
       nodePort: {{ .Values.service.statefulRabbitMq.nodePort | default 30002 }}
       {{- end }}
     - name: rabbitmq-man

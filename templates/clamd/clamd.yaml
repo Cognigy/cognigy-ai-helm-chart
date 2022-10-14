@@ -1,5 +1,4 @@
 {{- with .Values.clamd }}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,65 +16,24 @@ spec:
       annotations:
         checksum/clamav: {{ include (print $.Template.BasePath "/configurations/clamav.yaml") $ | sha256sum }}
     spec:
-      volumes:
-        - name: host
-          hostPath:
-            path: /
-        - name: clamdb
-          emptyDir:
-        - name: etc
-          configMap:
-            name: clamav
-      initContainers:
-        - name: init
-          image: {{ .image }}
-          imagePullPolicy: Always
-          command:
-            - /clamav
-            - seed
-          volumeMounts:
-            - name: etc
-              mountPath: /etc/clamav
-              readOnly: true
-            - name: clamdb
-              mountPath: /var/lib/clamav
-              readOnly: false
       containers:
-        - name: clamd
+        - name: clamd          
           image: {{ .image }}
           resources: {{- toYaml .resources | nindent 12 }}
           imagePullPolicy: Always
-          command:
-            - /clamav
-            - clamd
-          securityContext:
-            capabilities:
-              add: [SYS_ADMIN, SYS_PTRACE]
+          ports:
+            - containerPort: 3310
           readinessProbe:
             periodSeconds: 3
             tcpSocket:
               port: 3310
           volumeMounts:
-            - name: etc
-              mountPath: /etc/clamav
-              readOnly: true
-            - name: host
-              mountPath: /host
-              readOnly: true
-            - name: clamdb
-              mountPath: /var/lib/clamav
+            - name: clamav-config
+              mountPath: /etc/clamav              
               readOnly: false
-        - name: freshclam
-          image: filefrog/clamav:latest
-          imagePullPolicy: Always
-          command:
-            - /clamav
-            - freshclam
-          volumeMounts:
-            - name: etc
-              mountPath: /etc/clamav
-              readOnly: true
-            - name: clamdb
-              mountPath: /var/lib/clamav
-              readOnly: false
+      volumes: 
+        - name: clamav-config
+          configMap:
+            name: clamav      
+      {{- include "image.pullSecrets" $ | nindent 6 }}
 {{- end }}

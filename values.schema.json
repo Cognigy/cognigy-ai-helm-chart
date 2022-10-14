@@ -118,6 +118,7 @@
   "required": [
     "cloud",
     "imageCredentials",
+    "clamd",
     "serviceAi",
     "serviceAlexaManagement",
     "serviceAnalyticsCollector",

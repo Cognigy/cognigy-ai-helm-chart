@@ -25,15 +25,11 @@ spec:
             - '--model-control-mode=explicit'
             - '--load-model=labse'
             - '--strict-readiness=true'
-            - '--backend-config=tensorflow,version=2'
             - '--response-cache-byte-size=0'
             - '--log-verbose=1'
             - '--log-info=true'
             - '--log-warning=true'
             - '--log-error=true'
-            - '--allow-grpc=false'
-            - '--allow-sagemaker=false'
-            - '--allow-vertex-ai=false'
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
             - name: http
@@ -44,7 +40,7 @@ spec:
             httpGet:
               path: /v2/health/ready
               port: 8000
-            failureThreshold: 5
+            failureThreshold: 3
             periodSeconds: 60
           livenessProbe:
             httpGet:
