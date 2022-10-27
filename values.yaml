@@ -72,7 +72,7 @@ managementUi:
   ingress:
     enabled: true
     host: ""
-  image: cognigy.azurecr.io/management-ui:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/management-ui:49120040ac4bd68a2a03175bbe2a5cd334285339
   replicaCount: 1
   resources:
     limits:
@@ -914,7 +914,7 @@ statefulRedisPersistent:
 ## Cognigy.AI components
 ##
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:36926aed93d734d928fba387b89df84505cf01bc
+  image: cognigy.azurecr.io/service-ai:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -955,7 +955,7 @@ serviceAi:
   extraEnvVars: []
   securityContext: {}
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-alexa-management:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -967,7 +967,7 @@ serviceAlexaManagement:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsCollector:
-  image: cognigy.azurecr.io/service-analytics-collector:release-b6320cd-1665396202
+  image: cognigy.azurecr.io/service-analytics-collector:release-4017dec-1666884214
   replicaCount: 3
   resources:
     requests:
@@ -979,7 +979,7 @@ serviceAnalyticsCollector:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsConversations:
-  image: cognigy.azurecr.io/service-analytics-conversations:release-185a48a-1665396201
+  image: cognigy.azurecr.io/service-analytics-conversations:release-e05f40f-1666871354
   replicaCount: 3
   requests:
     cpu: '0.1'
@@ -990,7 +990,7 @@ serviceAnalyticsConversations:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsOdata:
-  image: cognigy.azurecr.io/service-analytics-odata:release-5a6231b-1665396202
+  image: cognigy.azurecr.io/service-analytics-odata:release-e090f27-1664185597
   replicaCount: 3
   resources:
     requests:
@@ -1002,7 +1002,7 @@ serviceAnalyticsOdata:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsRealtime:
-  image: cognigy.azurecr.io/service-analytics-realtime:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-analytics-realtime:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 1
   resources:
     requests:
@@ -1014,7 +1014,7 @@ serviceAnalyticsRealtime:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsReporter:
-  image: cognigy.azurecr.io/service-analytics-reporter:release-8de618f-1665396208
+  image: cognigy.azurecr.io/service-analytics-reporter:release-b325fec-1666871482
   replicaCount: 3
   resources:
     requests:
@@ -1026,7 +1026,7 @@ serviceAnalyticsReporter:
   extraEnvVars: []
   securityContext: {}
 serviceApi:
-  image: cognigy.azurecr.io/service-api:afc4c8d5aeab47c9f7fb53a437e3d99e7a8341ca
+  image: cognigy.azurecr.io/service-api:9e0022bb179b3141e168e8bb23e48f95520cc2a0
   replicaCount: 3
   resources:
     requests:
@@ -1040,7 +1040,7 @@ serviceApi:
   extraEnvVars: []
   securityContext: {}
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-app-session-manager:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1052,7 +1052,7 @@ serviceAppSessionManager:
   extraEnvVars: []
   securityContext: {}
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-custom-modules:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1064,7 +1064,7 @@ serviceCustomModules:
   extraEnvVars: []
   securityContext: {}
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-endpoint:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1076,7 +1076,7 @@ serviceEndpoint:
   extraEnvVars: []
   securityContext: {}
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-execution:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1088,7 +1088,7 @@ serviceExecution:
   extraEnvVars: []
   securityContext: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-function-execution:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1100,7 +1100,7 @@ serviceFunctionExecution:
   extraEnvVars: []
   securityContext: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-function-scheduler:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1112,7 +1112,7 @@ serviceFunctionScheduler:
   extraEnvVars: []
   securityContext: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-handover:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1124,7 +1124,7 @@ serviceHandover:
   extraEnvVars: []
   securityContext: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-http:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1136,7 +1136,7 @@ serviceHttp:
   extraEnvVars: []
   securityContext: {}
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-e701564-1665396204
+  image: cognigy.azurecr.io/service-insights-api:release-5854ba6-1664185599
   replicaCount: 3
   resources:
     requests:
@@ -1150,7 +1150,7 @@ serviceInsightsApi:
   extraEnvVars: []
   securityContext: {}
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-665a9aa-1665396209
+  image: cognigy.azurecr.io/service-insights-ui:release-0b9892d-1666885438
   replicaCount: 3
   resources:
     requests:
@@ -1164,7 +1164,7 @@ serviceInsightsUi:
   extraEnvVars: []
   securityContext: {}
 serviceJourneys:
-  image: cognigy.azurecr.io/service-journeys:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-journeys:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1176,7 +1176,7 @@ serviceJourneys:
   extraEnvVars: []
   securityContext: {}
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-logs:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1200,7 +1200,7 @@ serviceNlpMatcher:
   extraEnvVars: []
   securityContext: {}
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-nlp-ner:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1224,7 +1224,7 @@ serviceParser:
   extraEnvVars: []
   securityContext: {}
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-playbook-execution:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1236,7 +1236,7 @@ servicePlaybookExecution:
   extraEnvVars: []
   securityContext: {}
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-profiles:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1248,7 +1248,7 @@ serviceProfiles:
   extraEnvVars: []
   securityContext: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-resources:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1260,7 +1260,7 @@ serviceResources:
   extraEnvVars: []
   securityContext: {}
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-runtime-file-manager:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1272,7 +1272,7 @@ serviceRuntimeFileManager:
   extraEnvVars: []
   securityContext: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-security:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1284,7 +1284,7 @@ serviceSecurity:
   extraEnvVars: []
   securityContext: {}
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-session-state-manager:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1308,7 +1308,7 @@ serviceStaticFiles:
   extraEnvVars: []
   securityContext: {}
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-task-manager:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1320,7 +1320,7 @@ serviceTaskManager:
   extraEnvVars: []
   securityContext: {}
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-trainer:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1332,7 +1332,7 @@ serviceTrainer:
   extraEnvVars: []
   securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:f9af187f9f763b23adeb3a1030bc450ae866d215
+  image: cognigy.azurecr.io/service-ui:c463c0067c81bbe98a6da020ec5cc64225b1890a
   replicaCount: 3
   resources:
     requests:
@@ -1346,7 +1346,7 @@ serviceUi:
   extraEnvVars: []
   securityContext: {}
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:1e0cff127c2da0a134d2a122fc09b65b14d8400b
+  image: cognigy.azurecr.io/service-webchat:088233f1f226dda4d4ca1206c8da8e22fad8db99
   replicaCount: 3
   resources:
     requests:
@@ -1359,7 +1359,7 @@ serviceWebchat:
   securityContext: {}
 serviceNlpQaDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-qa-de:ddb2c18f313651a84a5d13f41f854af187eb4698
+  image: cognigy.azurecr.io/service-nlp-qa-de:116373bb29c171f2e688b0fe99bd56e34865c122
   replicaCount: 1
   resources:
     requests:
@@ -1372,7 +1372,7 @@ serviceNlpQaDe:
   securityContext: {}
 serviceNlpScoreDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1385,7 +1385,7 @@ serviceNlpScoreDe:
   securityContext: {}
 serviceNlpTrainDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1398,7 +1398,7 @@ serviceNlpTrainDe:
   securityContext: {}
 serviceNlpQaEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-qa-en:ddb2c18f313651a84a5d13f41f854af187eb4698
+  image: cognigy.azurecr.io/service-nlp-qa-en:62f3ea84a9561270a8eeeefb008473b903ff14e2
   replicaCount: 1
   resources:
     requests:
@@ -1411,7 +1411,7 @@ serviceNlpQaEn:
   securityContext: {}
 serviceNlpScoreEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-en:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp-en:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1424,7 +1424,7 @@ serviceNlpScoreEn:
   securityContext: {}
 serviceNlpTrainEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-en:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp-en:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1437,7 +1437,7 @@ serviceNlpTrainEn:
   securityContext: {}
 serviceNlpQaGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-qa-ge:ddb2c18f313651a84a5d13f41f854af187eb4698
+  image: cognigy.azurecr.io/service-nlp-qa-ge:62f3ea84a9561270a8eeeefb008473b903ff14e2
   replicaCount: 1
   resources:
     requests:
@@ -1450,7 +1450,7 @@ serviceNlpQaGe:
   securityContext: {}
 serviceNlpScoreGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ge:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp-ge:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1463,7 +1463,7 @@ serviceNlpScoreGe:
   securityContext: {}
 serviceNlpTrainGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ge:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp-ge:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1476,7 +1476,7 @@ serviceNlpTrainGe:
   securityContext: {}
 serviceNlpScoreJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ja:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp-ja:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1489,7 +1489,7 @@ serviceNlpScoreJa:
   securityContext: {}
 serviceNlpTrainJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ja:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp-ja:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1502,7 +1502,7 @@ serviceNlpTrainJa:
   securityContext: {}
 serviceNlpScoreKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ko:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp-ko:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1515,7 +1515,7 @@ serviceNlpScoreKo:
   securityContext: {}
 serviceNlpTrainKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ko:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp-ko:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1528,7 +1528,7 @@ serviceNlpTrainKo:
   securityContext: {}
 serviceNlpScoreXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1541,7 +1541,7 @@ serviceNlpScoreXx:
   securityContext: {}
 serviceNlpTrainXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp:0e073f858bc758a579ee0cc50a8c325189160ef7
+  image: cognigy.azurecr.io/service-nlp:8f93e6a4222a65850b826792a6fa87c37c7fdd6d
   replicaCount: 2
   resources:
     requests:
@@ -1587,7 +1587,7 @@ serviceNlpEmbeddingGe:
       memory: 4Gi
 serviceNlpClassifierScoreEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-en:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier-en:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1598,7 +1598,7 @@ serviceNlpClassifierScoreEn:
       memory: 960M
 serviceNlpClassifierTrainEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-en:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier-en:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1609,7 +1609,7 @@ serviceNlpClassifierTrainEn:
       memory: 960M
 serviceNlpV2ScoreEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2-en:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2-en:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1620,7 +1620,7 @@ serviceNlpV2ScoreEn:
       memory: 2500M
 serviceNlpV2TrainEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2-en:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2-en:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1631,7 +1631,7 @@ serviceNlpV2TrainEn:
       memory: 2500M
 serviceNlpClassifierScoreGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ge:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier-ge:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1642,7 +1642,7 @@ serviceNlpClassifierScoreGe:
       memory: 960M
 serviceNlpClassifierTrainGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ge:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier-ge:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1653,7 +1653,7 @@ serviceNlpClassifierTrainGe:
       memory: 960M
 serviceNlpV2ScoreGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2-ge:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2-ge:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1664,7 +1664,7 @@ serviceNlpV2ScoreGe:
       memory: 4000M
 serviceNlpV2TrainGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2-ge:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2-ge:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1675,7 +1675,7 @@ serviceNlpV2TrainGe:
       memory: 4000M
 serviceNlpClassifierScoreDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1686,7 +1686,7 @@ serviceNlpClassifierScoreDe:
       memory: 960M
 serviceNlpClassifierTrainDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1697,7 +1697,7 @@ serviceNlpClassifierTrainDe:
       memory: 960M
 serviceNlpV2ScoreDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1708,7 +1708,7 @@ serviceNlpV2ScoreDe:
       memory: 2500M
 serviceNlpV2TrainDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1719,7 +1719,7 @@ serviceNlpV2TrainDe:
       memory: 2500M
 serviceNlpClassifierScoreJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ja:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier-ja:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1730,7 +1730,7 @@ serviceNlpClassifierScoreJa:
       memory: 960M
 serviceNlpClassifierTrainJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ja:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier-ja:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1741,7 +1741,7 @@ serviceNlpClassifierTrainJa:
       memory: 960M
 serviceNlpV2ScoreJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2-ja:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2-ja:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1752,7 +1752,7 @@ serviceNlpV2ScoreJa:
       memory: 2500M
 serviceNlpV2TrainJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2-ja:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2-ja:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1763,7 +1763,7 @@ serviceNlpV2TrainJa:
       memory: 2500M
 serviceNlpClassifierScoreKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ko:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier-ko:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1774,7 +1774,7 @@ serviceNlpClassifierScoreKo:
       memory: 960M
 serviceNlpClassifierTrainKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ko:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier-ko:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1785,7 +1785,7 @@ serviceNlpClassifierTrainKo:
       memory: 960M
 serviceNlpV2ScoreKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2-ko:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2-ko:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1796,7 +1796,7 @@ serviceNlpV2ScoreKo:
       memory: 2500M
 serviceNlpV2TrainKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2-ko:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2-ko:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1807,7 +1807,7 @@ serviceNlpV2TrainKo:
       memory: 2500M
 serviceNlpClassifierScoreXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1818,7 +1818,7 @@ serviceNlpClassifierScoreXx:
       memory: 960M
 serviceNlpClassifierTrainXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-classifier:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1829,7 +1829,7 @@ serviceNlpClassifierTrainXx:
       memory: 960M
 serviceNlpV2ScoreXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:
@@ -1840,7 +1840,7 @@ serviceNlpV2ScoreXx:
       memory: 2500M
 serviceNlpV2TrainXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-v2:5a0c75a5bb43ae5c3b4948ffc72bcaf46bf86ecd
+  image: cognigy.azurecr.io/service-nlp-v2:d325a94f55009db0e7e1fb7113722d770a7e8ffa
   replicaCount: 1
   resources:
     requests:

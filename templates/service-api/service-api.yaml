@@ -34,8 +34,6 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
-              value: 'true'
             - name: INSIGHTS_JWT_SECRET
               valueFrom:
                 secretKeyRef:
