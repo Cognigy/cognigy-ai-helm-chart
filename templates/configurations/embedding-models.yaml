@@ -1,3 +1,4 @@
+{{- if or (.Values.serviceNlpEmbeddingEn.enabled) (.Values.serviceNlpEmbeddingXx.enabled) (.Values.serviceNlpEmbeddingGe.enabled) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -115,3 +116,4 @@ data:
         }
         count: 5 # '0' here would means '1' iteration
     }]
+{{- end }}

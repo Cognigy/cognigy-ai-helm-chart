@@ -1,0 +1,18 @@
+{{- if .Values.serviceAi.horizontalPodAutoscaler.enabled }}
+{{- with .Values.serviceAi.horizontalPodAutoscaler }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: service-ai
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: service-ai
+    apiVersion: apps/v1
+  minReplicas: {{ .minReplicas }}
+  maxReplicas: {{ .maxReplicas }}
+  metrics:
+    {{- include "common.tplvalues.render" ( dict "value" .metrics "context" $ ) | nindent 4 }}
+{{- end }}
+{{- end }}

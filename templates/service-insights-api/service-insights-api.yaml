@@ -31,6 +31,10 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"	
             - name: INSIGHTS_JWT_SECRET
               valueFrom:
                 secretKeyRef:

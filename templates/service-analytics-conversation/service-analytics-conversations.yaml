@@ -28,6 +28,10 @@ spec:
             - name: metrics
               containerPort: 8002
           env:
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"	
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
