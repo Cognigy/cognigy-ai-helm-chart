@@ -124,7 +124,6 @@
     "serviceAnalyticsCollector",
     "serviceAnalyticsConversations",
     "serviceAnalyticsOdata",
-    "serviceAnalyticsRealtime",
     "serviceAnalyticsReporter",
     "serviceApi",
     "serviceAppSessionManager",
