@@ -96,7 +96,7 @@ stages:
 
               cd ../cognigy-ai-helm-chart
               git checkout main
-              git add .
+              git add -A
               git commit -m "Adding files for Helm Chart $helmChartVersion"
               git tag v$helmChartVersion
 
