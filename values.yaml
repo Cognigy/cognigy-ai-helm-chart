@@ -72,7 +72,7 @@ managementUi:
   ingress:
     enabled: true
     host: ""
-  image: cognigy.azurecr.io/management-ui:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/management-ui:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 1
   resources:
     limits:
@@ -328,10 +328,80 @@ cognigyEnv:
   # Path to files containing pre-computed noise embeddings
   NLP_PRECOMPUTED_EMBEDDINGS_PATH: "/embedding/precomputed_embeddings"
 
-  ### Platform Integration ENV Variables ###
-  
+  ### Shared ENV variables ###
+
   # A link to an online instance of the adaptive cards designer
-    # ADAPTIVE_CARDS_DESIGNER_URL:
+  # ADAPTIVE_CARDS_DESIGNER_URL:
+
+  # Amazon client credetentials
+  # AMAZON_CLIENT_ID:
+  # AMAZON_CLIENT_SECRET:
+
+  # Cognigy Live Agent (Chatwoot based)
+  # CLIENT_ID_COGNIGY_LIVE_AGENT:
+
+  # Cognigy LiveAgent setup
+  # COGNIGY_LIVE_AGENT_API_BASE_URL_WITH_PROTOCOL:
+  # COGNIGY_LIVE_AGENT_PLATFORM_TOKEN:
+
+  # URL pointing to the Endpoint service
+  # ENDPOINT_BASE_URL_WITH_PROTOCOL:
+
+  # Genesys Cloud handover provider feature flag
+  # FEATURE_USE_GENESYS_CLOUD:
+
+  # If set to "true", will exchange "Cogngiy.AI" for a generic name and will let customer to whitelabel the platform
+  # FEATURE_USE_WHITELABELING:
+
+  # The JWT secret to sign JWT-tokens with, this is used e.g. for realtime-tokens (endpoint, backend connection)
+  # JWT_SECRET:
+
+  # The key for the built-in pendo. If set, pendo routines will be activated.
+  # PENDO_KEY:
+
+  # The app-id for the official workplace by facebook cognigy.AI APP
+  # WORKPLACE_APP_ID:
+
+  # defaults to 'false', needs to be set to 'true'
+  # FEATURE_ALLOW_ADDITIONAL_ACTIONS_IN_CODE_NODES:
+
+  # Disable the license-installation route. This is e.g. used
+  # for our cloud installations. The same environment variable
+  # needs to be set within the 'service-api' to disable the
+  # api there as well. Set the env variable to 'true'
+  # DISABLE_LICENSE_UPLOAD:
+
+  # If true, service nlp matcher will be disabled, but not for the ids in FEATURE_USE_SERVICE_NLP_MATCHER_ORG_FILTER
+  # FEATURE_DISABLE_SERVICE_NLP_MATCHER:
+
+  # connection details for rabbit mq
+  # RABBITMQ_HOST:
+  # RABBITMQ_PORT:
+  # RABBITMQ_USER:
+  # RABBITMQ_PASSWORD:
+
+  # Redis configuration
+  # REDIS_HOST:
+  # REDIS_PORT:
+  # REDIS_USE_TLS:
+  # REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS:
+
+  # Redis persistent configuration
+  # REDIS_PERSISTENT_HOST:
+  # REDIS_PERSISTENT_PORT:
+  # REDIS_PERSISTENT_USE_TLS:
+  # REDIS_PERSISTENT_KEEP_ALIVE_INTERVAL_IN_SECONDS:
+
+  # maximum number of unacknowledged messages in Events queues
+  # SERVICE_EVENTS_PREFETCH:
+
+  # Can be set to 0 to never expire contact profiles
+  # MAX_CONTACT_PROFILE_TTL_IN_MINUTES: "0"
+
+  # Can be set to 0 to never expire session states
+  # MAX_SESSION_STATE_TTL_IN_MINUTES: "0"
+
+  ### Platform Integration ENV Variables ###
   
   # Agent Bot description for Live Agent, Chatwoot, etc. 
     # AGENT_BOT_DESCRIPTION:
@@ -341,20 +411,9 @@ cognigyEnv:
 
   # Additional Alexa configuration
     # ALEXA_END_SESSION_AFTER_EACH_REPLY:
-  
-  # Amazon client credetentials
-    # AMAZON_CLIENT_ID:
-    # AMAZON_CLIENT_SECRET:
 
   # Check avaialability node timeout of agent   
     # CHECK_AGENT_AVAILABILITY_NODE_TIMEOUT_IN_SECONDS:
-
-  # Cognigy Live Agent (Chatwoot based)
-    # CLIENT_ID_COGNIGY_LIVE_AGENT:
-
-  # Cognigy LiveAgent setup
-    # COGNIGY_LIVE_AGENT_API_BASE_URL_WITH_PROTOCOL:
-    # COGNIGY_LIVE_AGENT_PLATFORM_TOKEN:
 
   # RPC timeout for creating runtime file in seconds. Default value is 8 secs. 
     # CREATE_RUNTIME_FILE_TIMEOUT_IN_SECONDS:
@@ -364,9 +423,6 @@ cognigyEnv:
 
   # Endpoint base URL 
     # ENDPOINT_BASE_URL_TUNNEL:
-
-  # URL pointing to the Endpoint service
-    # ENDPOINT_BASE_URL_WITH_PROTOCOL:
 
   # Allows our customers to specify CORS origins. If you want to specify CORS origins,
   # add all of your origins into a comma-delimited list as the following examples:
@@ -385,39 +441,14 @@ cognigyEnv:
   # Enable the "Follow Sessions" feature
     # FEATURE_ENABLE_FOLLOW_SESSION:
 
-  # Enable new voicegateway 2 endpoint (Jambonz) by setting this to true
-  # and adding organisationId to the list in FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST below:
-    # FEATURE_ENABLE_VOICEGATEWAY_2:
-
-  # Comma-separated list of organisationId to enable voicegateway 2
-  # As an example: FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST=5f99a7ad6107a6be813ff301,5f99a7ad6107a6be813ff302
-    # FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST:
-
-  # Define a whitelist of Endpoints that will not be shown in the UI, seperated by comma.
-  # Use the actual endpoint channel type values, e.g. webchat2
-  # Example: FEATURE_OMMITED_ENDPOINTS_FROM_UI="twilio,twilio-autopilot,twilio-sms,webchat2"
-    # FEATURE_OMMITED_ENDPOINTS_FROM_UI:
-
   # Enable detailed logs for RPC calls handling
     # FEATURE_RPC_LOGS:
-
-  # Enable Central Configuration for Adaptive cards
-    # FEATURE_USE_ADVANCED_ADAPTIVECARDS_INTEGRATION:
-
-  # Whether Cognigy Live Agent should be activated
-    # FEATURE_USE_COGNIGY_LIVE_AGENT:'true'
 
   # Enable the SSO features and show the Microsoft nodes if enabled
     # FEATURE_USE_MICROSOFT_SSO:
 
-  # Activate possibility of Non-Conversational endpoint creation
-    # FEATURE_USE_NON_CONVERSATIONAL_ENDPOINT:
-
   # Enable assured message delivery for sockentendpoint
     # FEATURE_USE_SOCKETENDPOINT_EVENTBUFFER:
-
-  # If set to "true", will exchange "Cogngiy.AI" for a generic name
-    # FEATURE_USE_WHITELABELING:
 
   # Cleanup/remove idle socket client connection
     # GENESYS_CLOUD_SOCKET_CLIENT_CLEANUP_INTERVAL:
@@ -434,9 +465,6 @@ cognigyEnv:
 
   # Handover TTL for persisting agent bot id into redis  
     # HANDOVER_TTL:
-
-  # the JWT token to decode 'realtime-tokens'
-    # JWT_SECRET:
 
   # CORS whitelist for the live-agent API
     # LIVE_AGENT_API_CORS_WHITELIST:
@@ -464,9 +492,6 @@ cognigyEnv:
 
   # Redis key TTL which stores inject/notify meta data 
     # NOTIFY_INJECT_EXPIRATION_IN_SECONDS:
-
-  # The key for the built-in pendo. If set, pendo routines will be activated.
-    # PENDO_KEY:
 
   # To reference assets in the `public` folder
     # PUBLIC_URL:
@@ -503,9 +528,9 @@ cognigyEnv:
 
   # Comma-separated list of origin URIs that are allowed to embed the webchat page as an iframe
   # You can use * in URLs to define subdomains or just * to allow any source
-  # Example: WEBCHAT_EMBEDDER_WHITELIST=mywebsite.com,myotherwebsite.com
-  # Example: WEBCHAT_EMBEDDER_WHITELIST=*.mywebsite.com
-  # Example: WEBCHAT_EMBEDDER_WHITELIST=* 
+  # Example: WEBCHAT_EMBEDDER_WHITELIST:mywebsite.com,myotherwebsite.com
+  # Example: WEBCHAT_EMBEDDER_WHITELIST:*.mywebsite.com
+  # Example: WEBCHAT_EMBEDDER_WHITELIST:* 
     # WEBCHAT_EMBEDDER_WHITELIST:
 
   # Prevent websocket connections from switching to long polling if set to true.
@@ -514,11 +539,402 @@ cognigyEnv:
   # WhatsApp cloud API url, whereas undefined means default url `https://graph.facebook.com/v13.0`
     # WHATS_APP_GRAPH_API_HOST:
 
-  # Workplacey by facebook specific
+  # Workplace by facebook specific
     # WORKPLACE_VERIFY_TOKEN:
-    # WORKPLACE_APP_ID:
     # WORKPLACE_APP_REDIRECT:
     # WORKPLACE_APP_SECRET:
+
+  ### service-ui env variables ###
+
+  # Enables / Disables some features
+  # FEATURE_LICENSE_AGREEMENT:
+
+  # sets the RSS-feed for the projects view
+  # RSS_FEED_URL:https://www.cognigy.com/blog/tag/product/rss.xml
+
+  # Flag that can be used to disable the 'get help / get tech support'
+  # button within the navigation to file a support ticket a Cognigy
+  # DISABLE_GET_TECH_SUPPORT:
+
+  # A link to a custom support-page or solution. Will only be displayed
+  # if the 'DISABLE_GET_TECH_SUPPORT' variable is NOT set to 'true'. If
+  # defined, it will overwrite our zendesk support integration
+  # FEATURE_CUSTOM_SUPPORT_LINK:
+
+  # Flag that can enable the 'community-forum' button within the
+  # navigation. The community forum is operated by Cognigy and a platform
+  # that allows users to connect with others. By default this will be off.
+  # FEATURE_COMMUNITY_BUTTON:
+
+  # Flag used to enable or disable Amazon Lex endpoint
+  # FEATURE_ENABLE_AMAZON_LEX_ENDPOINT
+
+  # Allow "from" for smtp configuration, defaults to false
+  # FEATURE_USE_SMTP_FROM:
+
+  # Set a Signup Link on the login page
+  # FEATURE_USE_SIGNUP_FOR_FREE_LINK:
+
+  ### Temp
+  # Activate the translation feature
+  # FEATURE_TMP_USE_ENDPOINT_TRANSLATION:
+
+  # Define a whitelist of Endpoints that will not be shown in the UI, seperated by comma.
+  # Use the actual endpoint channel type values, e.g. webchat2
+  # Example: FEATURE_OMMITED_ENDPOINTS_FROM_UI:"twilio,twilio-autopilot,twilio-sms,webchat2"
+  # FEATURE_OMMITED_ENDPOINTS_FROM_UI:
+
+  # Set this to "true" to disable the Insights application and use "the old analytics" page instead
+  # This option will be removed in the future!
+  # FEATURE_DISABLE_INSIGHTS:
+
+  # Disable marketplace integration
+  # FEATURE_DISABLE_MARKETPLACE:
+
+  # Define the marketplace hostname with protocol
+  # MARKETPLACE_BASE_URL_WITH_PROTOCOL:
+
+  # Disable the user-journey routes and navigation options in the menu
+  # Disable journey-specific RESTful API endpoints in order to avoid that somebody
+  # can actually use the journey-system
+  # FEATURE_DISABLE_JOURNEYS:
+
+  # Activate possibility of Non-Conversational endpoint creation
+  # FEATURE_USE_NON_CONVERSATIONAL_ENDPOINT:
+
+  # whether Cognigy Live Agent should be activated - e.g. has it been deployed?
+  # FEATURE_USE_COGNIGY_LIVE_AGENT:
+
+  # If set to "true", the customer will be able to update the 'trustedCode'
+  # property of an extension (and its node descriptor set)
+  # FEATURE_ALLOW_TRUSTED_CODE_CONFIGURATION:
+
+  # Enable new voicegateway 2 endpoint (Jambonz) by setting this to true
+  # and adding organisationId to the list in FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST below:
+  # FEATURE_ENABLE_VOICEGATEWAY_2:
+
+  # Comma-separated list of organisationId to enable voicegateway 2 in
+  # example: FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST:5f99a7ad6107a6be813ff301,5f99a7ad6107a6be813ff302
+  # FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST:
+
+  # Comma-separated list of organisationIds to enable the voice-call feature for
+  # example: FEATURE_ENABLE_VOICECALL_WHITELIST:5f99a7ad6107a6be813ff301,5f99a7ad6107a6be813ff302
+  # FEATURE_ENABLE_VOICECALL_WHITELIST:
+
+  # Enable Central Configuration for Adaptive cards
+  # FEATURE_USE_ADVANCED_ADAPTIVECARDS_INTEGRATION:
+
+  # Enable this flag to use the new Insights UI service
+  # FEATURE_USE_SERVICE_INSIGHTS_UI:
+
+  # Enables training all out of date flow models from a project - needs it's own nlp deployment.
+  # FEATURE_TRAIN_ALL_PROJECT_FLOWS:
+
+  # Route to the Insights UI service for local development
+  # INSIGHTS_UI_BASE_URL_WITH_PROTOCOL:
+
+  # Temporary flag to hide Yes/No Intent feature.
+  # Will be removed when feture is complete..
+  # FEATURE_ENABLE_YES_NO_INTENTS:
+
+  # The websocket URI to reach Voice Gateway from Interaction Panel Test calls
+  # VOICE_GATEWAY_SIP_WS_URI_WITH_PROTOCOL:
+  
+  ### service-resources env variables ###
+
+  # database credentials for resources
+  # RESOURCES_DB_USERNAME:
+  # RESOURCES_DB_PASSWORD:
+  # RESOURCES_DB_HOST:
+  # RESOURCES_DB_PORT:
+  # RESOURCES_DB_NAME:
+
+  # database credentials for nlu grid fs bucket
+  # NLU_DB_USERNAME:
+  # NLU_DB_PASSWORD:
+  # NLU_DB_HOST:
+  # NLU_DB_PORT:
+  # NLU_DB_NAME:
+
+  # encryption key for fields within connections
+  # CONNECTION_FIELDS_ENCRYPTION_KEY:
+
+  # Max amount of undo / redo steps to store
+  # MAX_UNDO_REDO_STEPS:
+
+  # Max amount of locales per project. Defaults to 10
+  # MAX_AMOUNT_OF_PROJECT_LOCALES:
+
+  # The storage path where Cognigy functions will reside
+  # FUNCTION_CODE_STORAGE_PATH:
+
+  # The amount of seconds a downloadable package for a Snapshot exists in Redis
+  # SNAPSHOT_PACKAGE_TTL_IN_SECONDS:
+
+  # list of organisationIds that use service nlp matcher, seperated by ;
+  # FEATURE_USE_SERVICE_NLP_MATCHER_ORG_FILTER:
+
+  # The Path from which system wide extensions should be loaded.
+  # FEATURE_ADDITIONAL_SYSTEM_WIDE_EXTENSIONS_PATH:
+
+  # The total number of http requests a customer can send via the httpRequest API
+  # OPTIONS_RESOLVER_MAX_OUTGOING_HTTP_REQUESTS:
+
+  # The total amount of data (in bytes) a http response can contain - used for the
+  # httpRequest API
+  # OPTIONS_RESOLVER_MAX_HTTP_REQUEST_RESPONSE_SIZE_BYTES:
+
+  # The maximum number of seconds an options resolver is allowed to run, after 
+  # which the vm running the resolver will exit
+  # OPTIONS_RESOLVER_MAX_EXECUTION_TIME_IN_SECONDS:
+
+  # Number of minutes after which playbook runs expire - default
+  # is set to 30 days
+  # FUNCTION_RUN_EXPIRATION_IN_MINUTES:
+
+  # "true" if extract answer feature should be made available
+  # FEATURE_ENABLE_EXTRACT_ANSWER:
+
+  ### service-security env variables ###
+
+  # connection details for the database
+  # SECURITY_DB_USERNAME:
+  # SECURITY_DB_PASSWORD:
+  # SECURITY_DB_HOST:
+  # SECURITY_DB_PORT:
+  # SECURITY_DB_NAME:
+
+  # The TTL of the LRU cache that stores the billing timezone
+  # LRU_CACHE_BILLING_TIMEZONE_TTL_IN_SECONDS:
+
+  # The prefetch for the conversation counter queue. Default 50
+  # CONVERSATION_COUNTER_PREFECTH:
+
+  ### service-api env variables ###
+
+  # licensing server url, default value present
+  # LICENSING_SERVER_URL_WITH_PROTOCOL:
+
+  # cognigy licensing server, default value present
+  # LICENSING_PING_INTERVAL_IN_MINUTES:
+
+  # ability to disable reporting (reporting is enabled by default!)
+  # LICENSING_DISABLE_REPORTING:
+
+  # connection details for the authentication database
+  # AUTHENTICATION_DB_USERNAME:
+  # AUTHENTICATION_DB_PASSWORD:
+  # AUTHENTICATION_DB_HOST:
+  # AUTHENTICATION_DB_PORT:
+  # AUTHENTICATION_DB_NAME:
+
+  # Redis persistent configuration
+  # REDIS_PERSISTENT_PASSWORD:
+
+  # connection details for smtp
+  # SYSTEM_SMTP_HOST:
+  # SYSTEM_SMTP_PORT:
+  # SYSTEM_SMTP_CONNECTION_TYPE:
+  # SYSTEM_SMTP_USERNAME:
+  # SYSTEM_SMTP_PASSWORD:
+  # SYSTEM_SMTP_FROM:
+
+  # Session Secret is used e.g. for the openid-connect implementation
+  # SESSION_SECRET:
+
+  # The basic auth credentials for special api calls (like creating organisations)
+  # INTERNAL_API_USERNAME:
+  # INTERNAL_API_PASSWORD:
+
+  # Static URLs to parts of the system 
+  # protocol + domain + port, without trailing slash
+  # e.g. "https://subdomain.domain.tld:1234"
+  # FRONTEND_BASE_URL_WITH_PROTOCOL:
+  # BACKEND_BASE_URL_WITH_PROTOCOL:
+  # WEBCHAT_BASE_URL_WITH_PROTOCOL:
+
+  # Decides whether users need to accept a license agreement 
+  # "true" | "false" (to be extended to "false" | "demo" | "community" etc. for different agreement texts)
+  # FEATURE_LICENSE_AGREEMENT:
+  # FEATURE_APIKEY_AUTH: 
+
+  # limit in kb for http put and post
+  # HTTP_JSON_BODY_LIMIT:60
+
+  # webhook that gets executed when a new user was created using the internal API
+  # WEBHOOK_ON_USER_CREATED_HOST:
+
+  # limit for http bodyparser text, used in upload csv
+  # example: '1000KB', '2MB', ... 
+  # HTTP_TEXT_BODY_LIMIT:
+
+  # Allows our customers to specify CORS origins. If you want to specify CORS origins,
+  # add all of your origins into a comma-delimited list like so:
+  # "http://example1.com, http://example2.com"
+  # API_CORS_WHITELIST:
+
+  # Allows to defined the TTL of access-tokens in minutes, e.g. set it to "5"
+  #
+  # The default value is: 15 minutes.
+  # API_ACCESS_TOKEN_EXPIRATION_IN_MINUTES:
+
+  # Allows to define the TTL of refresh-tokens. They need to have at least 4
+  # times the amount of TTL than access-tokens!. E.g. set this to "15".
+  #
+  # The default value is: 1 day.
+  # API_REFRESH_TOKEN_SHORT_EXPIRATION_IN_MINUTES:
+
+  # The default value is: 30 days.
+  # API_REFRESH_TOKEN_LONG_EXPIRATION_IN_MINUTES:
+
+  # Can be set to 0 to never expire contact profiles
+  # MAX_CONVERSATION_TTL_IN_MINUTES:
+
+  # The amount of seconds how long audit-events are buffered before
+  # they will get written to the databaes
+  # AUDIT_EVENT_BUFFER_TIME_IN_SECONDS:
+
+  # The amount of minutes for how long an audit-event should exist within the
+  # system. By default, our system will drop audit-events after 30 days.
+  # AUDIT_EVENT_TTL_IN_MINUTES:
+
+  # The amount of operations per batch call.
+  # MAX_AMOUNT_OF_OPERATIONS_PER_BATCH_CALL:
+
+  # The max size allowed when uploading a Snapshot file.
+  # Default size is 256 MiB
+  # SNAPSHOT_MAX_FILE_SIZE:
+
+  # The max size allowed when uploading a Package file.
+  # Default size is 256 MiB
+  # PACKAGE_MAX_FILE_SIZE:
+
+  # Enable compression of response objects. Is by default
+  # enabled and has to be set explicitly to 'false' to be disabled.
+  # API_ENABLE_COMPRESSION:
+
+  # The max size allowed when uploading a extensions file.
+  # Default size is 128 MiB
+  # EXTENSION_MAX_FILE_SIZE:
+
+  # The length of the access token we generate. Default is 512 bytes
+  # SECURITY_ACCESS_TOKEN_LENGTH:
+
+  # The length of the refresh token we generate. Default is 2048 bytes
+  # SECURITY_REFRESH_TOKEN_LENGTH:
+
+  # Enable the feature to create superapikeys
+  # FEATURE_USE_SUPERAPIKEY_API:
+
+  # The allowed hostnames, from where extensions can be remotely loaded.
+  #
+  # This should be a comma-separated list of hostnames, domain names, or a mixture
+  # of both. Asterisks can be used as wildcards. 
+  # Domain names may be indicated by a leading dot.
+  # example: "*.aventail.com,home.com,.seanet.com"
+  # defaults to "" meaning, no host is allowed.
+  # use "*" to allow all hostnames.
+  # ALLOWED_EXTENSION_HOSTNAMES:
+
+  # If set to an integer value, the amount of Refresh Tokens generated by a user
+  # will be limited to this value.
+  # REFRESH_TOKEN_MAX_AMOUNT_PER_USER:
+
+  # location of the authentication json for using the management ui, default: /run/secrets/management-ui-creds.json
+  # AUTHENTICATION_MANAGEMENT_UI_CRED_LOCATION:
+
+  #
+  # Cognigy Live Agent (chatwoot based)
+  #
+  # CLIENT_SECRET_COGNIGY_LIVE_AGENT:
+  # REDIRECT_URI_COGNIGY_LIVE_AGENT:
+
+  # Email used to validate the organisation delition process
+  # SYS_ADMINISTRATOR_EMAIL:
+
+  # DELETE_ORGANIZATION_TOKEN_TTL_IN_MINUTES:
+
+  # MANAGEMENTUI_BASE_URL_WITH_PROTOCOL:
+
+  # Flag to conditionally use request-promise to execute transformer
+  # USE_REQUEST_PROMISE_FOR_TRANSFORMER:
+
+  # VG prepareCall api-key
+  # VOICE_TEST_CALL_API_SECRET:
+  # VG base url
+  # VOICE_GATEWAY_BASE_URL_WITH_PROTOCOL:
+  # VOICE_GATEWAY_PREPARE_CALL_API:
+
+  # The timeout for getting the conversation counter.
+  # default 60000
+  # CONVERSATION_COUNTER_TIMEOUT_IN_MS:
+
+  ### service-journeys env variables ###
+
+  # database credentials for resources
+  # JOURNEYS_DB_USERNAME:
+  # JOURNEYS_DB_PASSWORD:
+  # JOURNEYS_DB_HOST:
+  # JOURNEYS_DB_PORT:
+  # JOURNEYS_DB_NAME:
+
+  # Hubspot Middleware URL to track events
+  # HSMWURL:
+
+  # URL to Microsoft Flow for Error Alerting
+  # HSMWALERTURL:
+
+  ### service-trainer env variables ###
+
+  # connection details for the database
+  # TRAINER_DB_USERNAME:
+  # TRAINER_DB_PASSWORD:
+  # TRAINER_DB_HOST:
+  # TRAINER_DB_PORT:
+  # TRAINER_DB_NAME:
+
+  # An aes encryption key
+  # TRAINER_PACKAGE_ENCRYPTION_KEY:
+
+  ### service-logs env variables ###
+
+  # connection details for the database
+  # LOG_DB_USERNAME:
+  # LOG_DB_PASSWORD:
+  # LOG_DB_HOST:
+  # LOG_DB_PORT:
+  # LOG_DB_NAME:
+
+  # ttl & buffer-time for log entries
+  # LOG_ENTRIES_TTL_IN_MINUTES:
+  # LOG_ENTRIES_BUFFER_IN_SECONDS:
+
+  # maximum entries we process at once
+  # LOG_ENTRIES_MAX_BUFFER_LENGHT:
+
+  # the desired maximum length of the queue
+  # MAX_LOGS_AMOUNT_IN_REDIS:
+
+  ### service-task-manager env variables ###
+
+  # connection details for the database
+  # TASK_MANAGER_DB_USERNAME:
+  # TASK_MANAGER_DB_PASSWORD:
+  # TASK_MANAGER_DB_HOST:
+  # TASK_MANAGER_DB_PORT:
+  # TASK_MANAGER_DB_NAME:
+
+  # set the ttl, how long a task is saved in the database
+  # default is 1 week
+  # TASK_TTL_IN_MINUTES:
+
+  # Train intents expiration timeout in milliseconds. Defaults to "60000".
+  # TRAIN_INTENTS_EXPIRATION_MILLISECONDS:
+
+  ### service-custom-modules env variables ###
+
+  # Whether to use a cert for installing npm modules
+  # USE_PROXY_CA_CERT:
 
   ### service-ai env variables ###
 
@@ -532,17 +948,11 @@ cognigyEnv:
   # maximum byte size for context, contact profiles, input data
   # MAX_MEMORY_OBJECT_SIZE: ""
 
-  # defaults to 'false', needs to be set to 'true'
-  # FEATURE_ALLOW_ADDITIONAL_ACTIONS_IN_CODE_NODES: ""
-
   # maximum loops to allow in Flows
   # MAX_LOOPS: "4"
 
   # Use NLU 2.0 for short utterances
   # SHORT_UTTERANCES_V2: ""
-
-  # Can be set to 0 to never expire session states
-  # MAX_SESSION_STATE_TTL_IN_MINUTES: "0"
 
   # The TTL of the session state in redis. Default is 10 minutes
   # SESSION_STATE_REDIS_TTL_IN_SECONDS: "600"
@@ -675,16 +1085,17 @@ cognigyEnv:
 
   ### service-playbook-execution env variables ###
 
-  # Maximum excutions Default=10
+  # Maximum excutions Default:10
   # MAX_CONCURRENT_PLAYBOOK_EXECUTIONS: "10"
 
   ### service-profiles env variables ###
 
-  # Can be set to 0 to never expire contact profiles
-  # MAX_CONTACT_PROFILE_TTL_IN_MINUTES: "0"
-
-  # maximum number of unacknowledged messages in Events queues
-  # SERVICE_EVENTS_PREFETCH: "100"
+  # connection details for the database
+  # PROFILES_DB_USERNAME:
+  # PROFILES_DB_PASSWORD:
+  # PROFILES_DB_HOST:
+  # PROFILES_DB_PORT:
+  # PROFILES_DB_NAME:
 
   ### service-runtime-file-manager env variables ###
 
@@ -693,7 +1104,7 @@ cognigyEnv:
   # "http://example1.com, http://example2.com"
   # RUNTIME_FILE_MANAGER_CORS_WHITELIST: ""
 
-  # Max file size of a runtime file in bytes. default =1024*1024*10 (10MB) 
+  # Max file size of a runtime file in bytes. default :1024*1024*10 (10MB) 
   # RUNTIME_FILE_MANAGER_MAX_FILE_SIZE: "10485760"
 
   ### service-session-state-manager env variables ###
@@ -733,7 +1144,7 @@ cognigyEnv:
   # Score ttl cache size. Defaults to 128.
   # NLP_CACHE_SIZE: ""
 
-  # NLP_SCORE_DISABLE_CACHE_EVICTION="False"
+  # NLP_SCORE_DISABLE_CACHE_EVICTION:"False"
 
   # Maximum size of a 'small' training batch for direct featurization. Defaults to 20.
   # NLP_SMALL_TRAINING_BATCH_SIZE: ""
@@ -802,6 +1213,214 @@ cognigyEnv:
 
   # disable starting rustling & duckling http severs as child processes
   # NLP_NER_DISABLE_CHILD_PROCESSES: ""
+
+  ### service-analytics-reporter env variables ###
+
+  ## connection details for the database
+  # ANALYTICS_REPORTER_DB_USERNAME:
+  # ANALYTICS_REPORTER_DB_PASSWORD:
+  # ANALYTICS_REPORTER_DB_HOST:
+  # ANALYTICS_REPORTER_DB_PORT:
+  # ANALYTICS_REPORTER_DB_NAME:
+
+  # # connection details for rabbit mq
+  # RABBITMQ_HOST:
+  # RABBITMQ_PORT:
+  # RABBITMQ_USER:
+  # RABBITMQ_PASSWORD:
+
+  # # connection details for redis
+  # REDIS_HOST:
+  # REDIS_PORT:
+  # REDIS_PASSWORD:
+
+  # # how long should Cognigy Insights cache generated reports until
+  # # they have to be re-generated? (default 180 minutes)
+  # INSIGHTS_REPORTS_CACHE_TIME_IN_MINUTES:
+
+  ### service-analytics-collector env variables ###
+  # # connection details for the database
+  # ANALYTICS_COLLECTOR_DB_USERNAME:
+  # ANALYTICS_COLLECTOR_DB_PASSWORD:
+  # ANALYTICS_COLLECTOR_DB_HOST:
+  # ANALYTICS_COLLECTOR_DB_PORT:
+  # ANALYTICS_COLLECTOR_DB_NAME:
+
+  # # connection details for rabbit mq
+  # RABBITMQ_HOST:
+  # RABBITMQ_PORT:
+  # RABBITMQ_USER:
+  # RABBITMQ_PASSWORD:
+
+  # # connection details for redis
+  # REDIS_HOST:
+  # REDIS_PORT:
+  # REDIS_USE_TLS:
+  # REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS:
+
+  ### service-analytics-conversations env variables ###
+  # # connection details for the database# connection details for the database
+  # CONVERSATION_COLLECTOR_DB_USERNAME:
+  # CONVERSATION_COLLECTOR_DB_PASSWORD:
+  # CONVERSATION_COLLECTOR_DB_HOST:
+  # CONVERSATION_COLLECTOR_DB_PORT:
+  # CONVERSATION_COLLECTOR_DB_NAME:
+
+  # # connection details for rabbit mq
+  # RABBITMQ_HOST:
+  # RABBITMQ_PORT:
+  # RABBITMQ_USER:
+  # RABBITMQ_PASSWORD:
+
+  # # connection details for redis
+  # REDIS_HOST:
+  # REDIS_PORT:
+  # REDIS_USE_TLS:
+  # REDIS_DEFAULT_TTL:
+
+  # enabled detailed logs for RPC calls handling
+  # FEATURE_RPC_LOGS:
+
+  # # how long should Cognigy Insights cache generated reports until
+  # # they have to be re-generated? (default 180 minutes)
+  # INSIGHTS_REPORTS_CACHE_TIME_IN_MINUTES:
+
+  # Conversation collection data Expiration time in minutes
+  # MAX_CONVERSATION_TTL_IN_MINUTES:
+
+  # contact Profile Expiration in minutes
+  # MAX_CONTACT_PROFILE_TTL_IN_MINUTES:
+
+
+  ### service-analytics-odata env variables ###
+
+  # # connection details for the odata database with analytics collection
+  # ANALYTICS_COLLECTOR_DB_USERNAME:
+  # ANALYTICS_COLLECTOR_DB_PASSWORD:
+  # ANALYTICS_COLLECTOR_DB_HOST:
+  # ANALYTICS_COLLECTOR_DB_PORT:
+  # ANALYTICS_COLLECTOR_DB_NAME:
+
+  # # connection details for the database with organisation collection
+  # SECURITY_DB_USERNAME:
+  # SECURITY_DB_PASSWORD:
+  # SECURITY_DB_HOST:
+  # SECURITY_DB_PORT:
+  # SECURITY_DB_NAME:
+
+  # # connection details for the flows database
+  # FLOWS_DB_USERNAME:
+  # FLOWS_DB_PASSWORD:
+  # FLOWS_DB_HOST:
+  # FLOWS_DB_PORT:
+  # FLOWS_DB_NAME:
+
+  # # odata server port
+  # ODATA_HOSTNAME:
+
+  # # Should be either http or https
+  # ODATA_PROTOCOL:
+
+  # # The amount of seconds a query
+  # # is cached in Redis
+  # ODATA_CACHE_TIME_IN_SECONDS:
+
+  # # connection details of our rabbit mq installation
+  # RABBITMQ_HOST:
+  # RABBITMQ_PORT:
+  # RABBITMQ_USER:
+  # RABBITMQ_PASSWORD:
+
+  # # connection details for redis
+  # REDIS_HOST:
+  # REDIS_PORT:
+  # REDIS_USE_TLS:
+  # REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS:
+
+  ### service-insights-api env variables ##
+  # RABBITMQ_HOST:
+  # RABBITMQ_PORT:
+  # RABBITMQ_USER:
+  # RABBITMQ_PASSWORD:
+
+  # REDIS_HOST:
+  # REDIS_PORT:
+  # REDIS_PASSWORD:
+
+
+  # INSIGHTS_JWT_SECRET:
+
+  # INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL:
+
+  # # If set to "true", will exchange "Cogngiy.AI" for a generic name
+  # FEATURE_USE_WHITELABELING:
+
+  # INSIGHTS_API_CORS_WHITELIST:
+
+  # HTTP_JSON_BODY_LIMIT:
+
+  # PRODUCT_DISPLAY_NAME:
+
+  # FEATURE_RPC_LOGS:
+
+  # SERVICE_PREFIX:
+  # INSIGHTS_API_VERSION:
+  # PRODUCT_DISPLAY_NAME:
+
+  ### service-insights-api env variables ##
+  # urls where services are reachable
+
+  # FRONTEND_BASE_URL_WITH_PROTOCOL:
+  # BACKEND_BASE_URL_WITH_PROTOCOL:
+  # ENDPOINT_BASE_URL_WITH_PROTOCOL:
+  # WEBCHAT_BASE_URL_WITH_PROTOCOL:
+  # INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL:
+
+  # # The key for the built-in pendo. If set, pendo routines will be activated.
+
+  # PENDO_KEY:
+
+  # # Flag that can be used to disable the 'get help / get tech support'
+
+  # # button within the navigation to file a support ticket a Cognigy
+
+  # DISABLE_GET_TECH_SUPPORT:true
+
+  # # Allow the customer to whitelabel our frontend
+
+  # FEATURE_USE_WHITELABELING:false
+
+  # # Cognigy Live Agent (chatwoot based)
+
+  # CLIENT_ID_COGNIGY_LIVE_AGENT:
+
+  # # whether Cognigy Live Agent should be activated - e.g. has it been deployed?
+
+  # FEATURE_USE_COGNIGY_LIVE_AGENT:
+  # FEATURE_USE_COGNIGY_DOC_LINKS:
+
+  # whether Cognigy Live Agent Dashboard should be activated
+  # FEATURE_USE_COGNIGY_LIVE_AGENT_DASHBOARD:
+
+  ### service-collector env variables ###
+  # RabbitMQ configuration
+
+  # RABBITMQ_HOST:
+  # RABBITMQ_PORT:
+  # RABBITMQ_USER:
+  # RABBITMQ_PASSWORD:
+
+  # # api key configuration
+  # INSIGHTS_COLLECTOR_API_KEY:
+
+  # # http2 configuration (optional)(defaults to 0.0.0.0:8000) 
+  # INSIGHTS_COLLECTOR_HTTP_HOST:
+  # INSIGHTS_COLLECTOR_HTTP_PORT:
+
+  ### management-ui env variables ###
+
+  # The port of the Cognigy Management UI
+  # CMUI_HTTP_PORT:
 
 amazonCredentials:
   ## The client id from amazon.developers.com
@@ -911,7 +1530,7 @@ statefulRedisPersistent:
 ## Cognigy.AI components
 ##
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-ai:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -992,7 +1611,7 @@ serviceAi:
             averageUtilization: 70
 
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-alexa-management:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1004,7 +1623,7 @@ serviceAlexaManagement:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsCollector:
-  image: cognigy.azurecr.io/service-analytics-collector:release-1d148f1-1667234246
+  image: cognigy.azurecr.io/service-analytics-collector:release-0df09a9-1667818048
   replicaCount: 3
   resources:
     requests:
@@ -1016,7 +1635,7 @@ serviceAnalyticsCollector:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsConversations:
-  image: cognigy.azurecr.io/service-analytics-conversations:release-e34c9f0-1667233016
+  image: cognigy.azurecr.io/service-analytics-conversations:release-d73d3c2-1667818050
   replicaCount: 3
   requests:
     cpu: '0.1'
@@ -1027,7 +1646,7 @@ serviceAnalyticsConversations:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsOdata:
-  image: cognigy.azurecr.io/service-analytics-odata:release-512970b-1666605914
+  image: cognigy.azurecr.io/service-analytics-odata:release-5062e6d-1667818052
   replicaCount: 3
   resources:
     requests:
@@ -1039,7 +1658,7 @@ serviceAnalyticsOdata:
   extraEnvVars: []
   securityContext: {}
 serviceAnalyticsReporter:
-  image: cognigy.azurecr.io/service-analytics-reporter:release-a206c2a-1667232992
+  image: cognigy.azurecr.io/service-analytics-reporter:release-afa3722-1667818050
   replicaCount: 3
   resources:
     requests:
@@ -1051,7 +1670,7 @@ serviceAnalyticsReporter:
   extraEnvVars: []
   securityContext: {}
 serviceApi:
-  image: cognigy.azurecr.io/service-api:a34c4f1e188583c141f56c10a81c86f06cbb8ff1
+  image: cognigy.azurecr.io/service-api:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1065,7 +1684,7 @@ serviceApi:
   extraEnvVars: []
   securityContext: {}
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-app-session-manager:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1077,7 +1696,7 @@ serviceAppSessionManager:
   extraEnvVars: []
   securityContext: {}
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-custom-modules:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1089,7 +1708,7 @@ serviceCustomModules:
   extraEnvVars: []
   securityContext: {}
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-endpoint:0d48bbde23adc489d9e2ed4a3282adf19faf1c14
   replicaCount: 3
   resources:
     requests:
@@ -1101,7 +1720,7 @@ serviceEndpoint:
   extraEnvVars: []
   securityContext: {}
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-execution:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1113,7 +1732,7 @@ serviceExecution:
   extraEnvVars: []
   securityContext: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-function-execution:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1125,7 +1744,7 @@ serviceFunctionExecution:
   extraEnvVars: []
   securityContext: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-function-scheduler:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1137,7 +1756,7 @@ serviceFunctionScheduler:
   extraEnvVars: []
   securityContext: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-handover:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1149,7 +1768,7 @@ serviceHandover:
   extraEnvVars: []
   securityContext: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-http:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1161,7 +1780,7 @@ serviceHttp:
   extraEnvVars: []
   securityContext: {}
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-f9e6bab-1666961505
+  image: cognigy.azurecr.io/service-insights-api:release-29f3014-1667818051
   replicaCount: 3
   resources:
     requests:
@@ -1175,7 +1794,7 @@ serviceInsightsApi:
   extraEnvVars: []
   securityContext: {}
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-ef2d283-1666605919
+  image: cognigy.azurecr.io/service-insights-ui:release-41fdd41-1668178036
   replicaCount: 3
   resources:
     requests:
@@ -1189,7 +1808,7 @@ serviceInsightsUi:
   extraEnvVars: []
   securityContext: {}
 serviceJourneys:
-  image: cognigy.azurecr.io/service-journeys:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-journeys:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1201,7 +1820,7 @@ serviceJourneys:
   extraEnvVars: []
   securityContext: {}
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-logs:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1225,7 +1844,7 @@ serviceNlpMatcher:
   extraEnvVars: []
   securityContext: {}
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-nlp-ner:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1237,7 +1856,7 @@ serviceNlpNer:
   extraEnvVars: []
   securityContext: {}
 serviceParser:
-  image: cognigy.azurecr.io/service-parser:344ba692381b7096ae1ca688f1ea6d175b002b81
+  image: cognigy.azurecr.io/service-parser:d076dbebd948d829d60a9d3a573576b4c5df6a29
   replicaCount: 3
   resources:
     requests:
@@ -1249,7 +1868,7 @@ serviceParser:
   extraEnvVars: []
   securityContext: {}
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-playbook-execution:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1261,7 +1880,7 @@ servicePlaybookExecution:
   extraEnvVars: []
   securityContext: {}
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-profiles:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1273,7 +1892,7 @@ serviceProfiles:
   extraEnvVars: []
   securityContext: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-resources:8675f5d47769b49347acea8b5ef0a24d6ecfb124
   replicaCount: 3
   resources:
     requests:
@@ -1285,7 +1904,7 @@ serviceResources:
   extraEnvVars: []
   securityContext: {}
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-runtime-file-manager:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1297,7 +1916,7 @@ serviceRuntimeFileManager:
   extraEnvVars: []
   securityContext: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:4ded3f0ff82a245c75a22eeb2b5a2f197c5b6066
+  image: cognigy.azurecr.io/service-security:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1309,7 +1928,7 @@ serviceSecurity:
   extraEnvVars: []
   securityContext: {}
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-session-state-manager:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1333,7 +1952,7 @@ serviceStaticFiles:
   extraEnvVars: []
   securityContext: {}
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-task-manager:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1345,7 +1964,7 @@ serviceTaskManager:
   extraEnvVars: []
   securityContext: {}
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-trainer:5d52ba398c963825eb7babfd65ac17d60bffcf0b
   replicaCount: 3
   resources:
     requests:
@@ -1357,7 +1976,7 @@ serviceTrainer:
   extraEnvVars: []
   securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-ui:fc59847d8b0742ddbcab6e6b29fbabb519f1a48d
   replicaCount: 3
   resources:
     requests:
@@ -1371,7 +1990,7 @@ serviceUi:
   extraEnvVars: []
   securityContext: {}
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:67bf959d2591bc04a9d856518e7bf0b8d94095fb
+  image: cognigy.azurecr.io/service-webchat:d5ffa7f35281b4f6507995c8a22099b6c57b15dd
   replicaCount: 3
   resources:
     requests:
