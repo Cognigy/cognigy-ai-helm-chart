@@ -72,7 +72,7 @@ managementUi:
   ingress:
     enabled: true
     host: ""
-  image: cognigy.azurecr.io/management-ui:5d52ba398c963825eb7babfd65ac17d60bffcf0b
+  image: cognigy.azurecr.io/management-ui:f4586ce52e4089e8c074257c22b85b4f4847288f
   replicaCount: 1
   resources:
     limits:
@@ -1530,7 +1530,7 @@ statefulRedisPersistent:
 ## Cognigy.AI components
 ##
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:5d52ba398c963825eb7babfd65ac17d60bffcf0b
+  image: cognigy.azurecr.io/service-ai:a1f91c6ef8fb5238e87c803e6d8f8f17d0079a29
   replicaCount: 3
   resources:
     requests:
@@ -1720,7 +1720,7 @@ serviceEndpoint:
   extraEnvVars: []
   securityContext: {}
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:5d52ba398c963825eb7babfd65ac17d60bffcf0b
+  image: cognigy.azurecr.io/service-execution:e21402ae27fc73f40e4d4d0b3ab243871db77373
   replicaCount: 3
   resources:
     requests:
@@ -1756,7 +1756,7 @@ serviceFunctionScheduler:
   extraEnvVars: []
   securityContext: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:5d52ba398c963825eb7babfd65ac17d60bffcf0b
+  image: cognigy.azurecr.io/service-handover:a750b21436d8d0e8d1a37ed61f74fd72fa9a5b84
   replicaCount: 3
   resources:
     requests:
@@ -1928,7 +1928,7 @@ serviceSecurity:
   extraEnvVars: []
   securityContext: {}
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:5d52ba398c963825eb7babfd65ac17d60bffcf0b
+  image: cognigy.azurecr.io/service-session-state-manager:f4586ce52e4089e8c074257c22b85b4f4847288f
   replicaCount: 3
   resources:
     requests:
@@ -1976,7 +1976,7 @@ serviceTrainer:
   extraEnvVars: []
   securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:fc59847d8b0742ddbcab6e6b29fbabb519f1a48d
+  image: cognigy.azurecr.io/service-ui:f4586ce52e4089e8c074257c22b85b4f4847288f
   replicaCount: 3
   resources:
     requests:

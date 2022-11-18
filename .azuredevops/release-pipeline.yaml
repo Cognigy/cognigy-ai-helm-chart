@@ -85,6 +85,10 @@ stages:
               git config --global user.email "azure-pipeline@cognigy.com"
               git config --global user.name "Azure Pipelines Bot"
 
+              cd cognigy-ai-helm-chart
+              rm -fr ./*
+              cd ..
+
               cd cognigy-ai-app
               helmChartVersion="$(yq e '.version' Chart.yaml)"
 
@@ -92,7 +96,6 @@ stages:
 
               rm -fr .git
               rm -fr CHANGELOG
-              rm -fr ../cognigy-ai-helm-chart
               cp -r ./ ../cognigy-ai-helm-chart
 
               cd ../cognigy-ai-helm-chart
