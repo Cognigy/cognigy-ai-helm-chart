@@ -1,51 +1,50 @@
-{{- with .Values.serviceWebchat }}
+{{- with .Values.serviceCollector }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-webchat
+  name: service-collector
   namespace: {{ $.Release.Namespace | quote }}
 spec:
   selector:
     matchLabels:
-      app: service-webchat
+      app: service-collector
   replicas: {{ .replicaCount }}
   template:
     metadata:
+      labels:
+        app: service-collector
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
-      labels:
-        app: service-webchat
+
     spec:
       containers:
-        - name: service-webchat
+        - name: service-collector
           image: {{ .image }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
-            - name: health
-              containerPort: 8001
             - name: metrics
               containerPort: 8002
-          env:
-            - name: REDIS_ENABLE_RECONNECT
-              value: "true"
-            - name: RABBITMQ_ENABLE_RECONNECT
-              value: "true"
-            {{- if .extraEnvVars }}
-            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
+          env:
+            - name: INSIGHTS_COLLECTOR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-insights-collector-api-key
+                  key: secret
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
-            - name: redis-password
-              mountPath: /var/run/secrets/redis-password.conf
-              subPath: redis-password.conf
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
               subPath: rabbitmqConnectionString
+            {{- if .extraVolumeMounts }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
+            {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -59,15 +58,15 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
-        - name: redis-password
-          secret:
-            secretName: cognigy-redis-password
         - name: rabbitmq-connection-string
           secret:
             secretName: cognigy-rabbitmq
             items:
               - key: connection-string
                 path: rabbitmqConnectionString
+        {{- if .extraVolumes }}
+        {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
+        {{- end }}
       {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

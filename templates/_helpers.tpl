@@ -201,3 +201,64 @@ Return the proper cognigyLiveAgent Credentials Secret Name
   {{- printf "%s" (tpl $liveAgentCredentialsSecretName $) -}}
 {{- end -}}
 
+{{/*
+Validate values of rabbitmq - Memory high watermark
+*/}}
+{{- define "rabbitmq.validateValues.memoryHighWatermark" -}}
+{{- if and (not (eq .Values.statefulRabbitMq.memoryHighWatermark.type "absolute")) (not (eq .Values.statefulRabbitMq.memoryHighWatermark.type "relative")) }}
+rabbitmq: statefulRabbitMq.memoryHighWatermark.type
+    Invalid Memory high watermark type. Valid values are "absolute" and
+    "relative". Please set a valid mode statefulRabbitMq.memoryHighWatermark.type="xxxx"
+{{- else if and .Values.statefulRabbitMq.memoryHighWatermark.enabled (not .Values.statefulRabbitMq.resources.limits.memory) (eq .Values.statefulRabbitMq.memoryHighWatermark.type "relative") }}
+rabbitmq: statefulRabbitMq.memoryHighWatermark
+    You enabled configuring memory high watermark using a relative limit. However,
+    no memory limits were defined at POD level. Define your POD limits as shown below:
+
+    statefulRabbitMq.memoryHighWatermark.enabled=true
+    statefulRabbitMq.memoryHighWatermark.type="relative"
+    statefulRabbitMq.memoryHighWatermark.value="0.4"
+    statefulRabbitMq.resources.limits.memory="2Gi"
+
+    Altenatively, user an absolute value for the memory memory high watermark :
+
+    statefulRabbitMq.memoryHighWatermark.enabled=true
+    statefulRabbitMq.memoryHighWatermark.type="absolute"
+    statefulRabbitMq.memoryHighWatermark.value="512MB"
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the number of bytes given a value
+following a base 2 or base 10 number system.
+Usage:
+{{ include "rabbitmq.toBytes" .Values.path.to.the.Value }}
+*/}}
+{{- define "rabbitmq.toBytes" -}}
+{{- $value := int (regexReplaceAll "([0-9]+).*" . "${1}") }}
+{{- $unit := regexReplaceAll "[0-9]+(.*)" . "${1}" }}
+{{- if eq $unit "Ki" }}
+    {{- mul $value 1024 }}
+{{- else if eq $unit "Mi" }}
+    {{- mul $value 1024 1024 }}
+{{- else if eq $unit "Gi" }}
+    {{- mul $value 1024 1024 1024 }}
+{{- else if eq $unit "Ti" }}
+    {{- mul $value 1024 1024 1024 1024 }}
+{{- else if eq $unit "Pi" }}
+    {{- mul $value 1024 1024 1024 1024 1024 }}
+{{- else if eq $unit "Ei" }}
+    {{- mul $value 1024 1024 1024 1024 1024 1024 }}
+{{- else if eq $unit "K" }}
+    {{- mul $value 1000 }}
+{{- else if eq $unit "M" }}
+    {{- mul $value 1000 1000 }}
+{{- else if eq $unit "G" }}
+    {{- mul $value 1000 1000 1000 }}
+{{- else if eq $unit "T" }}
+    {{- mul $value 1000 1000 1000 1000 }}
+{{- else if eq $unit "P" }}
+    {{- mul $value 1000 1000 1000 1000 1000 }}
+{{- else if eq $unit "E" }}
+    {{- mul $value 1000 1000 1000 1000 1000 1000 }}
+{{- end }}
+{{- end -}}

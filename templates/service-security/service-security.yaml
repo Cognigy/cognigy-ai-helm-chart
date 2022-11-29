@@ -25,12 +25,18 @@ spec:
           image: {{ .image }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
+            - name: health
+              containerPort: 8001
             - name: metrics
               containerPort: 8002
           envFrom:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -49,11 +55,14 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
           livenessProbe:
-            exec:
-              command:
-                - node
-                - /opt/healthcheck.js
+            httpGet:
+              path: /health/liveness
+              port: 8001
             failureThreshold: 3
             initialDelaySeconds: 90
             periodSeconds: 60

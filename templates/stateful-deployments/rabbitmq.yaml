@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: rabbitmq
+      annotations:
+        checksum/cognigy-rabbitmq-config: {{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq-config.yaml") $ | sha256sum }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -43,9 +45,35 @@ spec:
                 secretKeyRef:
                   name: cognigy-rabbitmq
                   key: rabbitmq-password
-              {{- if .extraEnvVars }}
-              {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- if .advancedConfiguration }}
+            ## Overrides advanced config file location
+            - name: RABBITMQ_ADVANCED_CONFIG_FILE
+              value: /etc/rabbitmq/conf.d/advanced.config
+            {{- end }}
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: configuration
+              mountPath: /etc/rabbitmq/conf.d/rabbitmq.conf
+              subPath: rabbitmq.conf
+            {{- if .advancedConfiguration }}
+            - name: configuration
+              mountPath: /etc/rabbitmq/conf.d/advanced.config
+              subPath: advanced.config
+            {{- end }}
+      volumes:
+        - name: configuration
+          secret:
+            secretName: cognigy-rabbitmq-config
+            items:
+              - key: rabbitmq.conf
+                path: rabbitmq.conf
+              {{- if .advancedConfiguration }}
+              - key: advanced.config
+                path: advanced.config
               {{- end }}
+            defaultMode: 0644
       {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

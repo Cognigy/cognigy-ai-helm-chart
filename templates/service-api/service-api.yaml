@@ -28,12 +28,18 @@ spec:
           image: {{ .image }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
+            - name: health
+              containerPort: 8001
             - name: metrics
               containerPort: 8002
           envFrom:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"
             - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
               value: 'true'
             - name: INSIGHTS_JWT_SECRET
@@ -83,11 +89,14 @@ spec:
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
           livenessProbe:
-            exec:
-              command:
-                - node
-                - /opt/healthcheck.js
+            httpGet:
+              path: /health/liveness
+              port: 8001
             failureThreshold: 3
             initialDelaySeconds: 90
             periodSeconds: 60

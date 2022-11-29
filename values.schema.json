@@ -127,6 +127,7 @@
     "serviceAnalyticsReporter",
     "serviceApi",
     "serviceAppSessionManager",
+    "serviceCollector",
     "serviceCustomModules",
     "serviceEndpoint",
     "serviceExecution",

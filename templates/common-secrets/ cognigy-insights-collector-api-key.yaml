@@ -1,0 +1,14 @@
+{{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-insights-collector-api-key") }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-insights-collector-api-key
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  # use 128 bytes of random value, hex
+  secret: "{{ printf "%x" (randAlphaNum 128) | b64enc }}"
+{{- end }}
