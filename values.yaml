@@ -1598,7 +1598,7 @@ statefulRedisPersistent:
 ## Cognigy.AI components
 ##
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:4bc237db960cadbc4dbe85e9af82c945dd844d7b
+  image: cognigy.azurecr.io/service-ai:a825def92f065a5bf285704ae9c109d71e608f7e
   replicaCount: 3
   resources:
     requests:
@@ -2058,7 +2058,7 @@ serviceTrainer:
   extraEnvVars: []
   securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:4bc237db960cadbc4dbe85e9af82c945dd844d7b
+  image: cognigy.azurecr.io/service-ui:7b4b13d1a743f1651728b3a408a30aaffb92a555
   replicaCount: 3
   resources:
     requests:
