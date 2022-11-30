@@ -1598,7 +1598,7 @@ statefulRedisPersistent:
 ## Cognigy.AI components
 ##
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:a825def92f065a5bf285704ae9c109d71e608f7e
+  image: cognigy.azurecr.io/service-ai:69658c7333c4f3b23a9c3e103e42cf7ecde756b7
   replicaCount: 3
   resources:
     requests:
@@ -1776,7 +1776,7 @@ serviceCustomModules:
   extraEnvVars: []
   securityContext: {}
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:4bc237db960cadbc4dbe85e9af82c945dd844d7b
+  image: cognigy.azurecr.io/service-endpoint:34a9baa509ace6a88603b1fd774a42035160c364
   replicaCount: 3
   resources:
     requests:
@@ -1836,7 +1836,7 @@ serviceHandover:
   extraEnvVars: []
   securityContext: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:4bc237db960cadbc4dbe85e9af82c945dd844d7b
+  image: cognigy.azurecr.io/service-http:69658c7333c4f3b23a9c3e103e42cf7ecde756b7
   replicaCount: 3
   resources:
     requests:
@@ -1974,7 +1974,7 @@ serviceProfiles:
   extraEnvVars: []
   securityContext: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:4bc237db960cadbc4dbe85e9af82c945dd844d7b
+  image: cognigy.azurecr.io/service-resources:34a9baa509ace6a88603b1fd774a42035160c364
   replicaCount: 3
   resources:
     requests:
@@ -2058,7 +2058,7 @@ serviceTrainer:
   extraEnvVars: []
   securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:7b4b13d1a743f1651728b3a408a30aaffb92a555
+  image: cognigy.azurecr.io/service-ui:69658c7333c4f3b23a9c3e103e42cf7ecde756b7
   replicaCount: 3
   resources:
     requests:
