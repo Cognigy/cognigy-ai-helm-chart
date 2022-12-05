@@ -1776,7 +1776,7 @@ serviceCustomModules:
   extraEnvVars: []
   securityContext: {}
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:34a9baa509ace6a88603b1fd774a42035160c364
+  image: cognigy.azurecr.io/service-endpoint:c686e3f73d21c77f69d5b0f2f28ecd7a92efea24
   replicaCount: 3
   resources:
     requests:
@@ -1788,7 +1788,7 @@ serviceEndpoint:
   extraEnvVars: []
   securityContext: {}
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:4bc237db960cadbc4dbe85e9af82c945dd844d7b
+  image: cognigy.azurecr.io/service-execution:c686e3f73d21c77f69d5b0f2f28ecd7a92efea24
   replicaCount: 3
   resources:
     requests:
@@ -1800,7 +1800,7 @@ serviceExecution:
   extraEnvVars: []
   securityContext: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:4bc237db960cadbc4dbe85e9af82c945dd844d7b
+  image: cognigy.azurecr.io/service-function-execution:c686e3f73d21c77f69d5b0f2f28ecd7a92efea24
   replicaCount: 3
   resources:
     requests:
@@ -2058,7 +2058,7 @@ serviceTrainer:
   extraEnvVars: []
   securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:69658c7333c4f3b23a9c3e103e42cf7ecde756b7
+  image: cognigy.azurecr.io/service-ui:c686e3f73d21c77f69d5b0f2f28ecd7a92efea24
   replicaCount: 3
   resources:
     requests:
