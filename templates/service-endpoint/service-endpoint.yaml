@@ -19,6 +19,7 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-persistent-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password").data | sha256sum }}{{ end }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-endpoint-api-access-token") }}{{ include (print $.Template.BasePath "/service-endpoint/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-endpoint-api-access-token").data | sha256sum }}{{ end }}
     spec:
       containers:
         - name: service-endpoint
@@ -51,6 +52,11 @@ spec:
                 secretKeyRef:
                   name: {{- include "liveAgentCredentials.secretName.render" $ | indent 1 }}
                   key: cognigy-live-agent-platform-token
+            - name: SERVICE_ENDPOINT_API_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-service-endpoint-api-access-token
+                  key: api-access-token
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
