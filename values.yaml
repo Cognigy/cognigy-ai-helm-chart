@@ -1776,7 +1776,7 @@ serviceCustomModules:
   extraEnvVars: []
   securityContext: {}
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:ccebb3e0f736f4654657720cec4272828c73fc2b
+  image: cognigy.azurecr.io/service-endpoint:310f9d32923617df1858be3f29052287a258ec49
   replicaCount: 3
   resources:
     requests:
@@ -1824,7 +1824,7 @@ serviceFunctionScheduler:
   extraEnvVars: []
   securityContext: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:ccebb3e0f736f4654657720cec4272828c73fc2b
+  image: cognigy.azurecr.io/service-handover:fff3d1db7637bfca88eff7ef8aec1316829612f6
   replicaCount: 3
   resources:
     requests:
@@ -2058,7 +2058,7 @@ serviceTrainer:
   extraEnvVars: []
   securityContext: {}
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:ccebb3e0f736f4654657720cec4272828c73fc2b
+  image: cognigy.azurecr.io/service-ui:fff3d1db7637bfca88eff7ef8aec1316829612f6
   replicaCount: 3
   resources:
     requests:
