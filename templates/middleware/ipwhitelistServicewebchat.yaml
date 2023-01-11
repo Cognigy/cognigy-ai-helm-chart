@@ -1,4 +1,4 @@
-{{- if and (.Values.ingress.enabled) (.Values.ingress.serviceWebchat.ipWhiteListMiddleware.enabled) }}
+{{- if and (.Values.traefik.enabled) (.Values.ingress.enabled) (.Values.ingress.serviceWebchat.ipWhiteListMiddleware.enabled) }}
 {{- with .Values.ingress.serviceWebchat.ipWhiteListMiddleware }}
 ---
 # Whitelisting Based on `X-Forwarded-For` with `depth=0`

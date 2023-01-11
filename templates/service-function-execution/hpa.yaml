@@ -1,0 +1,18 @@
+{{- if .Values.serviceFunctionExecution.horizontalPodAutoscaler.enabled }}
+{{- with .Values.serviceFunctionExecution.horizontalPodAutoscaler }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: service-function-execution
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: service-function-execution
+    apiVersion: apps/v1
+  minReplicas: {{ .minReplicas }}
+  maxReplicas: {{ .maxReplicas }}
+  metrics:
+    {{- include "common.tplvalues.render" ( dict "value" .metrics "context" $ ) | nindent 4 }}
+{{- end }}
+{{- end }}

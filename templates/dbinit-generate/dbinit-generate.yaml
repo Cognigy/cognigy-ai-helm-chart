@@ -17,9 +17,13 @@ spec:
       name: cognigy-ai-db-init
     spec:
       restartPolicy: Never
+      {{- if .Values.mongodb.dbinit.securityContext }}
+      securityContext:
+        {{- toYaml .Values.mongodb.dbinit.securityContext | nindent 8 }}
+      {{- end }}
       containers:
       - name: cognigy-ai-db-init
-        image: bitnami/mongodb:4.2.5-debian-10-r54
+        image: {{ .Values.mongodb.dbinit.image }}
         command: ["/bin/bash"]
         args: ["/cognigy-ai-dbinit/dbinit-generate/dbinit-generate.sh"]
         volumeMounts:
@@ -143,6 +147,7 @@ spec:
               items:
               - key: connection-string
                 path: cognigy-service-trainer
+      {{- include "image.pullSecrets" $ | nindent 6 }}
 {{- end }}
 {{- if and (.Values.mongodb.enabled) (not .Values.mongodb.auth.existingSecret) }}
 ---

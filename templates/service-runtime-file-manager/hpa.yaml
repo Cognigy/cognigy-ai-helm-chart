@@ -1,0 +1,18 @@
+{{- if .Values.serviceRuntimeFileManager.horizontalPodAutoscaler.enabled }}
+{{- with .Values.serviceRuntimeFileManager.horizontalPodAutoscaler }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: service-runtime-file-manager
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: service-runtime-file-manager
+    apiVersion: apps/v1
+  minReplicas: {{ .minReplicas }}
+  maxReplicas: {{ .maxReplicas }}
+  metrics:
+    {{- include "common.tplvalues.render" ( dict "value" .metrics "context" $ ) | nindent 4 }}
+{{- end }}
+{{- end }}

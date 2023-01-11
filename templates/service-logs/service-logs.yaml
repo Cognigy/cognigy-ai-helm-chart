@@ -20,6 +20,15 @@ spec:
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-logs") }}{{ include (print $.Template.BasePath "/service-logs/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-logs").data | sha256sum }}{{ end }}
     spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
       containers:
         - name: service-logs
           image: {{ .image }}

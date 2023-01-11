@@ -21,6 +21,15 @@ spec:
         checksum/amazon-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "amazonCredentials.secretName.render" $ ))) }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-amazon-credentials.yaml") $ | sha256sum }}{{ else }}{{ range $key, $value := (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "amazonCredentials.secretName.render" $ ))).data }}{{ $value | sha256sum }}{{ end }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-alexa-management") }}{{ include (print $.Template.BasePath "/service-alexa-management/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-alexa-management").data | sha256sum }}{{ end }}
     spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
       containers:
         - name: service-alexa-management
           image: {{ .image }}

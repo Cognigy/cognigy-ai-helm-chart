@@ -16,6 +16,15 @@ spec:
       annotations:
         checksum/clamav: {{ include (print $.Template.BasePath "/configurations/clamav.yaml") $ | sha256sum }}
     spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
       containers:
         - name: clamd          
           image: {{ .image }}
@@ -31,9 +40,15 @@ spec:
             - name: clamav-config
               mountPath: /etc/clamav              
               readOnly: false
+          {{- if .extraEnvVars }}
+          env:
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+          {{- end }}
       volumes: 
         - name: clamav-config
           configMap:
             name: clamav      
       {{- include "image.pullSecrets" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

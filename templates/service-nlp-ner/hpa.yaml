@@ -1,0 +1,18 @@
+{{- if .Values.serviceNlpNer.horizontalPodAutoscaler.enabled }}
+{{- with .Values.serviceNlpNer.horizontalPodAutoscaler }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: service-nlp-ner
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: service-nlp-ner
+    apiVersion: apps/v1
+  minReplicas: {{ .minReplicas }}
+  maxReplicas: {{ .maxReplicas }}
+  metrics:
+    {{- include "common.tplvalues.render" ( dict "value" .metrics "context" $ ) | nindent 4 }}
+{{- end }}
+{{- end }}

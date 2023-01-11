@@ -1,4 +1,4 @@
-{{- if and (.Values.ingress.enabled) (.Values.ingress.serviceStaticFiles.ipWhiteListMiddleware.enabled) (.Values.cognigyApps.enabled) }}
+{{- if and (.Values.traefik.enabled) (.Values.ingress.enabled) (.Values.ingress.serviceStaticFiles.ipWhiteListMiddleware.enabled) (.Values.cognigyApps.enabled) }}
 {{- with .Values.ingress.serviceStaticFiles.ipWhiteListMiddleware }}
 ---
 # Whitelisting Based on `X-Forwarded-For` with `depth=0`

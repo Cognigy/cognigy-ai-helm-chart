@@ -16,6 +16,15 @@ spec:
       labels:
         app: service-nlp-v2-train-ge
     spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
       containers:
         - name: service-nlp-v2-train-ge
           image: {{ .image }}
@@ -63,6 +72,9 @@ spec:
               value: service-nlp-embedding-ge:8000
             - name: LABSE_VOCAB_FILE
               value: /labse_vocab/cased_vocab.txt
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
       volumes:
         - name: rabbitmq-connection-string
           secret:

@@ -21,6 +21,15 @@ spec:
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-persistent-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password").data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-endpoint-api-access-token") }}{{ include (print $.Template.BasePath "/service-endpoint/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-endpoint-api-access-token").data | sha256sum }}{{ end }}
     spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
       containers:
         - name: service-endpoint
           image: {{ .image }}

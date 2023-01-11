@@ -16,6 +16,15 @@ spec:
       labels:
         app: service-nlp-classifier-score-ja
     spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
       containers:
         - name: service-nlp-classifier-score-ja
           image: {{ .image }}
@@ -64,6 +73,9 @@ spec:
               value: /models/usev3/config.pbtxt
             - name: EMBEDDING_SERVER_ADDRESS
               value: service-nlp-embedding-xx:8000
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
       volumes:
         - name: rabbitmq-connection-string
           secret:
