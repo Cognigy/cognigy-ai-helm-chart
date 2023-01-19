@@ -1750,7 +1750,7 @@ serviceAnalyticsReporter:
   nodeSelector: {}
   tolerations: []
 serviceApi:
-  image: cognigy.azurecr.io/service-api:f2c86aaca87af56635a98e3fadebcc60b6a2cfb3
+  image: cognigy.azurecr.io/service-api:1df897d6628259d4eb303d11cc9ead3e2ac87602
   replicaCount: 3
   resources:
     requests:
@@ -1797,7 +1797,7 @@ serviceCustomModules:
   nodeSelector: {}
   tolerations: []
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:f2c86aaca87af56635a98e3fadebcc60b6a2cfb3
+  image: cognigy.azurecr.io/service-endpoint:ab6d4ee0d6bc75c0b21898ed4f843fac2d7c3422
   replicaCount: 3
   resources:
     requests:
@@ -1890,7 +1890,7 @@ serviceFunctionScheduler:
             type: Utilization
             averageUtilization: 70
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:f2c86aaca87af56635a98e3fadebcc60b6a2cfb3
+  image: cognigy.azurecr.io/service-handover:c95e3a584a75d765e88e62a82307b757b234b7c7
   replicaCount: 3
   resources:
     requests:
@@ -1931,7 +1931,7 @@ serviceHttp:
             type: Utilization
             averageUtilization: 70
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-a2ceae9-1672670731
+  image: cognigy.azurecr.io/service-insights-api:release-cf1f03c-1674040971
   replicaCount: 3
   resources:
     requests:
@@ -2236,7 +2236,7 @@ serviceTrainer:
   nodeSelector: {}
   tolerations: []
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:f2c86aaca87af56635a98e3fadebcc60b6a2cfb3
+  image: cognigy.azurecr.io/service-ui:c95e3a584a75d765e88e62a82307b757b234b7c7
   replicaCount: 3
   resources:
     requests:
