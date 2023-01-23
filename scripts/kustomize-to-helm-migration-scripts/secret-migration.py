@@ -19,6 +19,7 @@ secrets_list_helm_resource_keep = [
     "cognigy-facebook",
     "cognigy-jwt",
     "cognigy-insights-jwt",
+    "cognigy-insights-collector-api-key",
     "cognigy-odata",
     "cognigy-rabbitmq",
     "cognigy-rce-credentials",
