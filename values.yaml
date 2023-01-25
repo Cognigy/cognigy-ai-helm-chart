@@ -1965,7 +1965,7 @@ serviceCollector:
   nodeSelector: {}
   tolerations: []
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-602db3b-1673863020
+  image: cognigy.azurecr.io/service-insights-ui:release-c8b674e-1674583922
   replicaCount: 3
   resources:
     requests:
