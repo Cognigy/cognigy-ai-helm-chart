@@ -1,3 +1,25 @@
+{{- if (.Values.ingress.serviceRuntimeFileManager.tls.enabled) }}
+{{- if not (.Values.ingress.serviceRuntimeFileManager.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceRuntimeFileManager.tls.crt) (.Values.ingress.serviceRuntimeFileManager.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-runtime-file-manager-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.ingress.serviceRuntimeFileManager.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceRuntimeFileManager.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceRuntimeFileManager.tls is required!" .Values.ingress.serviceRuntimeFileManager.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceRuntimeFileManager.tls is required!" .Values.ingress.serviceRuntimeFileManager.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceRuntimeFileManager.tls is required!" .Values.ingress.serviceRuntimeFileManager.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+---
 {{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -16,7 +38,21 @@ metadata:
     {{- end }}
 spec:
   ingressClassName: traefik
+  {{- if (.Values.ingress.serviceRuntimeFileManager.tls.enabled) }}
+  {{- if (.Values.ingress.serviceRuntimeFileManager.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceRuntimeFileManager.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceRuntimeFileManager.tls.crt) (.Values.ingress.serviceRuntimeFileManager.tls.key) }}
+  tls:
+    - secretName: cognigy-service-runtime-file-manager-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceRuntimeFileManager.tls is required!" .Values.ingress.serviceRuntimeFileManager.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceRuntimeFileManager.tls is required!" .Values.ingress.serviceRuntimeFileManager.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceRuntimeFileManager.tls is required!" .Values.ingress.serviceRuntimeFileManager.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
   {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
   rules:
   - host: {{ .Values.ingress.serviceRuntimeFileManager.host }}
     http:

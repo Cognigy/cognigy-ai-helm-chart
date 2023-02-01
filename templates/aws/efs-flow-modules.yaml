@@ -1,4 +1,4 @@
-{{- if eq .Values.cloud.provider "aws" }}
+{{- if and (eq .Values.cloud.provider "aws") (.Values.flowModules.persistence.aws.efs.enabled) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -23,7 +23,7 @@ spec:
       containers:
       - env:
         - name: FILE_SYSTEM_ID
-          value: {{ .Values.efs.flowModules.id }}
+          value: {{- include "flowModules.efs.id" $ | indent 1 }}
         - name: AWS_REGION
           value: {{ .Values.cloud.region }}
         - name: PROVISIONER_NAME
@@ -37,7 +37,7 @@ spec:
       - name: pv-volume
         nfs:
           path: /
-          server: {{ .Values.efs.flowModules.id }}.efs.{{ .Values.cloud.region }}.amazonaws.com
+          server: {{- include "flowModules.efs.id" $ | indent 1 }}.efs.{{ .Values.cloud.region }}.amazonaws.com
 
 ---
 kind: PersistentVolumeClaim
@@ -46,22 +46,25 @@ metadata:
   name: flow-modules
   namespace: {{ $.Release.Namespace | quote }}
   annotations:
-    volume.beta.kubernetes.io/storage-class: "aws-efs-flow-modules"
+    {{- include "flowModules.legacy.storage.class" $ | nindent 4 }}
 spec:
-  storageClassName: aws-efs-flow-modules
+  {{- include "flowModules.storage.class" $ | nindent 2 }}
   accessModes:
     - ReadWriteMany
   resources:
     requests:
       # The storage request has no effect for NFS
-      storage: 1Mi
+      storage: {{ .Values.flowModules.persistence.size | default "1Mi" }}
 
+{{- if (not (.Values.flowModules.persistence.storageClass)) }}
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: aws-efs-flow-modules
 provisioner: efs-provisioner-flow-modules
+
+{{ end }}
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

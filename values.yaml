@@ -5,7 +5,7 @@
 # This MongoDB user and password should have the permission to create users and databases, so normally it is admin or root
 # It does NOT have to be root user. We use these key names to be compatible with Bitnami MongoDB Helm Chert
 mongodb:
-  enabled: true 
+  enabled: true
   auth:
     rootUser: root
     rootPassword: ""
@@ -24,7 +24,6 @@ mongodb:
   dbinit:
     image: cognigy.azurecr.io/mongodb:4.4.15-debian-10-r8
     securityContext: {}
-
 
 ## Credentials for pulling image from private image registry.
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -47,7 +46,6 @@ imageCredentials:
   ## NOTE: When registry, username and password all are set, the pullSecrets are ignored.
   pullSecrets: []
 
-
 # Cognigy supports 3 cloud providers:
 # - aws
 # - azure
@@ -56,7 +54,76 @@ cloud:
   provider: aws
   region: ""
 
-# For AWS cloud provider only:
+## Cognigy Flow Modules
+##
+flowModules:
+  ## Persistence parameters
+  ##
+  ## Enable persistence using Persistent Volume Claims
+  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+  ##
+  persistence:
+    ## For AWS cloud provider only
+    ##
+    aws:
+      ## Optionally specify the parameters of an existing Elastic File System or EFS 
+      ## ref: https://aws.amazon.com/efs/
+      ## Note: By default this is enabled for the AWS cloud provider. When enabled, the value of the efs ID must be provided
+      ##
+      efs:
+        enabled: true
+        ## EFS File system ID
+        ##
+        id: ""
+    ## Optionally specify StorageClass for flowModules data volume
+    ## If defined, storageClassName: <storageClass>
+    ## If undefined or set to null, storageClassName is set according to the value defined in "cloud.provider"
+    ## 
+    storageClass: ""
+    ## PVC Storage Request for flowModules data volume.
+    ## Default value for aws is 1Mi and for azure 100Gi
+    ## Note: The storage request has no effect for NFS
+    ##
+    size: ""
+
+## Cognigy Functions
+##
+functions:
+  ## Persistence parameters
+  ##
+  ## Enable persistence using Persistent Volume Claims
+  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+  ##
+  persistence:
+    ## For AWS cloud provider only
+    ##
+    aws:
+      ## Optionally specify the parameters of an existing Elastic File System or EFS 
+      ## ref: https://aws.amazon.com/efs/
+      ## Note: By default this is enabled for the AWS cloud provider. When enabled, the value of the efs ID must be provided
+      ##
+      efs:
+        enabled: true
+        ## EFS File system ID
+        ##
+        id: ""
+    ## Optionally specify StorageClass for functions data volume
+    ## If defined, storageClassName: <storageClass>
+    ## If undefined or set to null, storageClassName is set according to the value defined in "cloud.provider"
+    ## 
+    storageClass: ""
+    ## PVC Storage Request for functions data volume.
+    ## Default value for aws is 1Mi and for azure 100Gi
+    ## Note: The storage request has no effect for NFS
+    ##
+    size: ""
+
+## !!! Deprecation Warning !!!
+## This "efs" section will be deprecated in the future release. 
+## Please use/migrate to "flowModules.persistence.aws.efs.id" and "functions.persistence.aws.efs.id" instead.
+##
+## For AWS cloud provider only:
+##
 efs:
   flowModules:
     id: ""
@@ -79,7 +146,19 @@ managementUi:
   ingress:
     enabled: true
     host: ""
-  image: cognigy.azurecr.io/management-ui:release-7d83f2ea09-1673887823
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
+    ipWhiteListMiddleware:
+      enabled: true
+      ipWhiteList:
+        sourceRange:
+          - 0.0.0.0/0
+        ipStrategy:
+          depth: 0
+  image: cognigy.azurecr.io/management-ui:release-033c31230a-1675177967
   replicaCount: 1
   resources:
     limits:
@@ -90,9 +169,9 @@ managementUi:
       cpu: "10m"
   extraEnvVars: []
   securityContext: {}
-  affinity: { }
-  nodeSelector: { }
-  tolerations: [ ]
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
 
 ## managementUiCredentials: '[{"username": "example_username", "password": "example_password"}]'
 managementUiCredentials: '[]'
@@ -102,7 +181,6 @@ managementUiCredentials: '[]'
 ##    [{"username": "user", "password": "pass"}, {"username": "user2", "password": "pass2"}]
 ## NOTE: When this is set, clear text credentials passed in the variable "managementUiCredentials" is ignored.
 managementUiCredentialsExistingSecret: ""
-
 
 ## SMTP server information for 'forgot password' functionality.
 ## Password for the SMTP server.
@@ -118,6 +196,9 @@ smtpPasswordExistingSecret: ""
 # customer running Cognigy.AI/Cognigy Insights using this HelmChart.
 cognigyApps:
   enabled: false
+
+# This is a temp flag for "Generative AI features"
+generativeAIWhitelist: []
 
 ## Traefik TLS certificate for the hostname defined at ingress.<service_name>.host
 ## NOTE: If you provide "tls.enable: true" and "traefik.enabled: true", either tls.crt and tls.key or tls.existingSecret must be provided.
@@ -155,6 +236,26 @@ ingress:
   enabled: true
   serviceAnalyticsOdata:
     host: ""
+    ## Do not use ingress.<service>.tls.enabled parameter if you have a wildcard certificate for all ingresses (recommended), use `tls` section for a wildcard certificate instead.
+    ## If you have individual certificates per ingress, set ingress.<service>.tls.enabled: "true" per individual ingress.
+    ## This will create a new secret cognigy-<service-name>-tls containing the individual certificate and the ingress will be served with the individual certificate.
+    ## You will need to provide the certificate either in clear text by setting `crt` and `key` fields or as existing base64-encoded kubernetes secret.
+    ## For a TLS certificate in clear text set:
+    ## "ingress.<service>.tls.crt": TLS certificate including full certificate chain
+    ## "ingress.<service>.tls.key": TLS certificate key
+    ## NOTE: When ingress.<service>.tls.existingSecret is set, certificate in clear text under `tls.crt` and `tls.key` is ignored.
+    ## Please make sure the `existingSecret` is created before referencing it in the ingress specification
+
+    ## CA certificate and certificate key in plaintext, not base64 encoded.
+    ## Example:
+    ## key: |
+    ##   -----BEGIN PRIVATE KEY-----
+    ##   -----END PRIVATE KEY-----
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
     ## Traefik IPWhiteList middleware. IPWhitelist accepts / refuses requests based on the client IP.
     ## A sourceRange of 0.0.0.0/0 means all IPs are allowed. For more detail https://doc.traefik.io/traefik/middlewares/http/ipwhitelist/
     ipWhiteListMiddleware:
@@ -166,6 +267,11 @@ ingress:
           depth: 0
   serviceApi:
     host: ""
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
     ipWhiteListMiddleware:
       enabled: true
       ipWhiteList:
@@ -175,6 +281,11 @@ ingress:
           depth: 0
   serviceAppSessionManager:
     host: ""
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
     ipWhiteListMiddleware:
       enabled: true
       ipWhiteList:
@@ -184,6 +295,11 @@ ingress:
           depth: 0
   serviceEndpoint:
     host: ""
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
     ipWhiteListMiddleware:
       enabled: true
       ipWhiteList:
@@ -193,6 +309,11 @@ ingress:
           depth: 0
   serviceInsightsApi:
     host: ""
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
     ipWhiteListMiddleware:
       enabled: true
       ipWhiteList:
@@ -202,7 +323,12 @@ ingress:
           depth: 0
   serviceRuntimeFileManager:
     host: ""
-    ipWhiteListMiddleware: 
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
+    ipWhiteListMiddleware:
       enabled: true
       ipWhiteList:
         sourceRange:
@@ -211,6 +337,11 @@ ingress:
           depth: 0
   serviceUi:
     host: ""
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
     ipWhiteListMiddleware:
       enabled: true
       ipWhiteList:
@@ -220,6 +351,11 @@ ingress:
           depth: 0
   serviceStaticFiles:
     host: ""
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
     ipWhiteListMiddleware:
       enabled: true
       ipWhiteList:
@@ -229,6 +365,11 @@ ingress:
           depth: 0
   serviceWebchat:
     host: ""
+    tls:
+      enabled: false
+      existingSecret: ""
+      crt: ""
+      key: ""
     ipWhiteListMiddleware:
       enabled: true
       ipWhiteList:
@@ -342,7 +483,6 @@ cognigyEnv:
 
   # Path to files containing pre-computed noise embeddings
   NLP_PRECOMPUTED_EMBEDDINGS_PATH: "/embedding/precomputed_embeddings"
-
   ### Shared ENV variables ###
 
   # A link to an online instance of the adaptive cards designer
@@ -417,147 +557,147 @@ cognigyEnv:
   # MAX_SESSION_STATE_TTL_IN_MINUTES: "0"
 
   ### Platform Integration ENV Variables ###
-  
+
   # Agent Bot description for Live Agent, Chatwoot, etc. 
-    # AGENT_BOT_DESCRIPTION:
-  
+  # AGENT_BOT_DESCRIPTION:
+
   # Agent Bot name for Live Agent, Chatwoot, etc.
-    # AGENT_BOT_NAME:
+  # AGENT_BOT_NAME:
 
   # Additional Alexa configuration
-    # ALEXA_END_SESSION_AFTER_EACH_REPLY:
+  # ALEXA_END_SESSION_AFTER_EACH_REPLY:
 
   # Check avaialability node timeout of agent   
-    # CHECK_AGENT_AVAILABILITY_NODE_TIMEOUT_IN_SECONDS:
+  # CHECK_AGENT_AVAILABILITY_NODE_TIMEOUT_IN_SECONDS:
 
   # RPC timeout for creating runtime file in seconds. Default value is 8 secs. 
-    # CREATE_RUNTIME_FILE_TIMEOUT_IN_SECONDS:
+  # CREATE_RUNTIME_FILE_TIMEOUT_IN_SECONDS:
 
   # Redis default cache TTL
-    # DEFAULT_CACHE_TTL:
+  # DEFAULT_CACHE_TTL:
 
   # Endpoint base URL 
-    # ENDPOINT_BASE_URL_TUNNEL:
+  # ENDPOINT_BASE_URL_TUNNEL:
 
   # Allows our customers to specify CORS origins. If you want to specify CORS origins,
   # add all of your origins into a comma-delimited list as the following examples:
   # "http://example1.com, http://example2.com", "http://*.example3.com"
-    # ENDPOINT_CORS_WHITELIST:
+  # ENDPOINT_CORS_WHITELIST:
 
   # The TTL of the session storage in the endpoint transformers in seconds.
-    # ENDPOINT_TRANSFORMER_SESSION_STORAGE_TTL:
+  # ENDPOINT_TRANSFORMER_SESSION_STORAGE_TTL:
 
   # TTL for user meta-data the system uses to keep track, such as flow changes
-    # ENDPOINT_USER_METADATA_REDIS_TTL:
+  # ENDPOINT_USER_METADATA_REDIS_TTL:
 
   # Additional facebook configuration. This is to verify the token in the webhook
-    # FB_VERIFY_TOKEN:
+  # FB_VERIFY_TOKEN:
 
   # Enable the "Follow Sessions" feature
-    # FEATURE_ENABLE_FOLLOW_SESSION:
+  # FEATURE_ENABLE_FOLLOW_SESSION:
 
   # Enable detailed logs for RPC calls handling
-    # FEATURE_RPC_LOGS:
+  # FEATURE_RPC_LOGS:
 
   # Enable the SSO features and show the Microsoft nodes if enabled
-    # FEATURE_USE_MICROSOFT_SSO:
+  # FEATURE_USE_MICROSOFT_SSO:
 
   # Enable assured message delivery for sockentendpoint
-    # FEATURE_USE_SOCKETENDPOINT_EVENTBUFFER:
+  # FEATURE_USE_SOCKETENDPOINT_EVENTBUFFER:
 
   # Cleanup/remove idle socket client connection
-    # GENESYS_CLOUD_SOCKET_CLIENT_CLEANUP_INTERVAL:
+  # GENESYS_CLOUD_SOCKET_CLIENT_CLEANUP_INTERVAL:
 
   # To limit the number of unacknowledged messages on a channel/connection on AMQP client 
-    # HANDOVER_POLLING_PREFETCH:
+  # HANDOVER_POLLING_PREFETCH:
 
   # Salesforce
-    # HANDOVER_POLLING_TTL:
+  # HANDOVER_POLLING_TTL:
 
   # The TTL for the RPC call to fetch the conversation. 
   # Should be increase if the save interval for analytics is increased
-    # HANDOVER_READ_CONVERSATION_TIMEOUT_IN_SECONDS:
+  # HANDOVER_READ_CONVERSATION_TIMEOUT_IN_SECONDS:
 
   # Handover TTL for persisting agent bot id into redis  
-    # HANDOVER_TTL:
+  # HANDOVER_TTL:
 
   # CORS whitelist for the live-agent API
-    # LIVE_AGENT_API_CORS_WHITELIST:
+  # LIVE_AGENT_API_CORS_WHITELIST:
 
   # Live Agent API secret
-    # LIVE_AGENT_API_SECRET:
+  # LIVE_AGENT_API_SECRET:
 
   # Live Agent base URL
-    # LIVE_AGENT_BACKEND_BASE_URL_WITH_PROTOCOL:
+  # LIVE_AGENT_BACKEND_BASE_URL_WITH_PROTOCOL:
 
   # Message displayed when handover session is aborted 
-    # LIVE_AGENT_LITE_EXPIRED_MESSAGE:
+  # LIVE_AGENT_LITE_EXPIRED_MESSAGE:
 
   # Time after which handover requests should automatically be closed in minutes. Defaults to 30. 0 means "no cleanup"
-    # LIVE_AGENT_LITE_HANDOVER_TTL:
+  # LIVE_AGENT_LITE_HANDOVER_TTL:
 
   # The TTL of the JWT + access token in seconds
-    # LIVE_AGENT_TOKEN_TTL_IN_SECONDS:
+  # LIVE_AGENT_TOKEN_TTL_IN_SECONDS:
 
   # Register a rotue for loader.io verification
-    # LOADER_IO_TOKEN:
+  # LOADER_IO_TOKEN:
 
   # The TTL of messages in the endpoint-session-queues in seconds.
-    # MESSAGE_TTL_SECONDS:120 
+  # MESSAGE_TTL_SECONDS:120 
 
   # Redis key TTL which stores inject/notify meta data 
-    # NOTIFY_INJECT_EXPIRATION_IN_SECONDS:
+  # NOTIFY_INJECT_EXPIRATION_IN_SECONDS:
 
   # To reference assets in the `public` folder
-    # PUBLIC_URL:
+  # PUBLIC_URL:
 
   # Verify token for RCE 
-    # RCE_VERIFY_TOKEN:
+  # RCE_VERIFY_TOKEN:
 
   # A comma-separated list of Snapshots that are deployed as Snapshot Executors
-    # SNAPSHOTS_USING_SNAPSHOT_EXECUTOR:
+  # SNAPSHOTS_USING_SNAPSHOT_EXECUTOR:
 
   # TTL for the Redis key used to handle client instances 
-    # SOCKET_ENDPOINT_REDIS_CLIENT_TTL:
+  # SOCKET_ENDPOINT_REDIS_CLIENT_TTL:
 
   # TTL for the Redis key used to handle buffer events
-    # SOCKET_ENDPOINT_REDIS_CONNECTION_STATUS_TTL:
+  # SOCKET_ENDPOINT_REDIS_CONNECTION_STATUS_TTL:
 
   # TTL for the Redis key used to handle sockets
-    # SOCKET_ENDPOINT_REDIS_SOCKET_TTL:
+  # SOCKET_ENDPOINT_REDIS_SOCKET_TTL:
 
   # Temporary workaround for a customer:
   # Wait for n seconds before we actually try to read the conversation history
   # as it seems that the history is not complete and
   # that 'waitForPossibleInput' does not work properly
-    # TEMP_FIX_WAIT_FOR_CONVERSATION_HISTORY:
+  # TEMP_FIX_WAIT_FOR_CONVERSATION_HISTORY:
 
   # TWITTER configuration
-    # TWITTER_ACCESS_TOKEN:
-    # TWITTER_ACCESS_TOKEN_SECRET:
-    # TWITTER_APIKEY:
-    # TWITTER_CONSUMER_KEY:
-    # TWITTER_CONSUMER_SECRET:
-    # TWITTER_FLOWNAME:
-    # TWITTER_USERNAME:
+  # TWITTER_ACCESS_TOKEN:
+  # TWITTER_ACCESS_TOKEN_SECRET:
+  # TWITTER_APIKEY:
+  # TWITTER_CONSUMER_KEY:
+  # TWITTER_CONSUMER_SECRET:
+  # TWITTER_FLOWNAME:
+  # TWITTER_USERNAME:
 
   # Comma-separated list of origin URIs that are allowed to embed the webchat page as an iframe
   # You can use * in URLs to define subdomains or just * to allow any source
   # Example: WEBCHAT_EMBEDDER_WHITELIST:mywebsite.com,myotherwebsite.com
   # Example: WEBCHAT_EMBEDDER_WHITELIST:*.mywebsite.com
   # Example: WEBCHAT_EMBEDDER_WHITELIST:* 
-    # WEBCHAT_EMBEDDER_WHITELIST:
+  # WEBCHAT_EMBEDDER_WHITELIST:
 
   # Prevent websocket connections from switching to long polling if set to true.
-    # WEBCHAT_FORCE_WEBSOCKETS:'false'
+  # WEBCHAT_FORCE_WEBSOCKETS:'false'
 
   # WhatsApp cloud API url, whereas undefined means default url `https://graph.facebook.com/v13.0`
-    # WHATS_APP_GRAPH_API_HOST:
+  # WHATS_APP_GRAPH_API_HOST:
 
   # Workplace by facebook specific
-    # WORKPLACE_VERIFY_TOKEN:
-    # WORKPLACE_APP_REDIRECT:
-    # WORKPLACE_APP_SECRET:
+  # WORKPLACE_VERIFY_TOKEN:
+  # WORKPLACE_APP_REDIRECT:
+  # WORKPLACE_APP_SECRET:
 
   ### service-ui env variables ###
 
@@ -624,16 +764,24 @@ cognigyEnv:
   # property of an extension (and its node descriptor set)
   # FEATURE_ALLOW_TRUSTED_CODE_CONFIGURATION:
 
-  # Enable new voicegateway 2 endpoint (Jambonz) by setting this to true
-  # and adding organisationId to the list in FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST below:
+  # Enable VoiceGateway by setting this to "true"
+  # Only works in combination with: FEATURE_ENABLE_VOICEGATEWAY_2_OVERRIDE_ALL_ORG_IDS or FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST
   # FEATURE_ENABLE_VOICEGATEWAY_2:
 
-  # Comma-separated list of organisationId to enable voicegateway 2 in
-  # example: FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST:5f99a7ad6107a6be813ff301,5f99a7ad6107a6be813ff302
+  # Enable VoiceGateway to all Org. IDs in the environment by setting it to "true"
+  # Only works with FEATURE_ENABLE_VOICEGATEWAY_2 it is also "true"
+  # FEATURE_ENABLE_VOICEGATEWAY_2_OVERRIDE_ALL_ORG_IDS:
+
+  # Comma-separated list of Org. IDs to have VoiceGateway enabled
+  # Only works with FEATURE_ENABLE_VOICEGATEWAY_2 it is also "true"
+  # Example: FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST:5f99a7ad6107a6be813ff301,5f99a7ad6107a6be813ff302
   # FEATURE_ENABLE_VOICEGATEWAY_2_WHITELIST:
 
-  # Comma-separated list of organisationIds to enable the voice-call feature for
-  # example: FEATURE_ENABLE_VOICECALL_WHITELIST:5f99a7ad6107a6be813ff301,5f99a7ad6107a6be813ff302
+  # Enable Interaction Panel Calls feature to all Org. IDs in the environment by setting it to "true"
+  # FEATURE_ENABLE_VOICECALL_OVERRIDE_ALL_ORG_IDS:
+
+  # Comma-separated list of Org. IDs to have Interaction Panel Calls feature enabled
+  # Example: FEATURE_ENABLE_VOICECALL_WHITELIST:5f99a7ad6107a6be813ff301,5f99a7ad6107a6be813ff302
   # FEATURE_ENABLE_VOICECALL_WHITELIST:
 
   # Enable Central Configuration for Adaptive cards
@@ -654,7 +802,7 @@ cognigyEnv:
 
   # The websocket URI to reach Voice Gateway from Interaction Panel Test calls
   # VOICE_GATEWAY_SIP_WS_URI_WITH_PROTOCOL:
-  
+
   ### service-resources env variables ###
 
   # database credentials for resources
@@ -1033,6 +1181,18 @@ cognigyEnv:
   # The cleanup interval of Brains in AI. Default is 30s
   # AI_BRAIN_CLEANUP_INTERVAL: ""
 
+  # Maximum count of flows that we keep in memory cache. Default 1000
+  # AI_FLOW_CACHE_MAX_SIZE=
+  # How many seconds we keep a flow in memory cache without being called. Default 3600 
+  # AI_FLOW_CACHE_TTL_IN_SEC=
+
+  # The cleanup interval of session states in seconds. Default is 30
+  # AI_SESSION_STATE_CACHE_CLEANUP_INTERVAL_IN_SEC=
+  # How many seconds we keep a session state in memory. Default is 3600 
+  # AI_SESSION_STATE_CACHE_TTL_IN_SEC=
+  # Maximum items that are handled in one cleanup cycle for the session state. Default is 100.
+  # AI_SESSION_STATE_CACHE_MAX_COUNT_PER_CLEANUP_CYCLE=
+
   # Timeout for Question node datepicker function.
   # AI_DATEPICKER_FUNCTION_VM_TIMEOUT_IN_MS: "150"
 
@@ -1085,7 +1245,7 @@ cognigyEnv:
   # RESPONSE_BYTES_LIMIT: ""
 
   ### service-parser env variables ###
-  
+
   # The timeout for rpc calls made by service-parser
   # SERVICE_PARSER_RPC_TIMEOUT_IN_SEC: "20"
 
@@ -1123,7 +1283,7 @@ cognigyEnv:
   # RUNTIME_FILE_MANAGER_MAX_FILE_SIZE: "10485760"
 
   ### service-session-state-manager env variables ###
- 
+
   # The amount of time to buffer events before saving them. Can be set to 0 to disable buffering
   # SESSION_STATE_MANAGER_BUFFER_TIME_IN_SECONDS: "10"
 
@@ -1194,7 +1354,7 @@ cognigyEnv:
   # NLP_DEBUG_IS_INFO: "False"
 
   ### service-nlp-matcher env variables ###
-  
+
   # amount of items we store in the memory cache, default 20000
   # NLP_MATCHER_CACHE_ITEMS: ""
 
@@ -1523,8 +1683,7 @@ statefulRabbitMq:
   ##       ]
   ##     }
   ##   ].
-  advancedConfiguration: |-
-
+  advancedConfiguration: ""
   ## RabbitMQ pods' Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
   ## Note: The following values of RabbitMQ pod's Security Context runAsUser and runAsGroup are required to run the pod as non-root user.
@@ -1535,7 +1694,6 @@ statefulRabbitMq:
   affinity: {}
   nodeSelector: {}
   tolerations: []
-
 
 ## If redis is not required to deploy then you can set the "statefulRedis.enabled" flag to false. By default it is always enabled. 
 ## statefulRedis:
@@ -1578,13 +1736,27 @@ statefulRedisPersistent:
   affinity: {}
   nodeSelector: {}
   tolerations: []
-
+  ## Persistence parameters
+  ##
+  ## Enable persistence using Persistent Volume Claims
+  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+  ##
+  persistence:
+    ## Optionally specify StorageClass for Redis Persistent data volume
+    ## If defined, storageClassName: <storageClass>
+    ## If undefined or set to null, storageClassName is set according to the value defined in "cloud.provider"
+    ##
+    storageClass: ""
+    ## Optionally specify PVC Storage Request for RedisPersistent data volume
+    ## Note: Default value is 10Gi
+    ##
+    size: ""
 
 ##
 ## Cognigy.AI components
 ##
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-ai:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1676,7 +1848,7 @@ serviceAi:
             ## Define the CPU target to trigger the scaling actions (utilization percentage)
             averageUtilization: 70
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-alexa-management:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1691,7 +1863,7 @@ serviceAlexaManagement:
   nodeSelector: {}
   tolerations: []
 serviceAnalyticsCollector:
-  image: cognigy.azurecr.io/service-analytics-collector:release-1251a92-1673863023
+  image: cognigy.azurecr.io/service-analytics-collector:release-f359566-1675074457
   replicaCount: 3
   resources:
     requests:
@@ -1706,7 +1878,7 @@ serviceAnalyticsCollector:
   nodeSelector: {}
   tolerations: []
 serviceAnalyticsConversations:
-  image: cognigy.azurecr.io/service-analytics-conversations:release-1de8de9-1673863018
+  image: cognigy.azurecr.io/service-analytics-conversations:release-5dd4754-1675074459
   replicaCount: 3
   requests:
     cpu: '0.1'
@@ -1720,7 +1892,7 @@ serviceAnalyticsConversations:
   nodeSelector: {}
   tolerations: []
 serviceAnalyticsOdata:
-  image: cognigy.azurecr.io/service-analytics-odata:release-b02f7d3-1673863019
+  image: cognigy.azurecr.io/service-analytics-odata:release-65b02ef-1675074459
   replicaCount: 3
   resources:
     requests:
@@ -1735,7 +1907,7 @@ serviceAnalyticsOdata:
   nodeSelector: {}
   tolerations: []
 serviceAnalyticsReporter:
-  image: cognigy.azurecr.io/service-analytics-reporter:release-dfe193d-1673863022
+  image: cognigy.azurecr.io/service-analytics-reporter:release-5705a0a-1675074456
   replicaCount: 3
   resources:
     requests:
@@ -1750,7 +1922,7 @@ serviceAnalyticsReporter:
   nodeSelector: {}
   tolerations: []
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-5da56e55c7-1673969381
+  image: cognigy.azurecr.io/service-api:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1767,7 +1939,7 @@ serviceApi:
   nodeSelector: {}
   tolerations: []
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-app-session-manager:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1782,7 +1954,7 @@ serviceAppSessionManager:
   nodeSelector: {}
   tolerations: []
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-custom-modules:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1797,7 +1969,7 @@ serviceCustomModules:
   nodeSelector: {}
   tolerations: []
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-1c5327d071-1673965958
+  image: cognigy.azurecr.io/service-endpoint:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1812,7 +1984,7 @@ serviceEndpoint:
   nodeSelector: {}
   tolerations: []
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-execution:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1838,7 +2010,7 @@ serviceExecution:
             type: Utilization
             averageUtilization: 70
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-function-execution:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1864,7 +2036,7 @@ serviceFunctionExecution:
             type: Utilization
             averageUtilization: 70
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-function-scheduler:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1890,7 +2062,7 @@ serviceFunctionScheduler:
             type: Utilization
             averageUtilization: 70
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-handover:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1905,7 +2077,7 @@ serviceHandover:
   nodeSelector: {}
   tolerations: []
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-http:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1931,7 +2103,7 @@ serviceHttp:
             type: Utilization
             averageUtilization: 70
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-fa6a39c-1673956369
+  image: cognigy.azurecr.io/service-insights-api:release-4bda69e-1675074493
   replicaCount: 3
   resources:
     requests:
@@ -1948,7 +2120,7 @@ serviceInsightsApi:
   nodeSelector: {}
   tolerations: []
 serviceCollector:
-  image: cognigy.azurecr.io/service-collector:release-bf9f141-1673863020
+  image: cognigy.azurecr.io/service-collector:release-ccd2457-1675074460
   replicaCount: 3
   resources:
     requests:
@@ -1965,7 +2137,7 @@ serviceCollector:
   nodeSelector: {}
   tolerations: []
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-c8b674e-1674583922
+  image: cognigy.azurecr.io/service-insights-ui:release-251648b-1675074459
   replicaCount: 3
   resources:
     requests:
@@ -1982,7 +2154,7 @@ serviceInsightsUi:
   nodeSelector: {}
   tolerations: []
 serviceJourneys:
-  image: cognigy.azurecr.io/service-journeys:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-journeys:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -1997,7 +2169,7 @@ serviceJourneys:
   nodeSelector: {}
   tolerations: []
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-logs:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2012,7 +2184,7 @@ serviceLogs:
   nodeSelector: {}
   tolerations: []
 serviceNlpMatcher:
-  image: cognigy.azurecr.io/service-nlp-matcher:release-6251650905-1672659394
+  image: cognigy.azurecr.io/service-nlp-matcher:release-554bc4b5f3-1674818304
   replicaCount: 3
   resources:
     requests:
@@ -2027,7 +2199,7 @@ serviceNlpMatcher:
   nodeSelector: {}
   tolerations: []
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-nlp-ner:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2053,7 +2225,7 @@ serviceNlpNer:
             type: Utilization
             averageUtilization: 70
 serviceParser:
-  image: cognigy.azurecr.io/service-parser:release-461ca3df08-1673546596
+  image: cognigy.azurecr.io/service-parser:release-554bc4b5f3-1674818304
   replicaCount: 3
   resources:
     requests:
@@ -2068,7 +2240,7 @@ serviceParser:
   nodeSelector: {}
   tolerations: []
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-playbook-execution:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2083,7 +2255,7 @@ servicePlaybookExecution:
   nodeSelector: {}
   tolerations: []
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-profiles:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2109,7 +2281,7 @@ serviceProfiles:
             type: Utilization
             averageUtilization: 70
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-resources:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2124,7 +2296,7 @@ serviceResources:
   nodeSelector: {}
   tolerations: []
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-runtime-file-manager:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2150,7 +2322,7 @@ serviceRuntimeFileManager:
             type: Utilization
             averageUtilization: 70
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-security:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2165,7 +2337,7 @@ serviceSecurity:
   nodeSelector: {}
   tolerations: []
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-session-state-manager:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2191,7 +2363,7 @@ serviceSessionStateManager:
             type: Utilization
             averageUtilization: 70
 serviceStaticFiles:
-  image: cognigy.azurecr.io/service-static-files:release-6497bbb10f-1672925796
+  image: cognigy.azurecr.io/service-static-files:release-924c19df34-1674837973
   replicaCount: 3
   resources:
     requests:
@@ -2206,7 +2378,7 @@ serviceStaticFiles:
   nodeSelector: {}
   tolerations: []
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-task-manager:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2221,7 +2393,7 @@ serviceTaskManager:
   nodeSelector: {}
   tolerations: []
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-trainer:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2236,7 +2408,7 @@ serviceTrainer:
   nodeSelector: {}
   tolerations: []
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-ui:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2253,7 +2425,7 @@ serviceUi:
   nodeSelector: {}
   tolerations: []
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:release-7d83f2ea09-1673887823
+  image: cognigy.azurecr.io/service-webchat:release-033c31230a-1675177967
   replicaCount: 3
   resources:
     requests:
@@ -2285,7 +2457,7 @@ serviceNlpQaDe:
   tolerations: []
 serviceNlpScoreDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2301,7 +2473,7 @@ serviceNlpScoreDe:
   tolerations: []
 serviceNlpTrainDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2333,7 +2505,7 @@ serviceNlpQaEn:
   tolerations: []
 serviceNlpScoreEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-en:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp-en:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2349,7 +2521,7 @@ serviceNlpScoreEn:
   tolerations: []
 serviceNlpTrainEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-en:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp-en:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2381,7 +2553,7 @@ serviceNlpQaGe:
   tolerations: []
 serviceNlpScoreGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ge:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp-ge:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2397,7 +2569,7 @@ serviceNlpScoreGe:
   tolerations: []
 serviceNlpTrainGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ge:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp-ge:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2413,7 +2585,7 @@ serviceNlpTrainGe:
   tolerations: []
 serviceNlpScoreJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ja:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp-ja:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2429,7 +2601,7 @@ serviceNlpScoreJa:
   tolerations: []
 serviceNlpTrainJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ja:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp-ja:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2445,7 +2617,7 @@ serviceNlpTrainJa:
   tolerations: []
 serviceNlpScoreKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ko:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp-ko:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2461,7 +2633,7 @@ serviceNlpScoreKo:
   tolerations: []
 serviceNlpTrainKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-ko:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp-ko:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2477,7 +2649,7 @@ serviceNlpTrainKo:
   tolerations: []
 serviceNlpScoreXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2493,7 +2665,7 @@ serviceNlpScoreXx:
   tolerations: []
 serviceNlpTrainXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp:release-d1157c428b-1674124530
+  image: cognigy.azurecr.io/service-nlp:release-abb78947b8-1673966423
   replicaCount: 2
   resources:
     requests:
@@ -2510,13 +2682,13 @@ serviceNlpTrainXx:
 serviceNlpEmbeddingEn:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-embedding-en:release-3bde3dd479-1665154702
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: 1
+      cpu: '0.3'
       memory: 2Gi
     limits:
-      cpu: 2
+      cpu: '0.4'
       memory: 3Gi
   securityContext: {}
   affinity: {}
@@ -2525,13 +2697,13 @@ serviceNlpEmbeddingEn:
 serviceNlpEmbeddingXx:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-embedding-xx:release-3bde3dd479-1665154702
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: 1
+      cpu: '0.4'
       memory: 1.2Gi
     limits:
-      cpu: 2
+      cpu: '0.8'
       memory: 2Gi
   securityContext: {}
   affinity: {}
@@ -2540,13 +2712,13 @@ serviceNlpEmbeddingXx:
 serviceNlpEmbeddingGe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-embedding-ge:release-3bde3dd479-1665154702
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: 1
+      cpu: '0.3'
       memory: 3Gi
     limits:
-      cpu: 2
+      cpu: '1.0'
       memory: 4Gi
   securityContext: {}
   affinity: {}
@@ -2555,14 +2727,14 @@ serviceNlpEmbeddingGe:
 serviceNlpClassifierScoreEn:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier-en:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: 500M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2571,14 +2743,14 @@ serviceNlpClassifierScoreEn:
 serviceNlpClassifierTrainEn:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier-en:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 300M
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: 1000M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2587,14 +2759,14 @@ serviceNlpClassifierTrainEn:
 serviceNlpV2ScoreEn:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2-en:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: 150M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2603,14 +2775,14 @@ serviceNlpV2ScoreEn:
 serviceNlpV2TrainEn:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2-en:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: 150M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2619,14 +2791,14 @@ serviceNlpV2TrainEn:
 serviceNlpClassifierScoreGe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier-ge:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 1G
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: '1.5G'
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2635,14 +2807,14 @@ serviceNlpClassifierScoreGe:
 serviceNlpClassifierTrainGe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier-ge:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 1G
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: '1.5G'
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2651,14 +2823,14 @@ serviceNlpClassifierTrainGe:
 serviceNlpV2ScoreGe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2-ge:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 3000M
+      cpu: '0.3'
+      memory: 1G
     limits:
-      cpu: '2'
-      memory: 4000M
+      cpu: '1.0'
+      memory: '1.5G'
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2667,14 +2839,14 @@ serviceNlpV2ScoreGe:
 serviceNlpV2TrainGe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2-ge:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 3000M
+      cpu: '0.3'
+      memory: 1G
     limits:
-      cpu: '2'
-      memory: 4000M
+      cpu: '1.0'
+      memory: '1.5G'
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2683,14 +2855,14 @@ serviceNlpV2TrainGe:
 serviceNlpClassifierScoreDe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: 500M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2699,14 +2871,14 @@ serviceNlpClassifierScoreDe:
 serviceNlpClassifierTrainDe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 300M
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: 1000M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2715,14 +2887,14 @@ serviceNlpClassifierTrainDe:
 serviceNlpV2ScoreDe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 800M
+      cpu: '0.3'
+      memory: 150M
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: 150M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2731,14 +2903,14 @@ serviceNlpV2ScoreDe:
 serviceNlpV2TrainDe:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 800M
+      cpu: '0.3'
+      memory: 150M
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: 150M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2747,14 +2919,14 @@ serviceNlpV2TrainDe:
 serviceNlpClassifierScoreJa:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier-ja:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: 500M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2763,14 +2935,14 @@ serviceNlpClassifierScoreJa:
 serviceNlpClassifierTrainJa:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier-ja:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 300M
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: 1000M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2779,14 +2951,14 @@ serviceNlpClassifierTrainJa:
 serviceNlpV2ScoreJa:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2-ja:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: 150M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2795,14 +2967,14 @@ serviceNlpV2ScoreJa:
 serviceNlpV2TrainJa:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2-ja:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: 150M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2811,14 +2983,14 @@ serviceNlpV2TrainJa:
 serviceNlpClassifierScoreKo:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier-ko:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: 500M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2827,14 +2999,14 @@ serviceNlpClassifierScoreKo:
 serviceNlpClassifierTrainKo:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier-ko:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 300M
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: 1000M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2843,14 +3015,14 @@ serviceNlpClassifierTrainKo:
 serviceNlpV2ScoreKo:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2-ko:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: 150M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2859,14 +3031,14 @@ serviceNlpV2ScoreKo:
 serviceNlpV2TrainKo:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2-ko:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 150M
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: 150M
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2875,14 +3047,14 @@ serviceNlpV2TrainKo:
 serviceNlpClassifierScoreXx:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 1G
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: '1.5G'
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2891,14 +3063,14 @@ serviceNlpClassifierScoreXx:
 serviceNlpClassifierTrainXx:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-classifier:release-3615166cb3-1673342262
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 960M
+      cpu: '0.3'
+      memory: 1G
     limits:
       cpu: '1.0'
-      memory: 960M
+      memory: '1.5G'
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2907,14 +3079,14 @@ serviceNlpClassifierTrainXx:
 serviceNlpV2ScoreXx:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 800M
+      cpu: '0.3'
+      memory: 1G
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: '1.5G'
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2923,14 +3095,14 @@ serviceNlpV2ScoreXx:
 serviceNlpV2TrainXx:
   enabled: false
   image: cognigy.azurecr.io/service-nlp-v2:release-4862ebe57b-1672392537
-  replicaCount: 1
+  replicaCount: 2
   resources:
     requests:
-      cpu: '0.350'
-      memory: 800M
+      cpu: '0.3'
+      memory: 1G
     limits:
-      cpu: '1'
-      memory: 2500M
+      cpu: '1.0'
+      memory: '1.5G'
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -2955,15 +3127,15 @@ clamd:
   resources:
     limits:
       cpu: 1000m
-      memory: 4000Mi
+      memory: 3000Mi
     requests:
       cpu: 800m
-      memory: 3000Mi
+      memory: 2000Mi
   extraEnvVars: []
   securityContext: {}
-  affinity: { }
-  nodeSelector: { }
-  tolerations: [ ]
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
 
 # The values below are used for Traefik Helm chart. For more information, see
 # https://github.com/traefik/traefik-helm-chart
@@ -2974,7 +3146,7 @@ traefik:
     name: cognigy.azurecr.io/traefik
     tag: "2.6.3"
     pullPolicy: IfNotPresent
-  deployment: 
+  deployment:
     ## Specify imagePullSecrets to pull the image from private repository.
     ## Based on the information provided in "imageCredentials" parameter previously, this should be
     ## either "cognigy-registry-token" or predefined secrets.
@@ -3052,6 +3224,7 @@ traefik:
         - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
         - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
         - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
 ## For the securityContext config of traefik, please refer to the official values.yaml file of the traefik
 ## This is the link for chart v10.19.4 for example
 ## https://github.com/traefik/traefik-helm-chart/blob/f24ac3c53579e0889b53a29f23a76d359ad54803/traefik/values.yaml#L490-L501

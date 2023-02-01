@@ -1,3 +1,4 @@
+---
 # We are using the ingress Configuration "serviceInsightsUI" from values.yaml
 # as both service-ui and service-insights-ui both share the same host and
 # service-inishgts-ui uses the path based routting.
@@ -18,7 +19,21 @@ metadata:
     {{- end }}
 spec:
   ingressClassName: traefik
+  {{- if (.Values.ingress.serviceUi.tls.enabled) }}
+  {{- if (.Values.ingress.serviceUi.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceUi.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceUi.tls.crt) (.Values.ingress.serviceUi.tls.key) }}
+  tls:
+    - secretName: cognigy-service-ui-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceUi.tls is required!" .Values.ingress.serviceUi.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceUi.tls is required!" .Values.ingress.serviceUi.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceUi.tls is required!" .Values.ingress.serviceUi.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
   {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
   rules:
   - host: {{ .Values.ingress.serviceUi.host }}
     http:

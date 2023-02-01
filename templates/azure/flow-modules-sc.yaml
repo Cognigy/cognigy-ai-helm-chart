@@ -1,4 +1,4 @@
-{{- if eq .Values.cloud.provider "azure" }}
+{{- if and (eq .Values.cloud.provider "azure") (not (.Values.flowModules.persistence.storageClass)) }}
 ---
 kind: StorageClass
 allowVolumeExpansion: true

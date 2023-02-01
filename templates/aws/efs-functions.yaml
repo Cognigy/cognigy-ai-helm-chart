@@ -1,4 +1,4 @@
-{{- if eq .Values.cloud.provider "aws" }}
+{{- if and (eq .Values.cloud.provider "aws") (.Values.functions.persistence.aws.efs.enabled) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -22,7 +22,7 @@ spec:
       containers:
       - env:
         - name: FILE_SYSTEM_ID
-          value: {{ .Values.efs.functions.id }}
+          value: {{- include "functions.efs.id" $ | indent 1 }}
         - name: AWS_REGION
           value: {{ .Values.cloud.region }}
         - name: PROVISIONER_NAME
@@ -36,7 +36,7 @@ spec:
       - name: pv-volume
         nfs:
           path: /
-          server: {{ .Values.efs.functions.id }}.efs.{{ .Values.cloud.region }}.amazonaws.com
+          server: {{- include "functions.efs.id" $ | indent 1 }}.efs.{{ .Values.cloud.region }}.amazonaws.com
 
 ---
 kind: PersistentVolumeClaim
@@ -45,22 +45,25 @@ metadata:
   name: functions
   namespace: {{ $.Release.Namespace | quote }}
   annotations:
-    volume.beta.kubernetes.io/storage-class: "aws-efs-functions"
+    {{- include "functions.legacy.storage.class" $ | nindent 4 }}
 spec:
-  storageClassName: aws-efs-functions
+  {{- include "functions.storage.class" $ | nindent 2 }}
   accessModes:
     - ReadWriteMany
   resources:
     requests:
       # The storage request has no effect for NFS
-      storage: 1Mi
+      storage: {{ .Values.functions.persistence.size | default "1Mi" }}
 
+{{- if (not (.Values.functions.persistence.storageClass)) }}
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: aws-efs-functions
 provisioner: efs-provisioner-functions
+
+{{ end }}
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

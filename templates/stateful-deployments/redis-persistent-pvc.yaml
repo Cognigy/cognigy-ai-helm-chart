@@ -7,18 +7,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-{{- if eq .Values.cloud.provider "aws" }}
-  storageClassName: redis-persistent
-{{- else if eq .Values.cloud.provider "azure" }}
-  storageClassName: managed-premium
-{{- else if eq .Values.cloud.provider "generic" }}
-  storageClassName: redis-persistent
-{{- else if eq .Values.cloud.provider "local-microk8s" }}
-  storageClassName: "microk8s-hostpath"
-{{- else if eq .Values.cloud.provider "local-rancher" }}
-  storageClassName: "local-path"
-{{- end }}
+  {{- include "statefulRedisPersistent.storage.class" $ | nindent 2 }}
   resources:
     requests:
-      storage: 10Gi
+      storage: {{ .Values.statefulRedisPersistent.persistence.size | default "10Gi" | quote }}
 {{- end }}

@@ -22,12 +22,27 @@ cloud:
   provider: aws
   region: ""
 
-# For AWS cloud provider only:
-efs:
-  flowModules:
-    id: ""
-  functions:
-    id: ""
+## For AWS cloud provider only:
+## Cognigy Flow Modules
+##
+flowModules:
+  persistence:
+    ## For AWS cloud provider only
+    ##
+    aws:
+      efs:
+        id: ""
+
+## For AWS cloud provider only:
+## Cognigy Functions
+##
+functions:
+  persistence:
+    ## For AWS cloud provider only
+    ##
+    aws:
+      efs:
+        id: ""
 
 cognigyLiveAgent:
   platformToken: ""
@@ -39,7 +54,8 @@ cognigyLiveAgent:
 #   enabled: true
 
 # Install Management UI on the cluster.
-# It is not required, since if not installed and the API endpoint is accessible from the Internet, you can still use the provided Management UI at https://management-ui-v4.cognigy.ai/
+# It is not required, since if not installed and the API endpoint is accessible from the Internet,
+# you can still use the provided Management UI at https://management-ui-v4.cognigy.ai/
 managementUi:
   enabled: false
   ingress:
@@ -87,8 +103,15 @@ amazonCredentials:
 # serviceAi:
 #   securityContext: {}
 
+## Enable NLP train and scoring services explicitly for the required language
+serviceNlpTrainEn:
+  enabled: true
+serviceNlpScoreEn:
+  enabled: true
 
-# You can use the x-forwarded-for header to collect the source IP on EKS cluster configured with classic load balancer following the below code. For other system this part needs to be configured with proper annotation specified with the Load balancer you are using. 
+## You can use the x-forwarded-for header to collect the source IP on EKS cluster configured
+# with classic load balancer following the below code. For other system this part needs to be
+# configured with proper annotation specified with the Load balancer you are using.
 
 # traefik:
 #   service:

@@ -22,12 +22,27 @@ cloud:
   provider: local
   region: ""
 
-# For AWS cloud provider only:
-efs:
-  flowModules:
-    id: ""
-  functions:
-    id: ""
+## For AWS cloud provider only:
+## Cognigy Flow Modules
+##
+flowModules:
+  persistence:
+    ## For AWS cloud provider only
+    ##
+    aws:
+      efs:
+        id: ""
+
+## For AWS cloud provider only:
+## Cognigy Functions
+##
+functions:
+  persistence:
+    ## For AWS cloud provider only
+    ##
+    aws:
+      efs:
+        id: ""
 
 cognigyLiveAgent:
   platformToken: ""
@@ -131,6 +146,13 @@ serviceTrainer:
 serviceUi:
   replicaCount: 1
 serviceWebchat:
+  replicaCount: 1
+### Enable NLP train and scoring services explicitly for the required language
+serviceNlpTrainEn:
+  enabled: true
+  replicaCount: 1
+serviceNlpScoreEn:
+  enabled: true
   replicaCount: 1
 
 traefik:

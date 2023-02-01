@@ -262,3 +262,191 @@ Usage:
     {{- mul $value 1000 1000 1000 1000 1000 1000 }}
 {{- end }}
 {{- end -}}
+
+
+{{/*
+Return the proper storageClassName for Redis Persistent
+Usage:
+{{- include "statefulRedisPersistent.storage.class" $ | nindent 2 }}
+*/}}
+{{- define "statefulRedisPersistent.storage.class" -}}
+
+  {{- $storageClass := "" -}}
+
+  {{- if .Values.statefulRedisPersistent.persistence.storageClass -}}
+    {{- $storageClass = .Values.statefulRedisPersistent.persistence.storageClass -}}
+  {{- else if eq .Values.cloud.provider "aws" -}}
+    {{- $storageClass = "redis-persistent" -}}
+  {{- else if eq .Values.cloud.provider "azure" -}}
+    {{- $storageClass = "managed-premium" -}}
+  {{- else if eq .Values.cloud.provider "generic" -}}
+    {{- $storageClass = "redis-persistent" -}}
+  {{- else if eq .Values.cloud.provider "local-microk8s" -}}
+    {{- $storageClass = "microk8s-hostpath" -}}
+  {{- else if eq .Values.cloud.provider "local-rancher" -}}
+    {{- $storageClass = "local-path" -}}
+  {{- end -}}
+
+  {{- if (not (empty $storageClass)) -}}
+    {{- printf "storageClassName: %s" $storageClass -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Return the proper storageClassName for Flow Modules
+Usage:
+{{- include "flowModules.storage.class" $ | nindent 2 }}
+*/}}
+{{- define "flowModules.storage.class" -}}
+
+  {{- $storageClass := "" -}}
+
+  {{- if .Values.flowModules.persistence.storageClass -}}
+    {{- $storageClass = .Values.flowModules.persistence.storageClass -}}
+  {{- else if eq .Values.cloud.provider "aws" -}}
+    {{- $storageClass = "aws-efs-flow-modules" -}}
+  {{- else if eq .Values.cloud.provider "azure" -}}
+    {{- $storageClass = "flow-modules" -}}
+  {{- else if eq .Values.cloud.provider "local-microk8s" -}}
+    {{- $storageClass = "microk8s-hostpath" -}}
+  {{- else if eq .Values.cloud.provider "local-rancher" -}}
+    {{- $storageClass = "local-path" -}}
+  {{- end -}}
+
+  {{- if (not (empty $storageClass)) -}}
+    {{- printf "storageClassName: %s" $storageClass -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Return the proper storageClassName for Functions
+Usage:
+{{- include "functions.storage.class" $ | nindent 2 }}
+*/}}
+{{- define "functions.storage.class" -}}
+
+  {{- $storageClass := "" -}}
+
+  {{- if .Values.functions.persistence.storageClass -}}
+    {{- $storageClass = .Values.functions.persistence.storageClass -}}
+  {{- else if eq .Values.cloud.provider "aws" -}}
+    {{- $storageClass = "aws-efs-functions" -}}
+  {{- else if eq .Values.cloud.provider "azure" -}}
+    {{- $storageClass = "functions" -}}
+  {{- else if eq .Values.cloud.provider "local-microk8s" -}}
+    {{- $storageClass = "microk8s-hostpath" -}}
+  {{- else if eq .Values.cloud.provider "local-rancher" -}}
+    {{- $storageClass = "local-path" -}}
+  {{- end -}}
+
+  {{- if (not (empty $storageClass)) -}}
+    {{- printf "storageClassName: %s" $storageClass -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Return the proper storageClassName for Flow Modules in legacy system with annotation
+Usage:
+{{- include "flowModules.legacy.storage.class" $ | nindent 2 }}
+*/}}
+{{- define "flowModules.legacy.storage.class" -}}
+
+  {{- $storageClass := "" -}}
+
+  {{- if .Values.flowModules.persistence.storageClass -}}
+    {{- $storageClass = .Values.flowModules.persistence.storageClass -}}
+  {{- else if eq .Values.cloud.provider "aws" -}}
+    {{- $storageClass = "aws-efs-flow-modules" -}}
+  {{- else if eq .Values.cloud.provider "azure" -}}
+    {{- $storageClass = "flow-modules" -}}
+  {{- else if eq .Values.cloud.provider "local-microk8s" -}}
+    {{- $storageClass = "microk8s-hostpath" -}}
+  {{- else if eq .Values.cloud.provider "local-rancher" -}}
+    {{- $storageClass = "local-path" -}}
+  {{- end -}}
+
+  {{- if (not (empty $storageClass)) -}}
+    {{- printf "volume.beta.kubernetes.io/storage-class: \"%s\"" $storageClass -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Return the proper storageClassName for Functions in legacy system with annotation
+Usage:
+{{- include "functions.legacy.storage.class" $ | nindent 2 }}
+*/}}
+{{- define "functions.legacy.storage.class" -}}
+
+  {{- $storageClass := "" -}}
+
+  {{- if .Values.functions.persistence.storageClass -}}
+    {{- $storageClass = .Values.functions.persistence.storageClass -}}
+  {{- else if eq .Values.cloud.provider "aws" -}}
+    {{- $storageClass = "aws-efs-functions" -}}
+  {{- else if eq .Values.cloud.provider "azure" -}}
+    {{- $storageClass = "functions" -}}
+  {{- else if eq .Values.cloud.provider "local-microk8s" -}}
+    {{- $storageClass = "microk8s-hostpath" -}}
+  {{- else if eq .Values.cloud.provider "local-rancher" -}}
+    {{- $storageClass = "local-path" -}}
+  {{- end -}}
+
+  {{- if (not (empty $storageClass)) -}}
+    {{- printf "volume.beta.kubernetes.io/storage-class: \"%s\"" $storageClass -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Return the proper EFS ID for Flow Modules
+Usage:
+{{- include "flowModules.efs.id" $ | indent 1 }}
+*/}}
+{{- define "flowModules.efs.id" -}}
+  {{- if and (eq .Values.cloud.provider "aws") (.Values.flowModules.persistence.aws.efs.enabled) -}}
+
+    {{- $efsID := "" -}}
+    {{- if .Values.flowModules.persistence.aws.efs.id -}}
+      {{- $efsID = .Values.flowModules.persistence.aws.efs.id -}}
+    {{- else if .Values.efs.flowModules.id -}}
+      {{- $efsID = .Values.efs.flowModules.id -}}
+    {{- else -}}
+        {{ required "A valid value for .Values.flowModules.persistence.aws.efs.id is required!" .Values.flowModules.persistence.aws.efs.id }}
+        {{ required "A valid value for .Values.efs.flowModules.id is required!" .Values.efs.flowModules.id }}
+    {{- end -}}
+
+    {{- if (not (empty $efsID)) -}}
+      {{- printf "%s" (tpl $efsID $) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Return the proper EFS ID for Functions
+Usage:
+{{- include "functions.efs.id" $ | indent 1 }}
+*/}}
+{{- define "functions.efs.id" -}}
+  {{- if and (eq .Values.cloud.provider "aws") (.Values.functions.persistence.aws.efs.enabled) -}}
+
+    {{- $efsID := "" -}}
+    {{- if .Values.functions.persistence.aws.efs.id -}}
+      {{- $efsID = .Values.functions.persistence.aws.efs.id -}}
+    {{- else if .Values.efs.functions.id -}}
+      {{- $efsID = .Values.efs.functions.id -}}
+    {{- else -}}
+        {{ required "A valid value for .Values.functions.persistence.aws.efs.id is required!" .Values.functions.persistence.aws.efs.id }}
+        {{ required "A valid value for .Values.efs.functions.id is required!" .Values.efs.functions.id }}
+    {{- end -}}
+
+    {{- if (not (empty $efsID)) -}}
+      {{- printf "%s" (tpl $efsID $) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+

@@ -39,7 +39,10 @@ spec:
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
-              value: "true"		  
+              value: "true"
+            # generative AI
+            - name: GENERATIVE_AI_WHITELIST_CONFIG_FILE_PATH
+              value: "/app/config/generative-ai-whitelist.json"
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -69,6 +72,12 @@ spec:
               mountPath: /app/flowModules
             - name: functions
               mountPath: /app/functions
+            # generative AI
+            - name: generative-ai-whitelist
+              mountPath: /app/config
+            {{- if .extraVolumeMounts }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
+            {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -112,6 +121,13 @@ spec:
         - name: functions
           persistentVolumeClaim:
             claimName: functions
+        # generative AI
+        - name: generative-ai-whitelist
+          configMap:
+            name: generative-ai-whitelist
+        {{- if .extraVolumes }}
+        {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
+        {{- end }}
       {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

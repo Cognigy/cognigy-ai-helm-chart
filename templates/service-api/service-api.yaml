@@ -76,6 +76,9 @@ spec:
                 secretKeyRef:
                   name: {{- include "smtp.password.secretName" $ | indent 1 }}
                   key: system-smtp-password
+            # generative AI
+            - name: GENERATIVE_AI_WHITELIST_CONFIG_FILE_PATH
+              value: "/app/config/generative-ai-whitelist.json"
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -95,6 +98,9 @@ spec:
             - name: management-ui-creds
               mountPath: /var/run/secrets/management-ui-creds.json
               subPath: management-ui-creds.json
+            # generative AI
+            - name: generative-ai-whitelist
+              mountPath: /app/config
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -132,6 +138,10 @@ spec:
         - name: management-ui-creds
           secret:
             secretName: {{- include "managementUiCredentials.secretName.render" $ | indent 1 }}
+        # generative AI
+        - name: generative-ai-whitelist
+          configMap:
+            name: generative-ai-whitelist
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

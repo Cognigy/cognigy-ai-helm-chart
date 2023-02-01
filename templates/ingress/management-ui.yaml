@@ -1,0 +1,67 @@
+{{- if and (.Values.managementUi.enabled) (.Values.managementUi.ingress.enabled) (.Values.managementUi.ingress.tls.enabled) }}
+{{- if not (.Values.managementUi.ingress.tls.existingSecret) }}
+{{- if and (.Values.managementUi.ingress.tls.crt) (.Values.managementUi.ingress.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-management-ui-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.managementUi.ingress.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.managementUi.ingress.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.managementUi.ingress.tls is required!" .Values.managementUi.ingress.tls.crt }}
+  {{ required "A valid value for .Values.managementUi.ingress.tls is required!" .Values.managementUi.ingress.tls.key }}
+  {{ required "A valid value for .Values.managementUi.ingress.tls is required!" .Values.managementUi.ingress.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if and (.Values.managementUi.enabled) (.Values.managementUi.ingress.enabled) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: management-ui
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+    {{- if .Values.managementUi.ingress.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistmanagementui@kubernetescrd
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.managementUi.ingress.tls.enabled) }}
+  {{- if (.Values.managementUi.ingress.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.managementUi.ingress.tls.existingSecret | quote }}
+  {{- else if and (.Values.managementUi.ingress.tls.crt) (.Values.managementUi.ingress.tls.key) }}
+  tls:
+    - secretName: cognigy-management-ui-tls
+  {{- else }}
+    {{ required "A valid value for .Values.managementUi.ingress.tls is required!" .Values.managementUi.ingress.tls.crt }}
+    {{ required "A valid value for .Values.managementUi.ingress.tls is required!" .Values.managementUi.ingress.tls.key }}
+    {{ required "A valid value for .Values.managementUi.ingress.tls is required!" .Values.managementUi.ingress.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.managementUi.ingress.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: management-ui
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+{{- end }}

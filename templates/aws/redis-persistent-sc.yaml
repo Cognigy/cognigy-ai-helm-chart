@@ -1,4 +1,4 @@
-{{- if eq .Values.cloud.provider "aws" }}
+{{- if and (eq .Values.cloud.provider "aws") (not (.Values.statefulRedisPersistent.persistence.storageClass)) }}
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass

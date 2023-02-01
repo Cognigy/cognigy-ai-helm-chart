@@ -1,3 +1,26 @@
+{{- if (.Values.ingress.serviceStaticFiles.tls.enabled) }}
+{{- if not (.Values.ingress.serviceStaticFiles.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceStaticFiles.tls.crt) (.Values.ingress.serviceStaticFiles.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-static-files-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.ingress.serviceStaticFiles.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceStaticFiles.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceStaticFiles.tls is required!" .Values.ingress.serviceStaticFiles.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceStaticFiles.tls is required!" .Values.ingress.serviceStaticFiles.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceStaticFiles.tls is required!" .Values.ingress.serviceStaticFiles.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
 {{- if and (.Values.ingress.enabled) (.Values.cognigyApps.enabled) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -15,7 +38,21 @@ metadata:
     {{- end }}
 spec:
   ingressClassName: traefik
+  {{- if (.Values.ingress.serviceStaticFiles.tls.enabled) }}
+  {{- if (.Values.ingress.serviceStaticFiles.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceStaticFiles.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceStaticFiles.tls.crt) (.Values.ingress.serviceStaticFiles.tls.key) }}
+  tls:
+    - secretName: cognigy-service-static-files-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceStaticFiles.tls is required!" .Values.ingress.serviceStaticFiles.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceStaticFiles.tls is required!" .Values.ingress.serviceStaticFiles.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceStaticFiles.tls is required!" .Values.ingress.serviceStaticFiles.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
   {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
   rules:
   - host: {{ .Values.ingress.serviceStaticFiles.host }}
     http:

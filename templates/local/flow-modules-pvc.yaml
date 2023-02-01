@@ -8,12 +8,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-{{- if eq .Values.cloud.provider "local-microk8s" }}
-  storageClassName: "microk8s-hostpath"
-{{- else if eq .Values.cloud.provider "local-rancher" }}
-  storageClassName: "local-path"
-{{- end }}
+  {{- include "flowModules.storage.class" $ | nindent 2 }}
   resources:
     requests:
-      storage: 5Gi
+      storage: {{ .Values.flowModules.persistence.size | default "5Gi" }}
 {{ end }}
