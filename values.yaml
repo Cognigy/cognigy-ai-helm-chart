@@ -1922,7 +1922,7 @@ serviceAnalyticsReporter:
   nodeSelector: {}
   tolerations: []
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-033c31230a-1675177967
+  image: cognigy.azurecr.io/service-api:release-8f4fec55fb-1675757725
   replicaCount: 3
   resources:
     requests:
@@ -2281,7 +2281,7 @@ serviceProfiles:
             type: Utilization
             averageUtilization: 70
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-033c31230a-1675177967
+  image: cognigy.azurecr.io/service-resources:release-8f4fec55fb-1675757725
   replicaCount: 3
   resources:
     requests:
@@ -2408,7 +2408,7 @@ serviceTrainer:
   nodeSelector: {}
   tolerations: []
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-033c31230a-1675177967
+  image: cognigy.azurecr.io/service-ui:release-8f4fec55fb-1675757725
   replicaCount: 3
   resources:
     requests:
