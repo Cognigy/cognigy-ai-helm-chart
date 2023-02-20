@@ -75,6 +75,8 @@ ingress:
     host: "odata.test"
   serviceApi:
     host: "api.test"
+  serviceCollector:
+    host: "insights-collector.test"
   serviceEndpoint:
     host: "endpoint.test"
   serviceInsightsApi:

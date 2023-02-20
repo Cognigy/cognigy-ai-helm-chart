@@ -1,0 +1,67 @@
+{{- if (.Values.ingress.serviceCollector.tls.enabled) }}
+{{- if not (.Values.ingress.serviceCollector.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceCollector.tls.crt) (.Values.ingress.serviceCollector.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-collector-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.ingress.serviceCollector.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceCollector.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-collector
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+    {{- if .Values.ingress.serviceCollector.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistservicecollector@kubernetescrd
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.ingress.serviceCollector.tls.enabled) }}
+  {{- if (.Values.ingress.serviceCollector.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceCollector.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceCollector.tls.crt) (.Values.ingress.serviceCollector.tls.key) }}
+  tls:
+    - secretName: cognigy-service-collector-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.existingSecret }}
+  {{- end }}
+  {{- else -}}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.serviceCollector.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: service-collector
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+{{- end }}

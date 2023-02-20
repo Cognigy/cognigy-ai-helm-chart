@@ -4,7 +4,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: prom-cognigy-monitor-cognigy-ai-service-nlp-v2-train-ja
+  name: prom-cognigy-monitor-cognigy-ai-service-nlp-orchestrator
   namespace: {{ .namespace }}
 spec:
   namespaceSelector:
@@ -15,6 +15,6 @@ spec:
       port: metrics
   selector:
     matchLabels:
-      app: service-nlp-v2-train-ja
+      app: service-nlp-orchestrator
 {{- end }}
 {{- end }}

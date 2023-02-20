@@ -1,4 +1,5 @@
 {{- if and (eq .Values.cloud.provider "aws") (.Values.flowModules.persistence.aws.efs.enabled) }}
+{{- if (not (.Values.flowModules.persistence.aws.efs.efs_csi.enabled)) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,7 +39,7 @@ spec:
         nfs:
           path: /
           server: {{- include "flowModules.efs.id" $ | indent 1 }}.efs.{{ .Values.cloud.region }}.amazonaws.com
-
+{{ end }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -62,10 +63,20 @@ kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: aws-efs-flow-modules
+{{- if (.Values.flowModules.persistence.aws.efs.efs_csi.enabled) }}
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap
+  fileSystemId: {{- include "flowModules.efs.id" $ | indent 1 }}
+  directoryPerms: {{ .Values.flowModules.persistence.aws.efs.efs_csi.directoryPerms | default "777" | quote }}
+  uid: {{ .Values.flowModules.persistence.aws.efs.efs_csi.uid | default "1000" | quote }}
+  gid: {{ .Values.flowModules.persistence.aws.efs.efs_csi.gid | default "1000" | quote }}
+{{- else }}
 provisioner: efs-provisioner-flow-modules
-
+{{ end }}
 {{ end }}
 
+{{- if (not (.Values.flowModules.persistence.aws.efs.efs_csi.enabled)) }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -81,5 +92,5 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
-
+{{ end }}
 {{ end }}

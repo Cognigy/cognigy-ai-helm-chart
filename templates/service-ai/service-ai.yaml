@@ -42,12 +42,14 @@ spec:
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
-            # generative AI
-            - name: GENERATIVE_AI_WHITELIST_CONFIG_FILE_PATH
-              value: "/app/config/generative-ai-whitelist.json"
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
+            - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{- include "liveAgentCredentials.secretName.render" $ | indent 1 }}
+                  key: cognigy-live-agent-platform-token
           envFrom:
             - configMapRef:
                 name: cognigy-env
@@ -69,9 +71,6 @@ spec:
               subPath: redis-password.conf
             - name: flow-modules
               mountPath: /app/flowModules
-            # generative AI
-            - name: generative-ai-whitelist
-              mountPath: /app/config
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -115,10 +114,6 @@ spec:
         - name: flow-modules
           persistentVolumeClaim:
             claimName: flow-modules
-        # generative AI
-        - name: generative-ai-whitelist
-          configMap:
-            name: generative-ai-whitelist
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

@@ -1,0 +1,165 @@
+{{- if .Values.serviceNlpOrchestrator.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locales-config-file
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  languageCodeMap.json: |
+    {
+        "de-DE": {
+            "locale": "de",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "en-AU": {
+            "locale": "en",
+            "embeddingServerAddr": "service-nlp-embedding-en:8000",
+            "modelConfigFile": "/models/usev4/config.pbtxt"
+        },
+        "en-CA": {
+            "locale": "en",
+            "embeddingServerAddr": "service-nlp-embedding-en:8000",
+            "modelConfigFile": "/models/usev4/config.pbtxt"
+        },
+        "en-GB": {
+            "locale": "en",
+            "embeddingServerAddr": "service-nlp-embedding-en:8000",
+            "modelConfigFile": "/models/usev4/config.pbtxt"
+        },
+        "en-IN": {
+            "locale": "en",
+            "embeddingServerAddr": "service-nlp-embedding-en:8000",
+            "modelConfigFile": "/models/usev4/config.pbtxt"
+        },
+        "en-US": {
+            "locale": "en",
+            "embeddingServerAddr": "service-nlp-embedding-en:8000",
+            "modelConfigFile": "/models/usev4/config.pbtxt"
+        },
+        "ge-GE": {
+            "locale": "ge",
+            "embeddingServerAddr": "service-nlp-embedding-ge:8000",
+            "modelConfigFile": "/models/labse/config.pbtxt",
+            "labseVocabFile": "/labse_vocab/cased_vocab.txt"
+        },
+        "bn-IN": {
+            "locale": "ge",
+            "embeddingServerAddr": "service-nlp-embedding-ge:8000",
+            "modelConfigFile": "/models/labse/config.pbtxt",
+            "labseVocabFile": "/labse_vocab/cased_vocab.txt"
+        },
+        "da-DK": {
+            "locale": "ge",
+            "embeddingServerAddr": "service-nlp-embedding-ge:8000",
+            "modelConfigFile": "/models/labse/config.pbtxt",
+            "labseVocabFile": "/labse_vocab/cased_vocab.txt"
+        },
+        "fi-FI": {
+            "locale": "ge",
+            "embeddingServerAddr": "service-nlp-embedding-ge:8000",
+            "modelConfigFile": "/models/labse/config.pbtxt",
+            "labseVocabFile": "/labse_vocab/cased_vocab.txt"
+        },
+        "hi-IN": {
+            "locale": "ge",
+            "embeddingServerAddr": "service-nlp-embedding-ge:8000",
+            "modelConfigFile": "/models/labse/config.pbtxt",
+            "labseVocabFile": "/labse_vocab/cased_vocab.txt"
+        },
+        "nn-NO": {
+            "locale": "ge",
+            "embeddingServerAddr": "service-nlp-embedding-ge:8000",
+            "modelConfigFile": "/models/labse/config.pbtxt",
+            "labseVocabFile": "/labse_vocab/cased_vocab.txt"
+        },
+        "sv-SE": {
+            "locale": "ge",
+            "embeddingServerAddr": "service-nlp-embedding-ge:8000",
+            "modelConfigFile": "/models/labse/config.pbtxt",
+            "labseVocabFile": "/labse_vocab/cased_vocab.txt"
+        },
+        "ta-IN": {
+            "locale": "ge",
+            "embeddingServerAddr": "service-nlp-embedding-ge:8000",
+            "modelConfigFile": "/models/labse/config.pbtxt",
+            "labseVocabFile": "/labse_vocab/cased_vocab.txt"
+        },
+        "vi-VN": {
+            "locale": "ge",
+            "embeddingServerAddr": "service-nlp-embedding-ge:8000",
+            "modelConfigFile": "/models/labse/config.pbtxt",
+            "labseVocabFile": "/labse_vocab/cased_vocab.txt"
+        },
+        "ar-AE": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "es-ES": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "fr-FR": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "it-IT": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "nl-NL": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "pl-PL": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "pt-BR": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "pt-PT": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "ru-RU": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "th-TH": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "tr-TR": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "zh-CN": {
+            "locale": "xx",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "ja-JP": {
+            "locale": "ja",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        },
+        "ko-KR": {
+            "locale": "ko",
+            "embeddingServerAddr": "service-nlp-embedding-xx:8000",
+            "modelConfigFile": "/models/usev3/config.pbtxt"
+        }
+    }
+{{- end }}
