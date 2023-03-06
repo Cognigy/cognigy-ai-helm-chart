@@ -2178,7 +2178,7 @@ serviceCollector:
   nodeSelector: {}
   tolerations: []
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-94d6101-1676287067
+  image: cognigy.azurecr.io/service-insights-ui:release-fb9a60e-1677071688
   replicaCount: 3
   resources:
     requests:
