@@ -25,7 +25,11 @@ spec:
       - name: cognigy-ai-db-init
         image: {{ .Values.mongodb.dbinit.image }}
         command: ["/bin/bash"]
+        {{- if eq .Values.mongodb.scheme "mongodb+srv" }}
+        args: ["/cognigy-ai-dbinit/dbinit-generate/dbinit-generate-atlas.sh"]
+        {{- else }}
         args: ["/cognigy-ai-dbinit/dbinit-generate/dbinit-generate.sh"]
+        {{- end }}
         volumeMounts:
         - name: dbinit-generate
           mountPath: /cognigy-ai-dbinit/dbinit-generate
@@ -33,6 +37,28 @@ spec:
           mountPath: "/cognigy-ai-dbinit/mongodb-connection-strings"
           readOnly: true
         env:
+          {{- if eq .Values.mongodb.scheme "mongodb+srv" }}
+          - name: MONGODB_ATLAS_PUBLIC_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbAtlasCredentials.secretName.render" $ | indent 1 }}
+                key: apikeypublic
+          - name: MONGODB_ATLAS_PRIVATE_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbAtlasCredentials.secretName.render" $ | indent 1 }}
+                key: apikeyprivate
+          - name: MONGODB_ATLAS_PROJECT_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbAtlasCredentials.secretName.render" $ | indent 1 }}
+                key: projectid
+          - name: MONGODB_ATLAS_CLUSTER_NAME
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbAtlasCredentials.secretName.render" $ | indent 1 }}
+                key: clustername
+          {{- else }}
           - name: MONGODB_USERNAME
             valueFrom:
               secretKeyRef:
@@ -48,10 +74,12 @@ spec:
               secretKeyRef:
                 name: mongodb-connection-hosts
                 key: hosts
+          {{- end}} 
       volumes:
       - name: dbinit-generate
         configMap:
           name: dbinit-generate
+
       - name: mongodb-connection-strings
         projected:
           sources:
@@ -149,7 +177,7 @@ spec:
                 path: cognigy-service-trainer
       {{- include "image.pullSecrets" $ | nindent 6 }}
 {{- end }}
-{{- if and (.Values.mongodb.enabled) (not .Values.mongodb.auth.existingSecret) }}
+{{- if and (.Values.mongodb.enabled) (eq .Values.mongodb.scheme "mongodb") (not .Values.mongodb.auth.existingSecret) }}
 ---
 apiVersion: v1
 kind: Secret
@@ -166,6 +194,26 @@ type: Opaque
 data:
   username: "{{- .Values.mongodb.auth.rootUser | b64enc }}"
   password: "{{- .Values.mongodb.auth.rootPassword | b64enc }}"
+{{- end }}
+{{- if and (.Values.mongodb.enabled) (eq .Values.mongodb.scheme "mongodb+srv") (not .Values.mongodb.auth.atlas.existingSecret) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-atlas-creds
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+type: Opaque
+data:
+  apikeypublic: "{{- .Values.mongodb.auth.atlas.publicAPIKey | b64enc }}"
+  apikeyprivate: "{{- .Values.mongodb.auth.atlas.privateAPIKey | b64enc }}"
+  projectid: "{{- .Values.mongodb.auth.atlas.projectId | b64enc }}"
+  clustername: "{{- .Values.mongodb.auth.atlas.clusterName | b64enc }}"
 {{- end }}
 {{- if .Values.mongodb.enabled }}
 ---
@@ -198,5 +246,9 @@ metadata:
     "helm.sh/hook-weight": "-4"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
 data:
+{{- if eq .Values.mongodb.scheme "mongodb+srv" }}
+{{ (.Files.Glob "scripts/dbinit-generate-atlas.sh").AsConfig | indent 2 }}
+{{- else }}
 {{ (.Files.Glob "scripts/dbinit-generate.sh").AsConfig | indent 2 }}
+{{- end }}
 {{- end }}

@@ -1,14 +1,10 @@
-# This MongoDB user and password should have the permission to create users and databases, so normally it is admin or root
-# It does NOT have to be root user. We use these key names to be compatible with Bitnami MongoDB Helm Chert
 mongodb:
   auth:
     rootUser: root
     rootPassword: ""
-  # Default value for the MongoDB replica set deployed by Cognigy MongoDB Helm Chart into 3 availability zones:
-  # hosts: mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-1.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-2.mongodb-headless.mongodb.svc.cluster.local:27017
-  # for development and testing purposes with a single replica MongoDB installation in "mongodb" namespace use:
-  # hosts: "mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017"
+  # Connection string for development and testing with a single replica MongoDB deployed with Cognigy MongoDB Helm Chart:
   hosts: mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017
+
 imageCredentials:
   registry: "cognigy.azurecr.io"
   username: ""

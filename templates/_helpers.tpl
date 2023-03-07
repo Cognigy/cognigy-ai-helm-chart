@@ -148,6 +148,21 @@ Return the proper mongodb credentials Secret Name
 {{- end -}}
 
 {{/*
+Return the proper mongodb Atlas credentials Secret Name
+*/}}
+{{- define "mongodbAtlasCredentials.secretName.render" -}}
+  {{- $mongodbAtlasCredentialsSecretName := "" -}}
+
+  {{- if .Values.mongodb.auth.atlas.existingSecret -}}
+    {{- $mongodbAtlasCredentialsSecretName = .Values.mongodb.auth.atlas.existingSecret -}}
+  {{- else -}}
+    {{- $mongodbAtlasCredentialsSecretName = "mongodb-atlas-creds" -}}
+  {{- end -}}
+
+  {{- printf "%s" (tpl $mongodbAtlasCredentialsSecretName $) -}}
+{{- end -}}
+
+{{/*
 Return the proper tls certificate Secret Name
 */}}
 {{- define "tlsCertificate.secretName.render" -}}

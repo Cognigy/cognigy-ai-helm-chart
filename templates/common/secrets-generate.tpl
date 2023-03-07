@@ -1,5 +1,5 @@
 {{- define "connectionString.mongodb" -}}
-mongodb://{{- .serviceName -}}:{{- .pw -}}@{{- .mongodbHosts -}}/{{- .serviceName -}}
+{{- .mongodbScheme }}://{{- .serviceName -}}:{{- .pw -}}@{{- .mongodbHosts -}}/{{- .serviceName -}}{{- .mongodbParams }}
 {{- end }}
 
 {{- define "imagePullSecret" }}

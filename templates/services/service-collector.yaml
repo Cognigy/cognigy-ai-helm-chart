@@ -6,6 +6,8 @@ metadata:
   labels:
     app: service-collector
   annotations:
+    # Annotation to enable plain text http2 (h2c) communication
+    traefik.ingress.kubernetes.io/service.serversscheme: h2c
   {{- if .Values.service.serviceCollector.annotations }}
     {{- toYaml .Values.service.serviceCollector.annotations | nindent 4 }}
   {{- end }}

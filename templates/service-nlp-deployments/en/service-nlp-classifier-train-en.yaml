@@ -13,6 +13,11 @@ spec:
   replicas: {{ .replicaCount }}
   template:
     metadata:
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-nlp") }}{{ include (print $.Template.BasePath "/service-nlp-deployments/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-nlp").data | sha256sum }}{{ end }}
       labels:
         app: service-nlp-classifier-train-en
     spec:

@@ -67,6 +67,9 @@ data:
     hz 10
     aof-rewrite-incremental-fsync yes
 
+    maxmemory {{.Values.statefulRedis.conf.maxMemory}}
+    maxmemory-policy {{.Values.statefulRedis.conf.maxMemoryPolicy}}
+
     # We mount the password of Redis in the container via a secret
     include /run/secrets/redis-password.conf
 {{- end }}
