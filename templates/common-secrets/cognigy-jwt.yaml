@@ -1,4 +1,5 @@
-{{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-jwt") }}
+{{- if (not .Values.commonSecrets.cognigyJwt.existingSecret) }}
+  {{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-jwt") }}
 ---
 apiVersion: v1
 kind: Secret
@@ -10,5 +11,6 @@ metadata:
 type: Opaque
 data:
   # use 128 bytes of random value, hex
-  secret: "{{ printf "%x" (randAlphaNum 128) | b64enc }}"
+  secret: "{{ .Values.commonSecrets.cognigyJwt.token | default (printf "%x" (randAlphaNum 128)) | b64enc }}"
+  {{- end }}
 {{- end }}

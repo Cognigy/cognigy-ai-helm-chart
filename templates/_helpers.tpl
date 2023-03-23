@@ -465,3 +465,19 @@ Usage:
   {{- end -}}
 {{- end -}}
 
+{{/*
+Renders a secret name. Prints existingSecret name if existingSecret is defined, else prints default secret name.
+Usage:
+{{ include "common.secretName.render" ( dict "existingSecret" .Values.path.to.the.existing.secret "defaultSecret" .Values.path.to.the.default.secret) }}
+*/}}
+{{- define "common.secretName.render" -}}
+  {{- $secretName := "" -}}
+
+  {{- if .existingSecret -}}
+    {{- $secretName = .existingSecret -}}
+  {{- else -}}
+    {{- $secretName = .defaultSecret -}}
+  {{- end -}}
+
+  {{- printf $secretName -}}
+{{- end -}}

@@ -1,4 +1,5 @@
-{{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-facebook") }}
+{{- if (not .Values.commonSecrets.cognigyFacebook.existingSecret) }}
+  {{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-facebook") }}
 ---
 apiVersion: v1
 kind: Secret
@@ -10,5 +11,6 @@ metadata:
 type: Opaque
 data:
   # use 16 bytes of random value, hex
-  fb-verify-token: "{{ printf "%x" (randAlphaNum 16) | b64enc }}"
+  fb-verify-token: "{{ .Values.commonSecrets.cognigyFacebook.token | default (printf "%x" (randAlphaNum 16)) | b64enc }}"
+  {{- end }}
 {{- end }}

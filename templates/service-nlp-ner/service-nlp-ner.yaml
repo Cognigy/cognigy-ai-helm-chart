@@ -1,3 +1,4 @@
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- with .Values.serviceNlpNer }}
 ---
 apiVersion: apps/v1
@@ -14,7 +15,7 @@ spec:
     metadata:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
-        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
       labels:
         app: service-nlp-ner
     spec:
@@ -67,13 +68,13 @@ spec:
       volumes:
         - name: rabbitmq-connection-string
           secret:
-            secretName: cognigy-rabbitmq
+            secretName: {{ $statefulRabbitMq_secret }}
             items:
               - key: connection-string
                 path: rabbitmqConnectionString
         - name: rabbitmq-api-connection-string
           secret:
-            secretName: cognigy-rabbitmq
+            secretName: {{ $statefulRabbitMq_secret }}
             items:
               - key: connection-string-api
                 path: rabbitmqAPIConnectionString

@@ -1,0 +1,17 @@
+{{- if and (.Values.traefik.enabled) (.Values.ingress.enabled) }}
+  {{- range $ingress_key, $ingress_val := .Values.ingress }}
+    {{- if kindIs "map" $ingress_val }}
+      {{- if $ingress_val.ipWhiteListMiddleware.enabled }}
+---
+# Whitelisting Based on `X-Forwarded-For` with `depth=0`
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ printf "ipwhitelist%s" (lower $ingress_key)}}
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  ipWhiteList: {{- toYaml $ingress_val.ipWhiteListMiddleware.ipWhiteList | nindent 4 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

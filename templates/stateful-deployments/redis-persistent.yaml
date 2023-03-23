@@ -1,4 +1,5 @@
 {{- if .Values.statefulRedisPersistent.enabled }}
+{{- $statefulRedisPersistent_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedisPersistent.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- with .Values.statefulRedisPersistent }}
 ---
 apiVersion: apps/v1
@@ -47,7 +48,7 @@ spec:
       volumes:
         - name: redis-password-config
           secret:
-            secretName: cognigy-redis-persistent-password
+            secretName: {{ $statefulRedisPersistent_secret }}
             items:
             - key: redis-persistent-password.conf
               path: redis-password.conf

@@ -1,0 +1,31 @@
+{{- if .Values.dbConnectionString.enabled }}
+  {{- range $service_key, $service_val := .Values.dbConnectionString.services }}
+    {{- if $service_val.enabled }}
+      {{- if not $service_val.auth.existingSecret }}
+        {{- $secretName := print "cognigy-" $service_val.serviceName }}
+        {{- if not $service_val.auth.existingSecret }}
+          {{- if not (lookup "v1" "Secret" $.Release.Namespace $secretName) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "{{ printf $secretName }}"
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  {{- if $service_val.auth.password }}
+  connection-string: "{{- include "connectionString.mongodb" (dict "pw" $service_val.auth.password "serviceName" $service_val.serviceName "mongodbScheme" $.Values.mongodb.scheme "mongodbHosts" $.Values.mongodb.hosts "mongodbParams" $.Values.mongodb.params) | b64enc }}"
+  {{- else }}
+  connection-string: "{{- include "connectionString.mongodb" (dict "pw" (randAlphaNum 24) "serviceName" $service_val.serviceName "mongodbScheme" $.Values.mongodb.scheme "mongodbHosts" $.Values.mongodb.hosts "mongodbParams" $.Values.mongodb.params) | b64enc }}"
+  {{- end }}
+
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

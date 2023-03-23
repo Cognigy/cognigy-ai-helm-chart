@@ -1,3 +1,4 @@
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- with .Values.statefulRabbitMq }}
 ---
 apiVersion: apps/v1
@@ -43,7 +44,7 @@ spec:
             - name: RABBITMQ_DEFAULT_PASS
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-rabbitmq
+                  name: {{ $statefulRabbitMq_secret }}
                   key: rabbitmq-password
             {{- if .advancedConfiguration }}
             ## Overrides advanced config file location

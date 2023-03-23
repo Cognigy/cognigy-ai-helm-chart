@@ -1,3 +1,10 @@
+{{- $cognigyServiceEndpointApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceEndpointApiAccessToken.existingSecret "defaultSecret" "cognigy-service-endpoint-api-access-token") }}
+{{- $cognigyFacebook_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyFacebook.existingSecret "defaultSecret" "cognigy-facebook") }}
+{{- $cognigyRceCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyRceCredentials.existingSecret "defaultSecret" "cognigy-rce-credentials") }}
+{{- $cognigyJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyJwt.existingSecret "defaultSecret" "cognigy-jwt") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $statefulRedisPersistent_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedisPersistent.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- with .Values.serviceEndpoint }}
 ---
 apiVersion: apps/v1
@@ -16,10 +23,10 @@ spec:
         app: service-endpoint
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
-        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq").data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-password").data | sha256sum }}{{ end }}
-        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password") }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-redis-persistent-password.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-redis-persistent-password").data | sha256sum }}{{ end }}
-        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-endpoint-api-access-token") }}{{ include (print $.Template.BasePath "/service-endpoint/secret.yaml") $ | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-endpoint-api-access-token").data | sha256sum }}{{ end }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
+        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret) }}{{ $statefulRedisPersistent_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret).data | sha256sum }}{{ end }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret) }}{{ $cognigyServiceEndpointApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -44,17 +51,17 @@ spec:
             - name: FB_VERIFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-facebook
+                  name: {{ $cognigyFacebook_secret }}
                   key: fb-verify-token
             - name: RCE_VERIFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-rce-credentials
+                  name: {{ $cognigyRceCredentials_secret }}
                   key: rce-verify-token
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-jwt
+                  name: {{ $cognigyJwt_secret }}
                   key: secret
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:
@@ -64,7 +71,7 @@ spec:
             - name: SERVICE_ENDPOINT_API_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-service-endpoint-api-access-token
+                  name: {{ $cognigyServiceEndpointApiAccessToken_secret }}
                   key: api-access-token
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
@@ -98,13 +105,13 @@ spec:
       volumes:
         - name: redis-persistent-password
           secret:
-            secretName: cognigy-redis-persistent-password
+            secretName: {{ $statefulRedisPersistent_secret }}
         - name: redis-password
           secret:
-            secretName: cognigy-redis-password
+            secretName: {{ $statefulRedis_secret }}
         - name: rabbitmq-connection-string
           secret:
-            secretName: cognigy-rabbitmq
+            secretName: {{ $statefulRabbitMq_secret }}
             items:
               - key: connection-string
                 path: rabbitmqConnectionString
