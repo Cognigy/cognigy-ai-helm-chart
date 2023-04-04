@@ -1,0 +1,47 @@
+# We are using the ingress Configuration "serviceEndpoint" from values.yaml
+# as both service-handover and service-endpoint both share the same host and
+# uses the path based routting.
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-handover
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+    {{- if .Values.ingress.serviceEndpoint.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistserviceendpoint@kubernetescrd
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.ingress.serviceEndpoint.tls.enabled) }}
+  {{- if (.Values.ingress.serviceEndpoint.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceEndpoint.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceEndpoint.tls.crt) (.Values.ingress.serviceEndpoint.tls.key) }}
+  tls:
+    - secretName: cognigy-service-handover-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceEndpoint.tls is required!" .Values.ingress.serviceEndpoint.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceEndpoint.tls is required!" .Values.ingress.serviceEndpoint.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceEndpoint.tls is required!" .Values.ingress.serviceEndpoint.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.serviceEndpoint.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: service-handover
+            port:
+              number: 8000
+        path: /handover/agentassist
+        pathType: Prefix
+{{- end }}

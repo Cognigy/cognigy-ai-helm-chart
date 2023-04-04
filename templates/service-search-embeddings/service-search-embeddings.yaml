@@ -1,0 +1,53 @@
+{{- if .Values.serviceSearchEmbeddings }}
+{{- if .Values.serviceSearchEmbeddings.enabled }}
+{{- with .Values.serviceSearchEmbeddings }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-search-embeddings
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: service-search-embeddings
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-search-embeddings
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: service-search-embeddings
+          image: {{ .image }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 5000
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 5000
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 5000
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+      {{- include "image.pullSecrets" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -4,6 +4,7 @@
 {{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $statefulRedisPersistent_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedisPersistent.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- $serviceApi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceApi.serviceName)) }}
+{{- $cognigySmtpOauth2Credentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpOAuth2.auth.existingSecret "defaultSecret" "cognigy-smtp-oauth2-credentials") }}
 {{- with .Values.serviceApi }}
 ---
 apiVersion: apps/v1
@@ -27,6 +28,8 @@ spec:
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret) }}{{ $statefulRedisPersistent_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret).data | sha256sum }}{{ end }}
         checksum/management-ui: {{ if not (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))) }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-management-ui-creds.yaml") $ | sha256sum }}{{ else }}{{ range $key, $value := (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))).data }}{{ $value | sha256sum }}{{ end }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceApi_dbSecret) }}{{ $serviceApi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceApi_dbSecret).data | sha256sum }}{{ end }}
+        checksum/cognigy-smtp-oauth2-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret) }}{{ $cognigySmtpOauth2Credentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret).data | sha256sum }}{{ end }}
+
 
     spec:
       {{- if .affinity }}
@@ -82,6 +85,26 @@ spec:
                 secretKeyRef:
                   name: {{- include "smtp.password.secretName" $ | indent 1 }}
                   key: system-smtp-password
+            - name: SYSTEM_SMTP_EMAIL_OAUTH2_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigySmtpOauth2Credentials_secret }}
+                  key: smtp-oauth2-client-id
+            - name: SYSTEM_SMTP_EMAIL_OAUTH2_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigySmtpOauth2Credentials_secret }}
+                  key: smtp-oauth2-client-secret
+            - name: SYSTEM_SMTP_EMAIL_OAUTH2_REFRESH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigySmtpOauth2Credentials_secret }}
+                  key: smtp-oauth2-refresh-token
+            - name: SYSTEM_SMTP_EMAIL_OAUTH2_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigySmtpOauth2Credentials_secret }}
+                  key: smtp-oauth2-access-token
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

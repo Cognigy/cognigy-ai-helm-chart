@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-handover
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-handover
+  annotations:
+    {{- if .Values.service.serviceHandover.annotations }}
+      {{- toYaml .Values.service.serviceHandover.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: service-handover
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-handover
