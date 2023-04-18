@@ -2,6 +2,8 @@
 {{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $statefulRedisPersistent_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedisPersistent.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- $serviceAi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAi.serviceName)) }}
+{{- $cognigyServiceAiSmtpEmailCredsAuthType := $.Values.smtpEmailNotificationCredentials.authType | default "basic" }}
+{{- $cognigyServiceAiSmtpEmailCreds_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpEmailNotificationCredentials.existingSecret "defaultSecret" "cognigy-service-ai-smtp-email-creds") }}
 {{- with .Values.serviceAi }}
 ---
 apiVersion: apps/v1
@@ -24,6 +26,7 @@ spec:
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret) }}{{ $statefulRedisPersistent_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret) }}{{ $serviceAi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret).data | sha256sum }}{{ end }}
+        checksum/cognigy-service-ai-smtp-email-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceAiSmtpEmailCreds_secret) }}{{ $cognigyServiceAiSmtpEmailCreds_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceAiSmtpEmailCreds_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -54,6 +57,45 @@ spec:
                 secretKeyRef:
                   name: {{- include "liveAgentCredentials.secretName.render" $ | indent 1 }}
                   key: cognigy-live-agent-platform-token
+            {{- if eq $cognigyServiceAiSmtpEmailCredsAuthType "basic" }}
+            - name: EMAIL_NOTIFICATION_SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyServiceAiSmtpEmailCreds_secret }}
+                  key: smtp-email-basic-username
+            - name: EMAIL_NOTIFICATION_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyServiceAiSmtpEmailCreds_secret }}
+                  key: smtp-email-basic-password
+            {{- end }}
+            {{- if eq $cognigyServiceAiSmtpEmailCredsAuthType "oauth2" }}
+            - name: EMAIL_NOTIFICATION_SMTP_OAUTH2_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyServiceAiSmtpEmailCreds_secret }}
+                  key: smtp-email-oauth2-user
+            - name: EMAIL_NOTIFICATION_SMTP_OAUTH2_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyServiceAiSmtpEmailCreds_secret }}
+                  key: smtp-email-oauth2-client-id
+            - name: EMAIL_NOTIFICATION_SMTP_OAUTH2_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyServiceAiSmtpEmailCreds_secret }}
+                  key: smtp-email-oauth2-client-secret
+            - name: EMAIL_NOTIFICATION_SMTP_OAUTH2_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyServiceAiSmtpEmailCreds_secret }}
+                  key: smtp-email-oauth2-access-token
+            - name: EMAIL_NOTIFICATION_SMTP_OAUTH2_REFRESH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyServiceAiSmtpEmailCreds_secret }}
+                  key: smtp-email-oauth2-refresh-token
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env

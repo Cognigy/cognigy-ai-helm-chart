@@ -1,0 +1,18 @@
+{{- if .Values.serviceHandoverInactivity.horizontalPodAutoscaler.enabled }}
+{{- with .Values.serviceHandoverInactivity.horizontalPodAutoscaler }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: service-handover-inactivity
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: service-handover-inactivity
+    apiVersion: apps/v1
+  minReplicas: {{ .minReplicas }}
+  maxReplicas: {{ .maxReplicas }}
+  metrics:
+    {{- include "common.tplvalues.render" ( dict "value" .metrics "context" $ ) | nindent 4 }}
+{{- end }}
+{{- end }}

@@ -13,6 +13,8 @@ spec:
   replicas: {{ .replicaCount }}
   template:
     metadata:
+      annotations:
+        checksum/embedding-models: {{ include (print $.Template.BasePath "/configurations/embedding-models.yaml") $ | sha256sum }}
       labels:
         app: service-nlp-embedding-ge
     spec:

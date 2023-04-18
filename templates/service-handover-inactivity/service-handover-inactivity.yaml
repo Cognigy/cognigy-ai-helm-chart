@@ -1,28 +1,26 @@
-{{- $cognigyJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyJwt.existingSecret "defaultSecret" "cognigy-jwt") }}
+{{- if .Values.serviceHandoverInactivity.enabled }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $serviceRuntimeFileManager_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceRuntimeFileManager.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceRuntimeFileManager.serviceName)) }}
-{{- with .Values.serviceRuntimeFileManager }}
+{{- $serviceHandoverInactivity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceHandoverInactivity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceHandoverInactivity.serviceName)) }}
+{{- with .Values.serviceHandoverInactivity }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-runtime-file-manager
+  name: service-handover-inactivity
   namespace: {{ $.Release.Namespace | quote }}
 spec:
   selector:
     matchLabels:
-      app: service-runtime-file-manager
+      app: service-handover-inactivity
   replicas: {{ .replicaCount }}
   template:
     metadata:
+      labels:
+        app: service-handover-inactivity
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}        
-        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceRuntimeFileManager_dbSecret) }}{{ $serviceRuntimeFileManager_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceRuntimeFileManager_dbSecret).data | sha256sum }}{{ end }}
-      labels:
-        app: service-runtime-file-manager
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceHandoverInactivity_dbSecret) }}{{ $serviceHandoverInactivity_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceHandoverInactivity_dbSecret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -34,26 +32,21 @@ spec:
       tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
       {{- end }}
       containers:
-        - name: service-runtime-file-manager
+        - name: service-handover-inactivity
           image: {{ .image }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
             - name: metrics
               containerPort: 8002
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           env:
-            - name: REDIS_ENABLE_RECONNECT
+            - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
-            - name: RUNTIME_FILE_MANAGER_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigyJwt_secret }}
-                  key: secret
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -61,9 +54,12 @@ spec:
             - name: mongodb-connection-string
               mountPath: /var/run/secrets/mongodbConnectionString
               subPath: mongodbConnectionString
-            - name: redis-password
-              mountPath: /var/run/secrets/redis-password.conf
-              subPath: redis-password.conf
+            - name: rabbitmq-api-connection-string
+              mountPath: /var/run/secrets/rabbitmqAPIConnectionString
+              subPath: rabbitmqAPIConnectionString
+            {{- if .extraVolumeMounts }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
+            {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -85,14 +81,21 @@ spec:
                 path: rabbitmqConnectionString
         - name: mongodb-connection-string
           secret:
-            secretName: {{ $serviceRuntimeFileManager_dbSecret }}
+            secretName: {{ $serviceHandoverInactivity_dbSecret }}
             items:
               - key: connection-string
                 path: mongodbConnectionString
-        - name: redis-password
+        - name: rabbitmq-api-connection-string
           secret:
-            secretName: {{ $statefulRedis_secret }}
+            secretName: {{ $statefulRabbitMq_secret }}
+            items:
+              - key: connection-string-api
+                path: rabbitmqAPIConnectionString
+        {{- if .extraVolumes }}
+        {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
+        {{- end }}
       {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
 {{- end }}

@@ -55,6 +55,8 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:
                 secretKeyRef:

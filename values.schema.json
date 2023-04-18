@@ -1,185 +1,196 @@
 {
-  "$schema": "https://json-schema.org/draft-07/schema#",
-  "properties": {
-    "cloud": {
-      "description": "Cloud which the cluster is running on",
-      "type": "object",
-      "anyOf": [
-        {
-          "properties": {
-            "provider": {
-              "description": "Cloud provider",
-              "type": "string",
-              "enum": [
-                "aws"
-              ]
-            },
-            "region": {
-              "description": "Cloud region",
-              "type": "string",
-              "minLength": 1
-            }
-          }
-        },
-        {
-          "properties": {
-            "provider": {
-              "description": "Cloud provider",
-              "type": "string",
-              "enum": [
-                "azure"
-              ]
-            }
-          }
-        },
-        {
-          "properties": {
-            "provider": {
-              "description": "Cloud provider",
-              "type": "string",
-              "enum": [
-                "generic"
-              ]
-            }
-          }
-        },
-        {
-          "properties": {
-            "provider": {
-              "description": "Cloud provider",
-              "type": "string",
-              "enum": [
-                "local-rancher"
-              ]
-            }
-          }
-        },
-        {
-          "properties": {
-            "provider": {
-              "description": "Cloud provider",
-              "type": "string",
-              "enum": [
-                "local-microk8s"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    "imageCredentials": {
-      "description": "Docker registry credentials",
-      "type": "object",
-      "properties": {
-        "registry": {
-          "description": "URL for the registry",
-          "type": "string"
-        },
-        "username": {
-          "description": "Username for the registry",
-          "type": "string"
-        },
-        "password": {
-          "description": "Password for the registry",
-          "type": "string"
-        },
-        "pullSecrets": {
-          "description": "Existing secrets for the registry login",
-          "type": "array"
-        }
-      },
-      "anyOf": [
-        {"required": ["registry", "username", "password"]},
-        {"required": ["pullSecrets"]}
-      ]
-    },
-    "efs": {
-      "type": "object",
-      "properties": {
-        "flowModules": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            }
-          }
-        },
-        "functions": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            }
-          }
-        }
-      }
-    }
-  },
-  "required": [
-    "cloud",
-    "imageCredentials",
-    "clamd",
-    "serviceAi",
-    "serviceAlexaManagement",
-    "serviceAnalyticsCollector",
-    "serviceAnalyticsConversations",
-    "serviceAnalyticsOdata",
-    "serviceAnalyticsReporter",
-    "serviceApi",
-    "serviceAppSessionManager",
-    "serviceCollector",
-    "serviceCustomModules",
-    "serviceEndpoint",
-    "serviceExecution",
-    "serviceFunctionExecution",
-    "serviceFunctionScheduler",
-    "serviceHandover",
-    "serviceHttp",
-    "serviceJourneys",
-    "serviceLogs",
-    "serviceNlpMatcher",
-    "serviceNlpNer",
-    "serviceParser",
-    "servicePlaybookExecution",
-    "serviceProfiles",
-    "serviceResources",
-    "serviceRuntimeFileManager",
-    "serviceSecurity",
-    "serviceSessionStateManager",
-    "serviceStaticFiles",
-    "serviceTaskManager",
-    "serviceTrainer",
-    "serviceUi",
-    "serviceWebchat",
-    "serviceNlpScoreDe",
-    "serviceNlpTrainDe",
-    "serviceNlpScoreEn",
-    "serviceNlpTrainEn",
-    "serviceNlpScoreGe",
-    "serviceNlpTrainGe",
-    "serviceNlpScoreJa",
-    "serviceNlpTrainJa",
-    "serviceNlpScoreKo",
-    "serviceNlpTrainKo",
-    "serviceNlpScoreXx",
-    "serviceNlpTrainXx",
-    "serviceNlpOrchestrator",
-    "serviceNlpEmbeddingEn",
-    "serviceNlpEmbeddingXx",
-    "serviceNlpEmbeddingGe",
-    "serviceNlpClassifierScoreEn",
-    "serviceNlpClassifierTrainEn",
-    "serviceNlpClassifierScoreGe",
-    "serviceNlpClassifierTrainGe",
-    "serviceNlpClassifierScoreDe",
-    "serviceNlpClassifierTrainDe",
-    "serviceNlpClassifierScoreJa",
-    "serviceNlpClassifierTrainJa",
-    "serviceNlpClassifierScoreKo",
-    "serviceNlpClassifierTrainKo",
-    "serviceNlpClassifierScoreXx",
-    "serviceNlpClassifierTrainXx"
-  ],
-  "title": "Values",
-  "type": "object"
+	"$schema": "https://json-schema.org/draft-07/schema#",
+	"properties": {
+		"cloud": {
+			"description": "Cloud which the cluster is running on",
+			"type": "object",
+			"anyOf": [
+				{
+					"properties": {
+						"provider": {
+							"description": "Cloud provider",
+							"type": "string",
+							"enum": [
+								"aws"
+							]
+						},
+						"region": {
+							"description": "Cloud region",
+							"type": "string",
+							"minLength": 1
+						}
+					}
+				},
+				{
+					"properties": {
+						"provider": {
+							"description": "Cloud provider",
+							"type": "string",
+							"enum": [
+								"azure"
+							]
+						}
+					}
+				},
+				{
+					"properties": {
+						"provider": {
+							"description": "Cloud provider",
+							"type": "string",
+							"enum": [
+								"generic"
+							]
+						}
+					}
+				},
+				{
+					"properties": {
+						"provider": {
+							"description": "Cloud provider",
+							"type": "string",
+							"enum": [
+								"local-rancher"
+							]
+						}
+					}
+				},
+				{
+					"properties": {
+						"provider": {
+							"description": "Cloud provider",
+							"type": "string",
+							"enum": [
+								"local-microk8s"
+							]
+						}
+					}
+				}
+			]
+		},
+		"imageCredentials": {
+			"description": "Docker registry credentials",
+			"type": "object",
+			"properties": {
+				"registry": {
+					"description": "URL for the registry",
+					"type": "string"
+				},
+				"username": {
+					"description": "Username for the registry",
+					"type": "string"
+				},
+				"password": {
+					"description": "Password for the registry",
+					"type": "string"
+				},
+				"pullSecrets": {
+					"description": "Existing secrets for the registry login",
+					"type": "array"
+				}
+			},
+			"anyOf": [
+				{
+					"required": [
+						"registry",
+						"username",
+						"password"
+					]
+				},
+				{
+					"required": [
+						"pullSecrets"
+					]
+				}
+			]
+		},
+		"efs": {
+			"type": "object",
+			"properties": {
+				"flowModules": {
+					"type": "object",
+					"properties": {
+						"id": {
+							"type": "string"
+						}
+					}
+				},
+				"functions": {
+					"type": "object",
+					"properties": {
+						"id": {
+							"type": "string"
+						}
+					}
+				}
+			}
+		}
+	},
+	"required": [
+		"cloud",
+		"imageCredentials",
+		"clamd",
+		"serviceAi",
+		"serviceAlexaManagement",
+		"serviceAnalyticsCollector",
+		"serviceAnalyticsConversations",
+		"serviceAnalyticsOdata",
+		"serviceAnalyticsReporter",
+		"serviceApi",
+		"serviceAppSessionManager",
+		"serviceCollector",
+		"serviceCustomModules",
+		"serviceEndpoint",
+		"serviceExecution",
+		"serviceFunctionExecution",
+		"serviceFunctionScheduler",
+		"serviceHandover",
+		"serviceHandoverInactivity",
+		"serviceHttp",
+		"serviceJourneys",
+		"serviceLogs",
+		"serviceNlpMatcher",
+		"serviceNlpNer",
+		"serviceParser",
+		"servicePlaybookExecution",
+		"serviceProfiles",
+		"serviceResources",
+		"serviceRuntimeFileManager",
+		"serviceSecurity",
+		"serviceSessionStateManager",
+		"serviceStaticFiles",
+		"serviceTaskManager",
+		"serviceTrainer",
+		"serviceUi",
+		"serviceWebchat",
+		"serviceNlpScoreDe",
+		"serviceNlpTrainDe",
+		"serviceNlpScoreEn",
+		"serviceNlpTrainEn",
+		"serviceNlpScoreGe",
+		"serviceNlpTrainGe",
+		"serviceNlpScoreJa",
+		"serviceNlpTrainJa",
+		"serviceNlpScoreKo",
+		"serviceNlpTrainKo",
+		"serviceNlpScoreXx",
+		"serviceNlpTrainXx",
+		"serviceNlpOrchestrator",
+		"serviceNlpEmbeddingEn",
+		"serviceNlpEmbeddingXx",
+		"serviceNlpEmbeddingGe",
+		"serviceNlpClassifierScoreEn",
+		"serviceNlpClassifierTrainEn",
+		"serviceNlpClassifierScoreGe",
+		"serviceNlpClassifierTrainGe",
+		"serviceNlpClassifierScoreDe",
+		"serviceNlpClassifierTrainDe",
+		"serviceNlpClassifierScoreJa",
+		"serviceNlpClassifierTrainJa",
+		"serviceNlpClassifierScoreKo",
+		"serviceNlpClassifierTrainKo",
+		"serviceNlpClassifierScoreXx",
+		"serviceNlpClassifierTrainXx"
+	],
+	"title": "Values",
+	"type": "object"
 }

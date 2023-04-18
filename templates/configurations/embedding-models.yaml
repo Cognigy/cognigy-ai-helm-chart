@@ -6,14 +6,10 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
 data:
   usev4-config: |
-    max_batch_size: 256
+    max_batch_size: {{ .Values.embeddingModelConfig.usev4Config.maxBatchSize }}
 
     dynamic_batching {
-      max_queue_delay_microseconds: 100
-    }
-
-    response_cache {
-      enable: True
+      max_queue_delay_microseconds: {{ .Values.embeddingModelConfig.usev4Config.maxQueueDelayMicroseconds }}
     }
 
     instance_group [
@@ -38,14 +34,10 @@ data:
     }]
 
   usev3-config: |
-    max_batch_size: 256
+    max_batch_size: {{ .Values.embeddingModelConfig.usev3Config.maxBatchSize }}
 
     dynamic_batching {
-      max_queue_delay_microseconds: 100
-    }
-
-    response_cache {
-      enable: True
+      max_queue_delay_microseconds: {{ .Values.embeddingModelConfig.usev3Config.maxQueueDelayMicroseconds }}
     }
 
     instance_group [
@@ -70,14 +62,10 @@ data:
     }]
 
   labse-config: |
-    max_batch_size: 256
+    max_batch_size: {{ .Values.embeddingModelConfig.labseConfig.maxBatchSize }}
 
     dynamic_batching {
-      max_queue_delay_microseconds: 100
-    }
-
-    response_cache {
-      enable: True
+      max_queue_delay_microseconds: {{ .Values.embeddingModelConfig.labseConfig.maxQueueDelayMicroseconds }}
     }
 
     instance_group [

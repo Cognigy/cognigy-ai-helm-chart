@@ -1,0 +1,25 @@
+{{- if (not .Values.smtpEmailNotificationCredentials.existingSecret) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-ai-smtp-email-creds
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  # the smtp email notification credentials
+  ## basic credentials
+  {{- if (eq .Values.smtpEmailNotificationCredentials.authType "basic")   }}
+  smtp-email-basic-username: {{ .Values.smtpEmailNotificationCredentials.basic.username | b64enc | quote }}
+  smtp-email-basic-password: {{ .Values.smtpEmailNotificationCredentials.basic.password | b64enc | quote }}
+  {{- else if (eq .Values.smtpEmailNotificationCredentials.authType "oauth2")  }}
+  ## oauth2 credentials
+  smtp-email-oauth2-user: {{ .Values.smtpEmailNotificationCredentials.oauth2.user | b64enc | quote }}
+  smtp-email-oauth2-client-id: {{ .Values.smtpEmailNotificationCredentials.oauth2.clientId | b64enc | quote }}
+  smtp-email-oauth2-client-secret: {{ .Values.smtpEmailNotificationCredentials.oauth2.clientSecret | b64enc | quote }}
+  smtp-email-oauth2-access-token: {{ .Values.smtpEmailNotificationCredentials.oauth2.accessToken | b64enc | quote }}
+  smtp-email-oauth2-refresh-token: {{ .Values.smtpEmailNotificationCredentials.oauth2.refreshToken | b64enc | quote }}
+  {{- end }}
+{{- end }}
