@@ -2361,7 +2361,7 @@ serviceAnalyticsConversations:
   nodeSelector: {}
   tolerations: []
 serviceAnalyticsOdata:
-  image: cognigy.azurecr.io/service-analytics-odata:release-305edae-1681222255
+  image: cognigy.azurecr.io/service-analytics-odata:release-62b990e-1681028077
   replicaCount: 3
   resources:
     requests:
@@ -2633,7 +2633,7 @@ serviceCollector:
   nodeSelector: {}
   tolerations: []
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-1c47cb7-1681804921
+  image: cognigy.azurecr.io/service-insights-ui:release-30edcc2-1682002925
   replicaCount: 3
   resources:
     requests:
