@@ -1,0 +1,19 @@
+{{- if .Values.knowledgeSearch.enabled }}
+{{- if .Values.knowledgeSearch.localCluster }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: weaviate
+  namespace: cognigy-ai
+  labels:
+    app: weaviate
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: weaviate
+{{- end }}
+{{- end }}

@@ -35,7 +35,7 @@ spec:
       {{- end }}
       containers:
         - name: service-trainer
-          image: {{ .image }}
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
             - name: health

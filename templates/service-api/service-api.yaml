@@ -29,7 +29,7 @@ spec:
         checksum/management-ui: {{ if not (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))) }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-management-ui-creds.yaml") $ | sha256sum }}{{ else }}{{ range $key, $value := (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))).data }}{{ $value | sha256sum }}{{ end }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceApi_dbSecret) }}{{ $serviceApi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceApi_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-smtp-oauth2-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret) }}{{ $cognigySmtpOauth2Credentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret).data | sha256sum }}{{ end }}
-
+        checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
 
     spec:
       {{- if .affinity }}
@@ -43,7 +43,7 @@ spec:
       {{- end }}
       containers:
         - name: service-api
-          image: {{ .image }}
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
             - name: health

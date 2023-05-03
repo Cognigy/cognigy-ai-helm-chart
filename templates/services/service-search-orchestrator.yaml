@@ -1,0 +1,21 @@
+{{- if .Values.knowledgeSearch.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-search-orchestrator
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-search-orchestrator
+  annotations:
+  {{- if .Values.service.serviceSearchOrchestrator.annotations }}
+    {{- toYaml .Values.service.serviceSearchOrchestrator.annotations | nindent 4 }}
+  {{- end }}   
+spec:
+  ports:
+    - name: service-search-orchestrator
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-search-orchestrator
+{{- end }}

@@ -23,7 +23,7 @@ spec:
       {{- end }}
       containers:
       - name: cognigy-ai-db-init
-        image: {{ .Values.mongodb.dbinit.image }}
+        image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.mongodb.dbinit.image) }}
         command: ["/bin/bash"]
         {{- if eq .Values.mongodb.scheme "mongodb+srv" }}
         args: ["/cognigy-ai-dbinit/dbinit-generate/dbinit-generate-atlas.sh"]

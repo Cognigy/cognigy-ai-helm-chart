@@ -15,6 +15,9 @@ data:
   APPS_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceAppSessionManager.host | quote}}
   FEATURE_USE_COGNIGY_APPS: "true"
   {{- end }}
+  {{- if .Values.knowledgeSearch.enabled }}
+  FEATURE_ENABLE_KNOWLEDGE_SEARCH: "true"
+  {{- end }}
   STATIC_FILES_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceStaticFiles.host | quote}}
   ODATA_HOSTNAME: {{ .Values.ingress.serviceAnalyticsOdata.host | quote }}
   ODATA_PROTOCOL: "https"

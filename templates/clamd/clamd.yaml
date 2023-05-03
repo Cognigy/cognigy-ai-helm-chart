@@ -27,7 +27,7 @@ spec:
       {{- end }}
       containers:
         - name: clamd          
-          image: {{ .image }}
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           imagePullPolicy: Always
           ports:

@@ -30,7 +30,7 @@ spec:
       {{- end }}
       containers:
         - name: redis-persistent
-          image: {{ .image }}
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
           - containerPort: 6379

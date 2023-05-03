@@ -29,7 +29,7 @@ spec:
       {{- end }}
       containers:
         - name: service-nlp-embedding-xx
-          image: {{ .image }}
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           args:
             - tritonserver
             - '--model-repository=/models'
