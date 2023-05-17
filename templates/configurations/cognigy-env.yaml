@@ -11,10 +11,7 @@ data:
   ENDPOINT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceEndpoint.host | quote}}
   RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceRuntimeFileManager.host | quote}}
   WEBCHAT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceWebchat.host | quote}}
-  {{- if .Values.cognigyApps.enabled }}
   APPS_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceAppSessionManager.host | quote}}
-  FEATURE_USE_COGNIGY_APPS: "true"
-  {{- end }}
   {{- if .Values.knowledgeSearch.enabled }}
   FEATURE_ENABLE_KNOWLEDGE_SEARCH: "true"
   {{- end }}

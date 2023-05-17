@@ -10,7 +10,7 @@ metadata:
     # resource is considered part of the release.
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-3"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
 spec:
   template:
     metadata:
@@ -20,6 +20,15 @@ spec:
       {{- if .Values.mongodb.dbinit.securityContext }}
       securityContext:
         {{- toYaml .Values.mongodb.dbinit.securityContext | nindent 8 }}
+      {{- end }}
+      {{- if .Values.mongodb.dbinit.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.mongodb.dbinit.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.mongodb.dbinit.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.mongodb.dbinit.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.mongodb.dbinit.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.mongodb.dbinit.tolerations "context" $) | nindent 8 }}
       {{- end }}
       containers:
       - name: cognigy-ai-db-init
@@ -108,13 +117,11 @@ spec:
               items:
               - key: connection-string
                 path: cognigy-service-api
-          {{- if .Values.cognigyApps.enabled }}
           - secret:
               name: cognigy-service-app-session-manager
               items:
               - key: connection-string
                 path: cognigy-service-app-session-manager
-          {{- end }}
           - secret:
               name: cognigy-service-custom-modules
               items:
@@ -194,7 +201,7 @@ metadata:
     # resource is considered part of the release.
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-4"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
 type: Opaque
 data:
   username: "{{- .Values.mongodb.auth.rootUser | b64enc }}"
@@ -212,7 +219,7 @@ metadata:
     # resource is considered part of the release.
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-4"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
 type: Opaque
 data:
   apikeypublic: "{{- .Values.mongodb.auth.atlas.publicAPIKey | b64enc }}"
@@ -232,7 +239,7 @@ metadata:
     # resource is considered part of the release.
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-4"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
 type: Opaque
 data:
   hosts: "{{- .Values.mongodb.hosts | b64enc }}"
@@ -249,7 +256,7 @@ metadata:
     # resource is considered part of the release.
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-4"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
 data:
 {{- if eq .Values.mongodb.scheme "mongodb+srv" }}
 {{ (.Files.Glob "scripts/dbinit-generate-atlas.sh").AsConfig | indent 2 }}

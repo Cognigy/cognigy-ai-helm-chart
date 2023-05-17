@@ -42,6 +42,6 @@ spec:
             name: service-handover
             port:
               number: 8000
-        path: /handover/agentassist
+        path: /handover
         pathType: Prefix
 {{- end }}

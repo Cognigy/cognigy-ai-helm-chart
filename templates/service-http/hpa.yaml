@@ -1,6 +1,6 @@
 {{- if .Values.serviceHttp.horizontalPodAutoscaler.enabled }}
 {{- with .Values.serviceHttp.horizontalPodAutoscaler }}
-apiVersion: autoscaling/v2beta2
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: service-http
@@ -14,5 +14,9 @@ spec:
   maxReplicas: {{ .maxReplicas }}
   metrics:
     {{- include "common.tplvalues.render" ( dict "value" .metrics "context" $ ) | nindent 4 }}
+  {{- if .behavior }}
+  behavior:
+    {{- include "common.tplvalues.render" ( dict "value" .behavior "context" $ ) | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}

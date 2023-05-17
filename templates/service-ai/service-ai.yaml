@@ -4,6 +4,7 @@
 {{- $serviceAi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAi.serviceName)) }}
 {{- $cognigyServiceAiSmtpEmailCredsAuthType := $.Values.smtpEmailNotificationCredentials.authType | default "basic" }}
 {{- $cognigyServiceAiSmtpEmailCreds_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpEmailNotificationCredentials.existingSecret "defaultSecret" "cognigy-service-ai-smtp-email-creds") }}
+{{- $cognigyInsightsCollectorApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsCollectorApiKey.existingSecret "defaultSecret" "cognigy-insights-collector-api-key") }}
 {{- with .Values.serviceAi }}
 ---
 apiVersion: apps/v1
@@ -27,6 +28,7 @@ spec:
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret) }}{{ $statefulRedisPersistent_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret) }}{{ $serviceAi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-service-ai-smtp-email-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceAiSmtpEmailCreds_secret) }}{{ $cognigyServiceAiSmtpEmailCreds_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceAiSmtpEmailCreds_secret).data | sha256sum }}{{ end }}
+        checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -96,6 +98,11 @@ spec:
                   name: {{ $cognigyServiceAiSmtpEmailCreds_secret }}
                   key: smtp-email-oauth2-refresh-token
             {{- end }}
+            - name: INSIGHTS_COLLECTOR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyInsightsCollectorApiKey_secret }}
+                  key: secret          
           envFrom:
             - configMapRef:
                 name: cognigy-env
