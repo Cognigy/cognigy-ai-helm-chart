@@ -26,6 +26,9 @@ spec:
       {{- if .tolerations }}
       tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
       {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
       containers:
         - name: service-ui
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
@@ -37,6 +40,8 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: HOST_VALIDATION_WHITELIST
+              value: {{ $.Values.ingress.serviceUi.host  | quote }}
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:
                 secretKeyRef:

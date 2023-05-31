@@ -34,6 +34,9 @@ spec:
       {{- if .tolerations }}
       tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
       {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
       containers:
         - name: service-handover
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
@@ -67,6 +70,18 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigyServiceHandoverApiAccessToken_secret }}
                   key: api-access-token
+            - name: TRACING_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
+            - name: TRACING_BASE_URL_WITH_PROTOCOL
+              value: {{ $.Values.tracing.sentry.runtime.baseUrl | quote }}      
+            - name: TRACING_ERRORS_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.errorsEnabled | quote }}
+            - name: TRACING_EVENTS_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.eventsSampleRate | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.sampleRate | quote }}
+            - name: ENVIRONMENT
+              value: {{ $.Values.tracing.environment | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

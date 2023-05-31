@@ -1,0 +1,18 @@
+{{- if .Values.priorityClass.enabled }}
+  {{- range $priority_class_key, $priority_class_val := .Values.priorityClass }}
+    {{- if kindIs "map" $priority_class_val }}
+      {{- if $priority_class_val.enabled }}
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ $priority_class_val.name | quote }}
+value: {{ $priority_class_val.value | int64 }}
+preemptionPolicy: {{ $priority_class_val.preemptionPolicy }}
+globalDefault: {{ printf "%t" $priority_class_val.globalDefault }}
+description: {{ $priority_class_val.description }}
+
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

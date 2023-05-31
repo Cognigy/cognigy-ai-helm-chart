@@ -33,6 +33,9 @@ spec:
       {{- if .tolerations }}
       tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
       {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
       containers:
         - name: service-nlp-train-ge
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}

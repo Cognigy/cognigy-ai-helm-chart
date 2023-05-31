@@ -4,6 +4,7 @@
 {{- $serviceAi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAi.serviceName)) }}
 {{- $cognigyServiceAiSmtpEmailCredsAuthType := $.Values.smtpEmailNotificationCredentials.authType | default "basic" }}
 {{- $cognigyServiceAiSmtpEmailCreds_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpEmailNotificationCredentials.existingSecret "defaultSecret" "cognigy-service-ai-smtp-email-creds") }}
+{{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 {{- $cognigyInsightsCollectorApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsCollectorApiKey.existingSecret "defaultSecret" "cognigy-insights-collector-api-key") }}
 {{- with .Values.serviceAi }}
 ---
@@ -28,6 +29,9 @@ spec:
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret) }}{{ $statefulRedisPersistent_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret) }}{{ $serviceAi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-service-ai-smtp-email-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceAiSmtpEmailCreds_secret) }}{{ $cognigyServiceAiSmtpEmailCreds_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceAiSmtpEmailCreds_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.knowledgeSearch.enabled }}
+        checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
+        {{- end }}
         checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
@@ -38,6 +42,9 @@ spec:
       {{- end }}
       {{- if .tolerations }}
       tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
         - name: service-ai
@@ -51,8 +58,27 @@ spec:
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
+            - name: TRACING_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
+            - name: TRACING_BASE_URL_WITH_PROTOCOL
+              value: {{ $.Values.tracing.sentry.runtime.baseUrl | quote }}      
+            - name: TRACING_ERRORS_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.errorsEnabled | quote }}
+            - name: TRACING_EVENTS_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.eventsSampleRate | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.sampleRate | quote }}
+            - name: ENVIRONMENT
+              value: {{ $.Values.tracing.environment | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+            {{- if $.Values.knowledgeSearch.enabled }}
+            - name: SEARCH_ORCHESTRATOR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                    name: {{ $cognigySearchOrchestratorApiKey }}
+                    key: api-key
             {{- end }}
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:

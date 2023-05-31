@@ -1,0 +1,16 @@
+{{- if and (.Values.knowledgeSearch.enabled) (not .Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret) }}
+  {{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-search-orchestrator-api-key") }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-search-orchestrator-api-key
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  # use 16 bytes of random value, hex
+  api-key: "{{ .Values.commonSecrets.cognigySearchOrchestratorApiKey.token | default (printf "%x" (randAlphaNum 16)) | b64enc }}"
+  {{- end }}
+{{- end }}

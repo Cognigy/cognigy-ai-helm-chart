@@ -5,6 +5,7 @@
 {{- $statefulRedisPersistent_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedisPersistent.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- $serviceApi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceApi.serviceName)) }}
 {{- $cognigySmtpOauth2Credentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpOAuth2.auth.existingSecret "defaultSecret" "cognigy-smtp-oauth2-credentials") }}
+{{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 {{- with .Values.serviceApi }}
 ---
 apiVersion: apps/v1
@@ -29,8 +30,10 @@ spec:
         checksum/management-ui: {{ if not (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))) }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-management-ui-creds.yaml") $ | sha256sum }}{{ else }}{{ range $key, $value := (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))).data }}{{ $value | sha256sum }}{{ end }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceApi_dbSecret) }}{{ $serviceApi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceApi_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-smtp-oauth2-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret) }}{{ $cognigySmtpOauth2Credentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.knowledgeSearch.enabled }}
+        checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
+        {{- end }}
         checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
-
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -40,6 +43,9 @@ spec:
       {{- end }}
       {{- if .tolerations }}
       tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
         - name: service-api
@@ -60,6 +66,8 @@ spec:
               value: "true"
             - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
               value: 'true'
+            - name: HOST_VALIDATION_WHITELIST
+              value: {{ $.Values.ingress.serviceApi.host  | quote }}
             - name: INSIGHTS_JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -105,6 +113,25 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigySmtpOauth2Credentials_secret }}
                   key: smtp-oauth2-access-token
+            - name: TRACING_ENABLED
+              value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
+            - name: TRACING_BASE_URL_WITH_PROTOCOL
+              value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+            - name: TRACING_ERRORS_ENABLED
+              value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
+            - name: TRACING_EVENTS_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.ide.eventsSampleRate | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.ide.sampleRate | quote }}
+            - name: ENVIRONMENT
+              value: {{ $.Values.tracing.environment | quote }}
+            {{- if $.Values.knowledgeSearch.enabled }}
+            - name: SEARCH_ORCHESTRATOR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                    name: {{ $cognigySearchOrchestratorApiKey }}
+                    key: api-key
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

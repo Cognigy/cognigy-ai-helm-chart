@@ -1,5 +1,7 @@
 {{- if .Values.knowledgeSearch.enabled }}
 {{- with .Values.serviceSearchOrchestrator }}
+{{- $cognigyWeaviateApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyWeaviateApiKey.existingSecret "defaultSecret" "cognigy-weaviate-api-key") }}
+{{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -17,6 +19,8 @@ spec:
         app: service-search-orchestrator
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/cognigy-weaviate-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey) }}{{ $cognigyWeaviateApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey).data | sha256sum }}{{ end }}
+        checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -26,6 +30,9 @@ spec:
       {{- end }}
       {{- if .tolerations }}
       tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
         - name: service-search-orchestrator
@@ -50,6 +57,16 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: WEAVIATE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                    name: {{ $cognigyWeaviateApiKey }}
+                    key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
+            - name: SEARCH_ORCHESTRATOR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                    name: {{ $cognigySearchOrchestratorApiKey }}
+                    key: api-key
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
