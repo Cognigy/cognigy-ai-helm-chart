@@ -1,0 +1,25 @@
+{{- if and (eq .Values.cloud.provider "azure") (.Values.storageClass.azure.enabled) }}
+  {{- range $storage_class_key, $storage_class_val := .Values.storageClass.azure.file }}  
+    {{- if kindIs "map" $storage_class_val }}
+      {{- if $storage_class_val.enabled }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $storage_class_val.storageClassName | quote }}
+mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - uid={{ $storage_class_val.uid }}
+  - gid={{ $storage_class_val.gid }}
+  - mfsymlinks
+  - cache=strict
+parameters:
+  skuName: {{ $storage_class_val.skuName }}
+provisioner: {{ $storage_class_val.provisioner }}
+reclaimPolicy: {{ $storage_class_val.reclaimPolicy }}
+volumeBindingMode: {{ $storage_class_val.volumeBindingMode }}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

@@ -61,6 +61,8 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: HOST_VALIDATION_WHITELIST
               value: {{ $.Values.ingress.serviceWebchat.host  | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

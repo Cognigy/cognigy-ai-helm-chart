@@ -70,6 +70,8 @@ spec:
               value: {{ $.Values.tracing.sentry.runtime.sampleRate | quote }}
             - name: ENVIRONMENT
               value: {{ $.Values.tracing.environment | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

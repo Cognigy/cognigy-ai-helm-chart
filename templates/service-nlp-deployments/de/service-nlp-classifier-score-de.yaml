@@ -86,6 +86,8 @@ spec:
               value: /models/usev3/config.pbtxt
             - name: EMBEDDING_SERVER_ADDRESS
               value: service-nlp-embedding-xx:8000
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }} 
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

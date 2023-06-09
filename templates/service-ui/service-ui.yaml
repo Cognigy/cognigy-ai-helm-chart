@@ -42,6 +42,8 @@ spec:
           env:
             - name: HOST_VALIDATION_WHITELIST
               value: {{ $.Values.ingress.serviceUi.host  | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:
                 secretKeyRef:

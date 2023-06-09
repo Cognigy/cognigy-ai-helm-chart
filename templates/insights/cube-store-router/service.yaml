@@ -1,0 +1,25 @@
+
+{{- if .Values.cubejs.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cube-store-router
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: cube-store-router
+  annotations:
+    {{- if .Values.service.cubeStoreRouter.annotations }}
+      {{- toYaml .Values.service.cubeStoreRouter.annotations | nindent 4 }}
+    {{- end }}    
+spec:
+  ports:
+    - name: http
+      port: 3030
+      targetPort: 3030
+    - name: meta
+      port: 9999
+      targetPort: 9999
+  selector:
+    app: cube-store-router
+{{- end }}    

@@ -65,6 +65,8 @@ spec:
           env:
             - name: LANGUAGES_TO_RUN
               value: ar-AE,bn-IN,da-DK,es-ES,fi-FI,fr-FR,ge-GE,hi-IN,it-IT,ko-KR,nl-NL,nn-NO,pl-PL,pt-PT,pt-BR,ru-RU,sv-SE,ta-IN,tr-TR,vi-VN
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }} 
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

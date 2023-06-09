@@ -84,6 +84,8 @@ spec:
               value: ar-AE,bn-IN,da-DK,de-DE,en-US,en-IN,en-GB,en-CA,en-AU,es-ES,fi-FI,fr-FR,ge-GE,hi-IN,it-IT,ja-JP,ko-KR,nl-NL,nn-NO,pl-PL,pt-PT,pt-BR,ru-RU,sv-SE,ta-IN,th-TH,tr-TR,vi-VN,zh-CN
             - name: LOCALES_CONFIG
               value: /app/config/languageCodeMap.json
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

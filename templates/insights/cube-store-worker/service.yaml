@@ -1,0 +1,25 @@
+{{- if .Values.cubejs.enabled }}
+{{- if gt (.Values.cubejs.storeWorker.replicaCount | int) 0 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cube-store-worker-hl
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cube-store-worker
+  annotations:
+    {{- if .Values.service.cubeStoreWorker.annotations }}
+      {{- toYaml .Values.service.cubeStoreWorker.annotations | nindent 4 }}
+    {{- end }}   
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: worker
+      port: {{ .Values.cubejs.storeWorker.workerPort }}
+      targetPort: {{ .Values.cubejs.storeWorker.workerPort }}
+  selector:
+    app: cube-store-worker
+{{- end }}
+{{- end }}

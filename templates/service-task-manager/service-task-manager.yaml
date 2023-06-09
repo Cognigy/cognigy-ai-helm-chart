@@ -36,6 +36,7 @@ spec:
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
+      serviceAccountName: task-manager
       containers:
         - name: service-task-manager
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
@@ -62,6 +63,8 @@ spec:
               value: {{ $.Values.tracing.sentry.ide.sampleRate | quote }}
             - name: ENVIRONMENT
               value: {{ $.Values.tracing.environment | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

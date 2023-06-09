@@ -59,6 +59,8 @@ spec:
               value: service-security
             - name: CONVERSATION_COLLECTOR_DB_NAME
               value: service-analytics-conversation
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
             - name: ODATA_SUPER_API_KEY
               valueFrom:
                 secretKeyRef:

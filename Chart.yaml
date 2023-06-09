@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 4.52.0
-appVersion: "4.52.0"
+version: 4.52.1
+appVersion: "4.52.1"
 kubeVersion: ">=v1.19.0-0,<v1.26.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
@@ -22,3 +22,7 @@ dependencies:
   version: "16.1.0"
   repository: "https://weaviate.github.io/weaviate-helm"
   condition: knowledgeSearch.enabled
+- name: postgresql
+  version: "12.1.6"
+  repository: "https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami"
+  condition: postgresql.enabled

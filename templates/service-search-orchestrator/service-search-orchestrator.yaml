@@ -57,6 +57,8 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
             - name: WEAVIATE_API_KEY
               valueFrom:
                 secretKeyRef:
