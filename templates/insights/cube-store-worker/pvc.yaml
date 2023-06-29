@@ -1,0 +1,16 @@
+{{- if .Values.cubejs.enabled }}
+{{- if .Values.cubejs.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cubejs-cubestore-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: {{ .Values.cubejs.persistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.cubejs.persistence.size | default "10Gi" | quote }}
+{{- end }}
+{{- end }}

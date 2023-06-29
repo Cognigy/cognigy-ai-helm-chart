@@ -36,6 +36,7 @@ spec:
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
+      serviceAccountName: task-manager
       containers:
         - name: service-task-manager
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
