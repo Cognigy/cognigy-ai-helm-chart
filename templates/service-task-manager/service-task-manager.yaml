@@ -36,6 +36,7 @@ spec:
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
+      serviceAccountName: task-manager
       containers:
         - name: service-task-manager
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
@@ -80,6 +81,10 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            {{- if $.Values.knowledgeSearch.enabled }}
+            - name: task-jobs-config
+              mountPath: /var/run/config/task-jobs
+            {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -108,6 +113,11 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $statefulRedis_secret }}
+        {{- if $.Values.knowledgeSearch.enabled }}
+        - name: task-jobs-config
+          configMap:
+            name: knowledge-tasks-config
+        {{- end }}
       {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

@@ -481,3 +481,16 @@ Usage:
 
   {{- printf $secretName -}}
 {{- end -}}
+
+{{/* 
+  Create a list of cube-store-worker pods based on replica count
+*/}}
+{{- define "cubejs.cubeStoreWorkers" -}}
+  {{- $workers := list }}
+   {{- $workerPort := .Values.cubejs.storeWorker.workerPort | int }}
+  {{- range $i, $e := until (int .Values.cubejs.storeWorker.replicaCount) }}
+    {{- $workers = append $workers (printf "cube-store-worker-%d.cube-store-worker-hl:%d" $i $workerPort) }}
+  {{- end }}
+
+  {{- printf "%s" (join "," $workers | quote) }}
+{{- end }}

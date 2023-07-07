@@ -1,0 +1,82 @@
+{{- if .Values.cubejs.enabled }}
+{{- with .Values.cubejs.storeWorker }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cube-store-worker
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  replicas: {{ .replicaCount }}
+  serviceName: cube-store-worker-hl
+  selector:
+    matchLabels:
+      app: cube-store-worker
+  template:
+    metadata:
+      labels:
+        app: cube-store-worker
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}      
+      initContainers:
+        - name: init-cubestore
+          image: busybox
+          command: ['sh', '-c', 'until nc -vz cube-store-router:9999; do echo "Waiting for router"; sleep 2; done;']
+      containers:
+        - name: cube-store-worker
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: worker
+              containerPort: {{ .workerPort }}
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+             {{- $workerPort := .workerPort | int }}
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CUBESTORE_SERVER_NAME
+              value: {{ printf "$(MY_POD_NAME).cube-store-worker-hl:%d" $workerPort | quote }}
+            - name: CUBESTORE_WORKER_PORT
+              value: {{ .workerPort | quote }}
+            - name: CUBESTORE_WORKERS
+              value: {{ include "cubejs.cubeStoreWorkers" $ }}
+            - name: CUBESTORE_META_ADDR
+              value: "cube-store-router:9999"
+            - name: CUBESTORE_DATA_DIR
+              value: /cube/.cubestore/data              
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}              
+          {{- if $.Values.cubejs.persistence.enabled }}
+          volumeMounts:
+            - name: datadir
+              mountPath: /cube/data
+          {{- end }}
+      {{- if $.Values.cubejs.persistence.enabled }}
+      volumes:
+        - name: datadir
+          persistentVolumeClaim:
+            claimName: cubejs-cubestore-pvc
+      {{- end }}
+      {{- include "image.pullSecrets" $ | nindent 6 }}      
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}      
+{{- end }}
+{{- end }}

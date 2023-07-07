@@ -1,0 +1,24 @@
+{{- if and (eq .Values.cloud.provider "azure") (.Values.storageClass.azure.enabled) }}
+  {{- range $storage_class_key, $storage_class_val := .Values.storageClass.azure.disk }}  
+    {{- if kindIs "map" $storage_class_val }}
+      {{- if $storage_class_val.enabled }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $storage_class_val.storageClassName | quote }}
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+    kubernetes.io/cluster-service: "true"
+provisioner: {{ $storage_class_val.provisionerName}}
+allowVolumeExpansion: true
+volumeBindingMode: {{ $storage_class_val.volumeBindingMode}}
+reclaimPolicy: {{ $storage_class_val.reclaimPolicy}}
+parameters:
+  cachingmode: ReadOnly
+  kind: Managed
+  storageaccounttype: {{ $storage_class_val.azureStorageAccountType }}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

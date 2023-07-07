@@ -1,0 +1,22 @@
+{{- if and (eq .Values.cloud.provider "aws") (.Values.storageClass.aws.enabled) }}
+  {{- range $storage_class_key, $storage_class_val := .Values.storageClass.aws.efs }}
+    {{- if kindIs "map" $storage_class_val }}
+      {{- if $storage_class_val.enabled }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $storage_class_val.storageClassName | quote }}
+parameters:
+  fileSystemId: {{ required (printf "A valid value for '.Values.storageClass.aws.efs.%s.fileSystemId' is required!" $storage_class_key) $storage_class_val.fileSystemId | quote }}
+  directoryPerms: {{ $storage_class_val.directoryPerms | quote }}
+  provisioningMode: efs-ap
+  gid: {{ $storage_class_val.gid | quote }}
+  uid: {{ $storage_class_val.uid | quote }}
+provisioner: {{ $storage_class_val.provisioner }}
+reclaimPolicy: {{ $storage_class_val.reclaimPolicy }}
+volumeBindingMode: {{ $storage_class_val.volumeBindingMode }}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

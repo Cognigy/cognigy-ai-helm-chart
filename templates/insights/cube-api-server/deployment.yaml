@@ -1,0 +1,91 @@
+{{- if .Values.cubejs.enabled }}
+{{- $postgreSql_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresql.auth.existingSecret "defaultSecret" .Values.postgresql.fullnameOverride) }}
+{{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
+{{- with .Values.cubejs.apiServer }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cube-api-server
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: cube-api-server
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: cube-api-server
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $postgreSql_dbSecret) }}{{ $postgreSql_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $postgreSql_dbSecret).data | sha256sum }}{{ end }}
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}   
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}   
+      containers:
+        - name: cube-api-server
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 4000
+          env:
+            - name: CUBEJS_DB_TYPE
+              value: {{ $.Values.cubejs.envs.CUBEJS_DB_TYPE | quote }}
+            - name: CUBEJS_DB_HOST
+              value: {{ $.Values.cubejs.envs.CUBEJS_DB_HOST | quote }}
+            - name: CUBEJS_DB_PORT
+              value: {{ $.Values.cubejs.envs.CUBEJS_DB_PORT | quote }}
+            - name: CUBEJS_DB_NAME
+              value: {{ $.Values.cubejs.envs.CUBEJS_DB_NAME | quote }}
+            - name: CUBEJS_DB_USER
+              value: {{ $.Values.cubejs.envs.CUBEJS_DB_USER | quote }}
+            - name: CUBEJS_CUBESTORE_HOST
+              value: cube-store-router
+            - name: CUBEJS_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyInsightsJwt_secret }}
+                  key: secret             
+            - name: CUBEJS_DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $postgreSql_dbSecret }}
+                  key: postgres-password
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}                  
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 4000
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 4000
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+      {{- include "image.pullSecrets" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}      
+
+{{- end }}
+{{- end }}

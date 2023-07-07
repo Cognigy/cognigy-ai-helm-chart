@@ -1,0 +1,138 @@
+{{- if .Values.knowledgeSearch.enabled }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: knowledge-tasks-config
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  processKnowledgeSourceFile.yaml: |
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: _NAME_
+      namespace: {{ $.Release.Namespace | quote }}
+    spec:
+      backoffLimit: {{ .Values.taskProcessKnowledgeSourceFile.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.taskProcessKnowledgeSourceFile.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .Values.taskProcessKnowledgeSourceFile.ttlSecondsAfterFinished }}
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: task-process-knowledge-source-file
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.taskProcessKnowledgeSourceFile.image) }}
+              resources: {{- toYaml .Values.taskProcessKnowledgeSourceFile.resources | nindent 16 }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              env:
+                - name: JOB_ARGUMENTS
+                  value: "_JOB_ARGUMENTS_"
+              volumeMounts:
+                - name: rabbitmq-connection-string
+                  mountPath: /var/run/secrets/rabbitmqConnectionString
+                  subPath: rabbitmqConnectionString
+                - name: redis-password
+                  mountPath: /var/run/secrets/redis-password.conf
+                  subPath: redis-password.conf
+          volumes:
+            - name: rabbitmq-connection-string
+              secret:
+                secretName: cognigy-rabbitmq
+                items:
+                  - key: connection-string
+                    path: rabbitmqConnectionString
+            - name: redis-password
+              secret:
+                secretName: cognigy-redis-password
+          {{- include "image.pullSecrets" $ | nindent 10 }}
+  
+  processKnowledgeSourceUrl.yaml: |
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: _NAME_
+      namespace: {{ $.Release.Namespace | quote }}
+    spec:
+      backoffLimit: {{ .Values.taskProcessKnowledgeSourceUrl.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.taskProcessKnowledgeSourceUrl.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .Values.taskProcessKnowledgeSourceUrl.ttlSecondsAfterFinished }}
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: task-process-knowledge-source-url
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.taskProcessKnowledgeSourceUrl.image) }}
+              resources: {{- toYaml .Values.taskProcessKnowledgeSourceUrl.resources | nindent 16 }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              env:
+                - name: JOB_ARGUMENTS
+                  value: "_JOB_ARGUMENTS_"
+              volumeMounts:
+                - name: rabbitmq-connection-string
+                  mountPath: /var/run/secrets/rabbitmqConnectionString
+                  subPath: rabbitmqConnectionString
+                - name: redis-password
+                  mountPath: /var/run/secrets/redis-password.conf
+                  subPath: redis-password.conf
+          volumes:
+            - name: rabbitmq-connection-string
+              secret:
+                secretName: cognigy-rabbitmq
+                items:
+                  - key: connection-string
+                    path: rabbitmqConnectionString
+            - name: redis-password
+              secret:
+                secretName: cognigy-redis-password
+          {{- include "image.pullSecrets" $ | nindent 10 }}
+
+  ingestKnowledgeChunks.yaml: |
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: _NAME_
+      namespace: {{ $.Release.Namespace | quote }}
+    spec:
+      backoffLimit: {{ .Values.taskIngestKnowledgeChunks.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.taskIngestKnowledgeChunks.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .Values.taskIngestKnowledgeChunks.ttlSecondsAfterFinished }}
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: task-ingest-knnowledge-chunks
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.taskIngestKnowledgeChunks.image) }}
+              resources: {{- toYaml .Values.taskIngestKnowledgeChunks.resources | nindent 16 }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              env:
+                - name: JOB_ARGUMENTS
+                  value: "_JOB_ARGUMENTS_"
+              volumeMounts:
+                - name: rabbitmq-connection-string
+                  mountPath: /var/run/secrets/rabbitmqConnectionString
+                  subPath: rabbitmqConnectionString
+                - name: weaviate-api-key
+                  mountPath: /var/run/secrets/weaviateApiKey
+                  subPath: weaviateApiKey
+          volumes:
+            - name: rabbitmq-connection-string
+              secret:
+                secretName: cognigy-rabbitmq
+                items:
+                  - key: connection-string
+                    path: rabbitmqConnectionString
+            - name: weaviate-api-key
+              secret:
+                secretName: cognigy-weaviate-api-key
+                items:
+                  - key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
+                    path: weaviateApiKey
+          {{- include "image.pullSecrets" $ | nindent 10 }}
+
+{{- end }}
