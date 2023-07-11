@@ -2487,7 +2487,7 @@ serviceCustomModules:
   tolerations: []
   priorityClassName: ""
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-d2dc8973c2-1687271226
+  image: cognigy.azurecr.io/service-endpoint:release-567c7b0fb8-1688735772
   replicaCount: 3
   resources:
     requests:
