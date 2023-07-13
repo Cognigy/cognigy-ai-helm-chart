@@ -6,13 +6,13 @@
 This chart installs a Cognigy.AI deployment on a [Kubernetes](https://kubernetes.io/) cluster using the [Helm](https://helm.sh/) package manager.
 
 ## Prerequisites
-- Kubernetes v1.19-1.24 running on either:
+- Kubernetes v1.19-1.26 running on either:
   - AWS EKS
   - Azure AKS
   - "generic" on-premises kubernetes platform. Running Cognigy.AI on-premises will require additional manual steps, we recommend to use public clouds (AWS or Azure) instead.
 - kubectl utility connected to the kubernetes cluster
-- Helm 3.8.0+
-- Persistent Volume provisioner in the underlying infrastructure for Cognigy.AI stateful services (for AWS/Azure no further conifguration is reqiured):
+- Helm 3.9.0+
+- Persistent Volume provisioner in the underlying infrastructure for Cognigy.AI stateful services (for AWS/Azure no further configuration is required):
   - Block storage (disks) for Redis Persistent PVC
   - File storage (NFS) shares for `flow-modules` and `functions` PVCs
 
@@ -46,20 +46,26 @@ You need to set at least following parameters in `YOUR_VALUES_FILE.yaml`:
 
 ### Cognigy.AI DNS and TLS Settings
 Cognigy.AI exposes several web services for which you will need to assign DNS records in a public domain operated by your organization. These DNS records must be added into your DNS system before you continue with the installation process. Replace `yourdomain.com` according to the domain (subdomain) of your organization under `ingress` section as below:
-```
+```yaml
 ingress:
-  serviceAnalyticsOdata: 
+  serviceAnalyticsOdata:
     host: "odata-yourdomain.com"
-  serviceApi: 
+  serviceApi:
     host: "api-yourdomain.com"
-  serviceEndpoint: 
+  serviceAppSessionManager:
+    host: "apps-yourdomain.com"
+  serviceEndpoint:
     host: "endpoint-yourdomain.com"
-  serviceUi: 
-    host: "yourdomain.com"
-  serviceWebchat: 
-    host: "webchat-yourdomain.com"
   serviceInsightsApi:
     host: "insights-api-yourdomain.com"
+  serviceRuntimeFileManager:
+    host: "files-api-yourdomain.com"
+  serviceStaticFiles:
+    host: "static-api-yourdomain.com"
+  serviceUi:
+    host: "yourdomain.com"
+  serviceWebchat:
+    host: "webchat-yourdomain.com"
 ```
 Cognigy.AI relies on SSL-encrypted connection between the client and the services You need to provide an SSL certificate for the domain in which DNS records for Cognigy.AI will be created, for this put the SSL certificate under `tls.crt` and its private key under `tls.key`. If you have a certificate chain, make sure you provide the whole certificate chain under `tls.crt` in [.pem format](https://www.digicert.com/kb/ssl-support/pem-ssl-creation.htm). 
 
@@ -73,22 +79,22 @@ helm dependency update
 2. Install Cognigy.AI Helm release: 
 * Installing from Cognigy Container Registry (recommended), specify proper `HELM_CHART_VERSION` and `YOUR_VALUES_FILE.yaml`:
    * Login into Cognigy helm registry (provide your Cognigy Container Registry credentials):
-   ```
+   ```bash
    helm registry login cognigy.azurecr.io \
    --username <your-username> \
    --password <your-password>
    ```
    * Install Helm Chart into a separate `cognigy-ai` namespace:
-   ```
+   ```bash
    helm upgrade --install --namespace cognigy-ai cognigy-ai oci://cognigy.azurecr.io/helm/cognigy.ai --version HELM_CHART_VERSION --values YOUR_VALUES_FILE.yaml --create-namespace
    ```
 * Alternatively you can install it from the local chart (not recommended):
-   ```
+   ```bash
    helm upgrade --install --namespace cognigy-ai --values YOUR_VALUES_FILE.yaml cognigy-ai .
    ```
 
 3. Verify that all pods are in a ready state:
-```
+```bash
 kubectl get pods --namespace cognigy-ai
 ```
 Proceed with logging in into Cognigy.AI and provide license according to official installation documentation.
@@ -122,26 +128,25 @@ Default resources for Cognigy.AI microservices specified in `values.yaml` are ta
 **IMPORTANT:** Do not copy `image` value as you will need to modify it manually during upgrades!
 
 For example, for `service-ai` microservice copy from `values.yaml` and adjust in `YOUR_VALUES_FILE.yaml` following variables:
-   ```
-   serviceAi:
-     replicaCount: 1
-     resources:
-       requests:
-         cpu: '0.4'
-         memory: 400M
-       limits:
-         cpu: '0.4'
-         memory: 500M
-   ```
+```yaml
+serviceAi:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: '0.4'
+      memory: 400M
+    limits:
+      cpu: '0.4'
+      memory: 500M
+```
 
 ### NLP Configuration
-To disable NLP capabilities for additional languages, you can set `replicaCount: 0`
-for related `Train` and `Score` components, for example to disable NLP capabilities for Japanese:
-```
-serviceNlpScoreJa
-  replicaCount: 0
+To enable NLP capabilities for additional languages, you can set `enabled: true` for related `Train` and `Score` components, for example to enable NLP capabilities for Japanese:
+```yaml
+serviceNlpScoreJa:
+  enabled: true
 serviceNlpTrainJa:
-  replicaCount: 0
+  enabled: true
 ```
 ### Cognigy.AI Secrets Backup
 During the installation process `dbinit-generate.sh` initialization script generates connection strings for Cognigy.AI microservices to MongoDB, RabbitMQ and Redis backends and stores these connection strings in form of [Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in `cognigy-ai` installation namespace. In case you loose the cluster where Cognigy.AI is running or accidentally delete these secrets, there will be no possibility to connect to the existing databases anymore. 
@@ -152,7 +157,7 @@ During the installation process `dbinit-generate.sh` initialization script gener
 **IMPORTANT:** If you uninstall the Cognigy.AI Helm release, `traefik` Ingress deployment will also be removed. Consequently, a dynamically provisioned `External IP` of the cloud provider's load balancer (e.g. ELB on AWS) will also be freed up. It will affect static DNS settings configured during DNS setup and will cause a downtime of your installation. If you recreate a release you will also have to update DNS, make sure DNS timeouts are set properly, to avoid long outages.
 
 To uninstall a release execute:
-```
+```bash
 helm uninstall --namespace cognigy-ai cognigy-ai
 ```
 
@@ -167,7 +172,7 @@ To fully remove PVCs and secrets you need to run the following command:
 **IMPORTANT: If you run these commands, all data persisted in PVCs will be lost!**
 
 **IMPORTANT: If you run these commands, all MongoDB credentials will be lost!**
-```
+```bash
 kubectl delete --namespace cognigy-ai pvc --all
 kubectl delete --namespace cognigy-ai secrets --all
 ```
