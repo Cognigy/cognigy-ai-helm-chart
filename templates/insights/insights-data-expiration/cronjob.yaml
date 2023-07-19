@@ -1,4 +1,4 @@
-{{- $postgreSql_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresql.auth.existingSecret "defaultSecret" .Values.postgresql.fullnameOverride) }}
+{{- $dataExpiration_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresqlExtras.passwords.services.dataExpiration.auth.existingSecret "defaultSecret" (printf "cognigy-insights-%s-postgres-password" $.Values.postgresqlExtras.passwords.services.dataExpiration.serviceName)) }}
 {{- if .Values.postgresql.enabled }}
 ---
 apiVersion: batch/v1
@@ -16,34 +16,34 @@ spec:
       template:
         spec:
           securityContext:
-            {{- toYaml .Values.postgresql.dataExpiration.securityContext | nindent 12 }}
+            {{- toYaml .Values.postgresqlExtras.dataExpiration.securityContext | nindent 12 }}
           restartPolicy: OnFailure
-          {{- if .Values.postgresql.dataExpiration.affinity }}
-          affinity: {{- include "common.tplvalues.render" (dict "value" .Values.postgresql.dataExpiration.affinity "context" $) | nindent 8 }}
+          {{- if .Values.postgresqlExtras.dataExpiration.affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .Values.postgresqlExtras.dataExpiration.affinity "context" $) | nindent 8 }}
           {{- end }}
-          {{- if .Values.postgresql.dataExpiration.nodeSelector }}
-          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.postgresql.dataExpiration.nodeSelector "context" $) | nindent 8 }}
+          {{- if .Values.postgresqlExtras.dataExpiration.nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.postgresqlExtras.dataExpiration.nodeSelector "context" $) | nindent 8 }}
           {{- end }}
-          {{- if .Values.postgresql.dataExpiration.tolerations }}
-          tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.postgresql.dataExpiration.tolerations "context" $) | nindent 8 }}
-          {{- end }}        
+          {{- if .Values.postgresqlExtras.dataExpiration.tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.postgresqlExtras.dataExpiration.tolerations "context" $) | nindent 8 }}
+          {{- end }}
           containers:
             - name: insights-data-expiration
-              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.postgresql.dataExpiration.image) }}
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.postgresqlExtras.dataExpiration.image) }}
               command: ["sh", "-c", "psql 'postgresql://'${INSIGHTS_POSTGRES_USER}':'${INSIGHTS_POSTGRES_PASSWORD}'@'${INSIGHTS_POSTGRES_HOST}':'${INSIGHTS_POSTGRES_PORT}'/'${INSIGHTS_POSTGRES_DB}'' -c 'SET timezone = '\''UTC'\''; DELETE FROM public.conversations WHERE \"expiresAt\" < NOW(); DELETE FROM public.sessions WHERE \"expiresAt\" < NOW(); DELETE FROM public.analytics WHERE \"expiresAt\" < NOW(); DELETE FROM public.stepevents WHERE \"expiresAt\" < NOW(); '"]
               env:
               - name: INSIGHTS_POSTGRES_HOST
-                value: {{ $.Values.cubejs.envs.CUBEJS_DB_HOST | quote }}
+                value: {{ $.Values.postgresqlExtras.hosts.pgpool | quote }}
               - name: INSIGHTS_POSTGRES_PORT
-                value: {{ $.Values.cubejs.envs.CUBEJS_DB_PORT | quote }}
+                value: {{ $.Values.postgresqlExtras.port | quote }}
               - name: INSIGHTS_POSTGRES_DB
-                value: {{ $.Values.cubejs.envs.CUBEJS_DB_NAME | quote }}
+                value: {{ $.Values.postgresql.postgresql.database | quote }}
               - name: INSIGHTS_POSTGRES_USER
-                value: {{ $.Values.postgresql.auth.username | quote }}              
+                value: {{ $.Values.postgresqlExtras.passwords.services.dataExpiration.serviceName | quote }}
               - name: INSIGHTS_POSTGRES_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: {{ $postgreSql_dbSecret }}
-                    key: postgres-password
-          {{- include "image.pullSecrets" $ | nindent 10 }}        
+                    name: {{ $dataExpiration_dbSecret }}
+                    key: password
+          {{- include "image.pullSecrets" $ | nindent 10 }}
 {{- end }}

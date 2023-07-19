@@ -30,8 +30,8 @@ spec:
       {{- end }}
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
-      {{- end }}      
-      containers:      
+      {{- end }}
+      containers:
         - name: cube-store-router
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
@@ -53,10 +53,12 @@ spec:
             - name: CUBESTORE_WORKERS
               value: {{ include "cubejs.cubeStoreWorkers" $ }}
             - name: CUBESTORE_DATA_DIR
-              value: /cube/.cubestore/data             
+              value: /cube/.cubestore/data
+            - name: CUBESTORE_REMOTE_DIR
+              value: /cube/data
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}              
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /livez
@@ -80,10 +82,10 @@ spec:
       volumes:
         - name: datadir
           persistentVolumeClaim:
-            claimName: cubejs-cubestore-pvc    
-      {{- end }}        
-      {{- include "image.pullSecrets" $ | nindent 6 }}            
+            claimName: cubejs-cubestore-pvc
+      {{- end }}
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
-        {{- toYaml .securityContext | nindent 8 }}      
+        {{- toYaml .securityContext | nindent 8 }}
 {{- end }}
 {{- end }}

@@ -1,5 +1,5 @@
 {{- if .Values.cubejs.enabled }}
-{{- $postgreSql_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresql.auth.existingSecret "defaultSecret" .Values.postgresql.fullnameOverride) }}
+{{- $cubejs_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresqlExtras.passwords.services.cubejs.auth.existingSecret "defaultSecret" (printf "cognigy-insights-%s-postgres-password" $.Values.postgresqlExtras.passwords.services.cubejs.serviceName)) }}
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
 {{- with .Values.cubejs.apiServer }}
 ---
@@ -19,7 +19,7 @@ spec:
         app: cube-api-server
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
-        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $postgreSql_dbSecret) }}{{ $postgreSql_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $postgreSql_dbSecret).data | sha256sum }}{{ end }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cubejs_dbSecret) }}{{ $cubejs_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cubejs_dbSecret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -29,10 +29,10 @@ spec:
       {{- end }}
       {{- if .tolerations }}
       tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
-      {{- end }}   
+      {{- end }}
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
-      {{- end }}   
+      {{- end }}
       containers:
         - name: cube-api-server
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
@@ -42,30 +42,30 @@ spec:
               containerPort: 4000
           env:
             - name: CUBEJS_DB_TYPE
-              value: {{ $.Values.cubejs.envs.CUBEJS_DB_TYPE | quote }}
+              value: "postgres"
             - name: CUBEJS_DB_HOST
-              value: {{ $.Values.cubejs.envs.CUBEJS_DB_HOST | quote }}
+              value: {{ $.Values.postgresqlExtras.hosts.pgpool | quote }}
             - name: CUBEJS_DB_PORT
-              value: {{ $.Values.cubejs.envs.CUBEJS_DB_PORT | quote }}
+              value: {{ $.Values.postgresqlExtras.port | quote }}
             - name: CUBEJS_DB_NAME
-              value: {{ $.Values.cubejs.envs.CUBEJS_DB_NAME | quote }}
+              value: {{ $.Values.postgresql.postgresql.database | quote }}
             - name: CUBEJS_DB_USER
-              value: {{ $.Values.cubejs.envs.CUBEJS_DB_USER | quote }}
+              value: {{ $.Values.postgresqlExtras.passwords.services.cubejs.serviceName | quote }}
             - name: CUBEJS_CUBESTORE_HOST
               value: cube-store-router
             - name: CUBEJS_API_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ $cognigyInsightsJwt_secret }}
-                  key: secret             
+                  key: secret
             - name: CUBEJS_DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: {{ $postgreSql_dbSecret }}
-                  key: postgres-password
+                  name: {{ $cubejs_dbSecret }}
+                  key: password
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}                  
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
@@ -85,7 +85,7 @@ spec:
             timeoutSeconds: 10
       {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
-        {{- toYaml .securityContext | nindent 8 }}      
+        {{- toYaml .securityContext | nindent 8 }}
 
 {{- end }}
 {{- end }}

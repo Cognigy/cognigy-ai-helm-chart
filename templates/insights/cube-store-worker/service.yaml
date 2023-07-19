@@ -4,16 +4,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: cube-store-worker-hl
+  name: cube-store-worker
   namespace: {{ .Release.Namespace }}
   labels:
     app: cube-store-worker
   annotations:
     {{- if .Values.service.cubeStoreWorker.annotations }}
       {{- toYaml .Values.service.cubeStoreWorker.annotations | nindent 4 }}
-    {{- end }}   
+    {{- end }}
 spec:
-  type: ClusterIP
   clusterIP: None
   ports:
     - name: worker

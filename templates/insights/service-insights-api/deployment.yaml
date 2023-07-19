@@ -1,6 +1,7 @@
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $serviceInsightsApi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresqlExtras.passwords.services.serviceInsightsApi.auth.existingSecret "defaultSecret" (printf "cognigy-insights-%s-postgres-password" $.Values.postgresqlExtras.passwords.services.serviceInsightsApi.serviceName)) }}
 {{- with .Values.serviceInsightsApi }}
 ---
 apiVersion: apps/v1
@@ -21,6 +22,7 @@ spec:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
+        checksum/postgres: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceInsightsApi_dbSecret) }}{{ $serviceInsightsApi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceInsightsApi_dbSecret).data | sha256sum }}{{ end }}
 
     spec:
       {{- if .affinity }}
@@ -46,10 +48,25 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            {{- if $.Values.postgresql.enabled }}
+            - name: INSIGHTS_POSTGRES_DB_NAME
+              value: {{ $.Values.postgresql.postgresql.database | quote }}
+            - name: INSIGHTS_POSTGRES_DB_HOST
+              value: {{ $.Values.postgresqlExtras.hosts.pgpool | quote }}
+            - name: INSIGHTS_POSTGRES_DB_PORT
+              value: {{ $.Values.postgresqlExtras.port | quote }}
+            - name: INSIGHTS_POSTGRES_DB_USERNAME
+              value: {{ $.Values.postgresqlExtras.passwords.services.serviceInsightsApi.serviceName }}
+            - name: INSIGHTS_POSTGRES_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceInsightsApi_dbSecret }}
+                  key: password
+            {{- end }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
-              value: "true"	
+              value: "true"
             - name: INSIGHTS_JWT_SECRET
               valueFrom:
                 secretKeyRef:

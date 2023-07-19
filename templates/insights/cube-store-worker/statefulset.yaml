@@ -8,7 +8,7 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
 spec:
   replicas: {{ .replicaCount }}
-  serviceName: cube-store-worker-hl
+  serviceName: cube-store-worker
   selector:
     matchLabels:
       app: cube-store-worker
@@ -30,7 +30,7 @@ spec:
       {{- end }}
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
-      {{- end }}      
+      {{- end }}
       initContainers:
         - name: init-cubestore
           image: busybox
@@ -52,7 +52,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: CUBESTORE_SERVER_NAME
-              value: {{ printf "$(MY_POD_NAME).cube-store-worker-hl:%d" $workerPort | quote }}
+              value: {{ printf "$(MY_POD_NAME).cube-store-worker:%d" $workerPort | quote }}
             - name: CUBESTORE_WORKER_PORT
               value: {{ .workerPort | quote }}
             - name: CUBESTORE_WORKERS
@@ -60,10 +60,12 @@ spec:
             - name: CUBESTORE_META_ADDR
               value: "cube-store-router:9999"
             - name: CUBESTORE_DATA_DIR
-              value: /cube/.cubestore/data              
+              value: /cube/.cubestore/data
+            - name: CUBESTORE_REMOTE_DIR
+              value: /cube/data
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}              
+            {{- end }}
           {{- if $.Values.cubejs.persistence.enabled }}
           volumeMounts:
             - name: datadir
@@ -75,8 +77,8 @@ spec:
           persistentVolumeClaim:
             claimName: cubejs-cubestore-pvc
       {{- end }}
-      {{- include "image.pullSecrets" $ | nindent 6 }}      
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
-        {{- toYaml .securityContext | nindent 8 }}      
+        {{- toYaml .securityContext | nindent 8 }}
 {{- end }}
 {{- end }}

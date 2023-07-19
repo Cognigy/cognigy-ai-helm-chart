@@ -344,7 +344,7 @@ managementUi:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
-  image: cognigy.azurecr.io/management-ui:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/management-ui:release-3cacc0d770-1688572302
   replicaCount: 1
   resources:
     limits:
@@ -2260,7 +2260,7 @@ statefulRedisPersistent:
 ## Cognigy.AI components
 ##
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-ai:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2357,7 +2357,7 @@ serviceAi:
             averageUtilization: 70
     behavior: {}
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-alexa-management:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2437,7 +2437,7 @@ serviceAnalyticsReporter:
   tolerations: []
   priorityClassName: ""
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-api:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2455,7 +2455,7 @@ serviceApi:
   tolerations: []
   priorityClassName: ""
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-app-session-manager:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2471,7 +2471,7 @@ serviceAppSessionManager:
   tolerations: []
   priorityClassName: ""
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-custom-modules:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2487,7 +2487,7 @@ serviceCustomModules:
   tolerations: []
   priorityClassName: ""
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-2947d584f1-1689092741
+  image: cognigy.azurecr.io/service-endpoint:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2503,7 +2503,7 @@ serviceEndpoint:
   tolerations: []
   priorityClassName: ""
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-execution:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2531,7 +2531,7 @@ serviceExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-function-execution:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2559,7 +2559,7 @@ serviceFunctionExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-function-scheduler:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2587,7 +2587,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-handover:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2632,7 +2632,7 @@ serviceHandoverInactivity:
             averageUtilization: 70
     behavior: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-http:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2714,7 +2714,7 @@ serviceInsightsUi:
   tolerations: []
   priorityClassName: ""
 serviceJourneys:
-  image: cognigy.azurecr.io/service-journeys:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-journeys:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2730,7 +2730,7 @@ serviceJourneys:
   tolerations: []
   priorityClassName: ""
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-logs:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2762,7 +2762,7 @@ serviceNlpMatcher:
   tolerations: []
   priorityClassName: ""
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:release-15e2c1bb2c-1688464860
+  image: cognigy.azurecr.io/service-nlp-ner:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2806,7 +2806,7 @@ serviceParser:
   tolerations: []
   priorityClassName: ""
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-playbook-execution:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2822,7 +2822,7 @@ servicePlaybookExecution:
   tolerations: []
   priorityClassName: ""
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-profiles:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2850,7 +2850,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-resources:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2866,7 +2866,7 @@ serviceResources:
   tolerations: []
   priorityClassName: ""
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-runtime-file-manager:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2894,7 +2894,7 @@ serviceRuntimeFileManager:
             averageUtilization: 70
     behavior: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-security:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2912,7 +2912,7 @@ serviceSecurity:
   tolerations: []
   priorityClassName: ""
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-session-state-manager:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2956,7 +2956,7 @@ serviceStaticFiles:
   tolerations: []
   priorityClassName: ""
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-task-manager:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2972,7 +2972,7 @@ serviceTaskManager:
   tolerations: []
   priorityClassName: ""
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-trainer:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -2988,7 +2988,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-9a9eec247a-1688650692
+  image: cognigy.azurecr.io/service-ui:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -3006,7 +3006,7 @@ serviceUi:
   tolerations: []
   priorityClassName: ""
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:release-9c02bce5fa-1688737490
+  image: cognigy.azurecr.io/service-webchat:release-3cacc0d770-1688572302
   replicaCount: 3
   resources:
     requests:
@@ -3545,12 +3545,29 @@ serviceNlpClassifierTrainXx:
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
+serviceSearchOrchestrator:
+  image: cognigy.azurecr.io/service-search-orchestrator:release-cef1ae0-1689156623
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "0.3"
+      memory: "500M"
+    limits:
+      cpu: "1.0"
+      memory: "1.0G"
+  extraEnvVars: []
+  securityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
 
 ##
 # Configuration for knowledge search tasks that run as Kubernetes jobs
 ##
 
 taskProcessKnowledgeSourceFile:
+  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-3cacc0d770-1688572302
   resources:
     requests:
       cpu: '0.1'
@@ -3567,28 +3584,8 @@ taskProcessKnowledgeSourceFile:
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
-  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-9c02bce5fa-1688737490
-
 taskProcessKnowledgeSourceUrl:
-  resources:
-    requests:
-      cpu: '0.1'
-      memory: 60M
-    limits:
-      cpu: '0.3'
-      memory: 150M
-  backoffLimit: 3
-  activeDeadlineSeconds: 300 # 5 minutes
-  ttlSecondsAfterFinished: 3600 # 1 hour
-  extraEnvVars: []
-  securityContext: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
-  priorityClassName: ""
   image: cognigy.azurecr.io/task-process-knowledge-source-url:release-85e9f7f593-1688390890
-
-taskIngestKnowledgeChunks:
   resources:
     requests:
       cpu: '0.1'
@@ -3605,7 +3602,24 @@ taskIngestKnowledgeChunks:
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
+taskIngestKnowledgeChunks:
   image: cognigy.azurecr.io/task-ingest-knowledge-chunks:release-6059001bfe-1687948810
+  resources:
+    requests:
+      cpu: '0.1'
+      memory: 60M
+    limits:
+      cpu: '0.3'
+      memory: 150M
+  backoffLimit: 3
+  activeDeadlineSeconds: 300 # 5 minutes
+  ttlSecondsAfterFinished: 3600 # 1 hour
+  extraEnvVars: []
+  securityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
 
 ## Optionally create priorityClass
 ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass
@@ -3971,44 +3985,72 @@ weaviate:
 # Insights PostgreSQL database
 postgresql:
   enabled: false
+  fullnameOverride: postgresql-ha
   global:
+    imageRegistry: "cognigy.azurecr.io"
     imagePullSecrets:
       - cognigy-registry-token
     storageClass: "postgresql"
-  fullnameOverride: "postgresql"
-  image:
-    registry: "cognigy.azurecr.io"
-    repository: postgres
-    tag: 12.14.0-debian-11-r19
-  architecture: "replication"
-  auth:
+  postgresql:
+    image:
+      registry: "cognigy.azurecr.io"
+      repository: "postgresql-repmgr"
+      tag: "15.3.0-debian-11-r6"
     database: "service_analytics_collector"
     username: "cognigy-insights"
-    password: "postgres"
-    postgresPassword: "postgres"
-    replicationPassword: "postgres"
-    # Existing secret must have the keys: postgres-password, password, replication-password
+    password: "veryStrongPassword"
+    postgresPassword: "veryStrongAdminPassword"
+    repmgrPassword: "veryStrongReplicationManagerPassword"
     existingSecret: ""
-  primary:
+    replicaCount: 3
     resources:
-      limits:
-        memory: "5Gi"
-        cpu: "2"
       requests:
         memory: "2Gi"
         cpu: "1"
-    persistence:
-      size: 50Gi
-  readReplicas:
-    persistence:
-      size: 50Gi
-    resources:
       limits:
         memory: "5Gi"
         cpu: "2"
-      requests:
-        memory: "2Gi"
-        cpu: "1"
+    persistence:
+      enabled: true
+      size: 10Gi
+  pgpool:
+    image:
+      registry: "cognigy.azurecr.io"
+      repository: "pgpool"
+      tag: "4.4.3-debian-11-r1"
+    replicaCount: 3
+    adminUsername: "admin"
+    adminPassword: "veryStrongPgPoolAdminPassword"
+    initdbScriptsCM: "cognigy-insights-pgpool-init-script"
+    extraEnvVars:
+      - name: COGNIGY_INSIGHTS_CUBEJS_USERNAME
+        value: "cubejs"
+      - name: COGNIGY_INSIGHTS_CUBEJS_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: cognigy-insights-cubejs-postgres-password
+            key: password
+      - name: COGNIGY_INSIGHTS_DATAEXPIRATION_USERNAME
+        value: "data-expiration"
+      - name: COGNIGY_INSIGHTS_DATAEXPIRATION_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: cognigy-insights-data-expiration-postgres-password
+            key: password
+      - name: COGNIGY_INSIGHTS_SERVICECOLLECTOR_USERNAME
+        value: "service-collector"
+      - name: COGNIGY_INSIGHTS_SERVICECOLLECTOR_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: cognigy-insights-service-collector-postgres-password
+            key: password
+      - name: COGNIGY_INSIGHTS_SERVICEINSIGHTSAPI_USERNAME
+        value: "service-insights-api"
+      - name: COGNIGY_INSIGHTS_SERVICEINSIGHTSAPI_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: cognigy-insights-service-insights-api-postgres-password
+            key: password
   metrics:
     enabled: true
     serviceMonitor:
@@ -4018,6 +4060,11 @@ postgresql:
       repository: postgres-exporter
       tag: 0.12.0-debian-11-r91
 
+postgresqlExtras:
+  port: "5432"
+  hosts:
+    pgpool: "postgresql-ha-pgpool"
+    headless: "postgresql-ha-postgresql-headless"
   # Insights CronJob for Data Expiration For PostgreSQL
   dataExpiration:
     image: "cognigy.azurecr.io/postgres:12.14.0-debian-11-r19"
@@ -4025,6 +4072,46 @@ postgresql:
     nodeSelector: {}
     tolerations: []
     securityContext: {}
+  # Insights PostgreSQL database init job
+  dbInit:
+    enabled: true
+    image: "cognigy.azurecr.io/postgres:12.14.0-debian-11-r19"
+    helmHook:
+      enabled: true
+      hook: post-install,pre-upgrade
+      deletePolicy: "before-hook-creation,hook-succeeded"
+    securityContext: {}
+    affinity: {}
+    nodeSelector: {}
+    tolerations: []
+  # Database credentials for Insights
+  passwords:
+    enabled: true
+    services:
+      serviceCollector:
+        enabled: true
+        serviceName: service-collector
+        auth:
+          password: ""
+          existingSecret: ""
+      serviceInsightsApi:
+        enabled: true
+        serviceName: service-insights-api
+        auth:
+          password: ""
+          existingSecret: ""
+      dataExpiration:
+        enabled: true
+        serviceName: data-expiration
+        auth:
+          password: ""
+          existingSecret: ""
+      cubejs:
+        enabled: true
+        serviceName: cubejs
+        auth:
+          password: ""
+          existingSecret: ""
 
 # Cube Framework for Insights
 # https://cube.dev
@@ -4034,14 +4121,6 @@ cubejs:
     enabled: false
     size: "1Mi"
     storageClass: "cubejs"
-
-  # CubeJS related ENV Variables
-  envs:
-    CUBEJS_DB_TYPE: "postgres"
-    CUBEJS_DB_HOST: "postgresql-read-0.postgresql-read-hl"
-    CUBEJS_DB_PORT: "5432"
-    CUBEJS_DB_NAME: "service_analytics_collector"
-    CUBEJS_DB_USER: "postgres"
 
   apiServer:
     image: "cognigy.azurecr.io/insights-cube:release-de82383-1685719424"
@@ -4062,7 +4141,7 @@ cubejs:
 
   refreshWorker:
     image: "cognigy.azurecr.io/insights-cube:release-de82383-1685719424"
-    replicaCount: 1
+    replicaCount: 1 # Don't increase the replica count, refresh worker can't be scaled independently and a whole cluster has to be replicated
     resources:
       requests:
         memory: "256Mi"
@@ -4076,10 +4155,9 @@ cubejs:
     nodeSelector: {}
     tolerations: []
     priorityClassName: ""
-
   storeRouter:
     image: "cognigy.azurecr.io/insights-cubestore:v0.33.23"
-    replicaCount: 1
+    replicaCount: 1 # Don't increase the replica count, store router can't be scaled independently and a whole cluster has to be replicated
     routerPort: "3030"
     metaPort: "9999"
     resources:
@@ -4095,9 +4173,13 @@ cubejs:
     nodeSelector: {}
     tolerations: []
     priorityClassName: ""
-
   storeWorker:
     image: "cognigy.azurecr.io/insights-cubestore:v0.33.23"
+    ##
+    # Increase the replica count of store worker. Manually scaling is not possible
+    # because the respective dns names should be pre-calculated and mounted as env in store-router
+    # to keep track of store worker
+    ##
     replicaCount: 2
     workerPort: "9001"
     resources:

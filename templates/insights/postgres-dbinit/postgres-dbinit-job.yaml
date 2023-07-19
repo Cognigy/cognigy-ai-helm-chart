@@ -1,0 +1,136 @@
+{{- $serviceCollector_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresqlExtras.passwords.services.serviceCollector.auth.existingSecret "defaultSecret" (printf "cognigy-insights-%s-postgres-password" $.Values.postgresqlExtras.passwords.services.serviceCollector.serviceName)) }}
+{{- $serviceInsightsApi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresqlExtras.passwords.services.serviceInsightsApi.auth.existingSecret "defaultSecret" (printf "cognigy-insights-%s-postgres-password" $.Values.postgresqlExtras.passwords.services.serviceInsightsApi.serviceName)) }}
+{{- $dataExpiration_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresqlExtras.passwords.services.dataExpiration.auth.existingSecret "defaultSecret" (printf "cognigy-insights-%s-postgres-password" $.Values.postgresqlExtras.passwords.services.dataExpiration.serviceName)) }}
+{{- $cubejs_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresqlExtras.passwords.services.cubejs.auth.existingSecret "defaultSecret" (printf "cognigy-insights-%s-postgres-password" $.Values.postgresqlExtras.passwords.services.cubejs.serviceName)) }}
+{{- $postgreSql_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresql.postgresql.existingSecret "defaultSecret" (printf "%s-postgresql" $.Values.postgresql.fullnameOverride)) }}
+
+{{- if and (.Values.postgresql.enabled) (.Values.postgresqlExtras.dbInit.enabled) }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cognigy-insights-postgres-dbinit
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.postgresqlExtras.dbInit.helmHook.enabled }}
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": {{ .Values.postgresqlExtras.dbInit.helmHook.hook }}
+    "helm.sh/hook-weight": "-3"
+    "helm.sh/hook-delete-policy": {{ .Values.postgresqlExtras.dbInit.helmHook.deletePolicy }}
+    {{- end }}
+spec:
+  template:
+    metadata:
+      name: cognigy-insights-postgres-dbinit
+    spec:
+      restartPolicy: Never
+      {{- if .Values.postgresqlExtras.dbInit.securityContext }}
+      securityContext:
+        {{- toYaml .Values.postgresqlExtras.dbInit.securityContext | nindent 8 }}
+      {{- end }}
+      {{- if .Values.postgresqlExtras.dbInit.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.postgresqlExtras.dbInit.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.postgresqlExtras.dbInit.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.postgresqlExtras.dbInit.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.postgresqlExtras.dbInit.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.postgresqlExtras.dbInit.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: cognigy-insights-postgres-dbinit
+        image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.postgresqlExtras.dbInit.image) }}
+        command: ["/bin/bash"]
+        args: ["/cognigy-insights-dbinit/scripts/postgres-dbinit.sh"]
+        volumeMounts:
+        - name: scripts
+          mountPath: /cognigy-insights-dbinit/scripts
+        - name: passwords
+          mountPath: "/cognigy-insights-dbinit/passwords"
+          readOnly: true
+        env:
+        - name: INSIGHTS_POSTGRES_HOSTS
+          value: {{ include "statefulPostgresql.hosts" $ }}
+        - name: INSIGHTS_POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $postgreSql_dbSecret }}
+              key: postgres-password
+      volumes:
+      - name: scripts
+        configMap:
+          name: cognigy-insights-postgres-dbinit-script
+      - name: passwords
+        projected:
+          sources:
+          - secret:
+              name: {{ $serviceCollector_dbSecret }}
+              items:
+              - key: password
+                path: {{ $.Values.postgresqlExtras.passwords.services.serviceCollector.serviceName }}
+          - secret:
+              name: {{ $serviceInsightsApi_dbSecret }}
+              items:
+              - key: password
+                path: {{ $.Values.postgresqlExtras.passwords.services.serviceInsightsApi.serviceName }}
+          - secret:
+              name: {{ $dataExpiration_dbSecret }}
+              items:
+              - key: password
+                path: {{ $.Values.postgresqlExtras.passwords.services.dataExpiration.serviceName }}
+          - secret:
+              name: {{ $cubejs_dbSecret }}
+              items:
+              - key: password
+                path: {{ $.Values.postgresqlExtras.passwords.services.cubejs.serviceName }}
+      {{- include "image.pullSecrets" $ | nindent 6 }}
+{{- end }}
+
+{{- if and (.Values.postgresql.enabled) (.Values.postgresqlExtras.dbInit.enabled) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cognigy-insights-postgres-dbinit-script
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.postgresqlExtras.dbInit.helmHook.enabled }}
+      # This is what defines this resource as a hook. Without these lines, the
+      # resource is considered part of the release.
+      "helm.sh/hook": {{ .Values.postgresqlExtras.dbInit.helmHook.hook }}
+      "helm.sh/hook-weight": "-4"
+      "helm.sh/hook-delete-policy": {{ .Values.postgresqlExtras.dbInit.helmHook.deletePolicy }}
+    {{- end }}
+data:
+{{ (.Files.Glob "scripts/postgres-dbinit.sh").AsConfig | indent 2 }}
+{{- end }}
+
+{{- if and (.Values.postgresql.enabled) (.Values.postgresql.pgpool.initdbScriptsCM) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cognigy-insights-pgpool-init-script
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  init_pool_passwd.sh: |-
+    #!/bin/bash
+    set -e
+
+    PGPOOL_CONF_DIR=/opt/bitnami/pgpool/conf
+
+    while IFS='=' read -r -d '' KEY VAL; do
+        if [[ $KEY =~ ^COGNIGY_INSIGHTS_(.*)_USERNAME$ ]]; then
+            SERVICE_NAME="${BASH_REMATCH[1]}"
+            PASSWORD_KEY="COGNIGY_INSIGHTS_${SERVICE_NAME}_PASSWORD"
+            PASSWORD="${!PASSWORD_KEY}"
+            if [[ -z $PASSWORD ]]; then
+                echo "Environment variable $PASSWORD_KEY must be set."
+                exit 1
+            fi
+            pg_enc -m -f $PGPOOL_CONF_DIR/pgpool.conf -k $PGPOOL_CONF_DIR/.pgpoolkey -u $VAL $PASSWORD
+        fi
+    done < <(env -0)
+
+{{- end }}

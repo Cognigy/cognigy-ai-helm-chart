@@ -11,7 +11,7 @@ metadata:
   annotations:
     {{- if .Values.service.cubeStoreRouter.annotations }}
       {{- toYaml .Values.service.cubeStoreRouter.annotations | nindent 4 }}
-    {{- end }}    
+    {{- end }}
 spec:
   ports:
     - name: http
@@ -22,4 +22,4 @@ spec:
       targetPort: 9999
   selector:
     app: cube-store-router
-{{- end }}    
+{{- end }}
