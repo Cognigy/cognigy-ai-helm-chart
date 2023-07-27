@@ -23,8 +23,9 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
         checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.postgresql.enabled }}
         checksum/postgres: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCollector_dbSecret) }}{{ $serviceCollector_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCollector_dbSecret).data | sha256sum }}{{ end }}
-
+        {{- end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -63,12 +64,12 @@ spec:
                 secretKeyRef:
                   name: {{ $serviceCollector_dbSecret }}
                   key: password
+            {{- end }}
             - name: INSIGHTS_COLLECTOR_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ $cognigyInsightsCollectorApiKey_secret }}
                   key: secret
-            {{- end }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             {{- if .extraEnvVars }}
