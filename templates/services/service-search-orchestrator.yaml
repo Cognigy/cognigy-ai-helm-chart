@@ -9,13 +9,19 @@ metadata:
   annotations:
   {{- if .Values.service.serviceSearchOrchestrator.annotations }}
     {{- toYaml .Values.service.serviceSearchOrchestrator.annotations | nindent 4 }}
-  {{- end }}   
+  {{- end }}
 spec:
   ports:
     - name: service-search-orchestrator
       port: 80
       targetPort: 8000
       protocol: TCP
+      {{- if and (eq .Values.service.serviceSearchOrchestrator.type "NodePort") .Values.service.serviceSearchOrchestrator.type }}
+      nodePort: {{ .Values.service.serviceSearchOrchestrator.nodePort | default 30005 }}
+      {{- end }}
+  {{- if .Values.service.serviceSearchOrchestrator.type }}
+  type: {{ .Values.service.serviceSearchOrchestrator.type | default "ClusterIP" }}
+  {{- end }}
   selector:
     app: service-search-orchestrator
 {{- end }}

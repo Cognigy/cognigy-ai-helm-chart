@@ -29,6 +29,8 @@ data:
               env:
                 - name: JOB_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
+                - name: UNSTRUCTURED_EXTRACTOR_URL
+                  value: "http://unstructured-io/general/v0/general"
               volumeMounts:
                 - name: rabbitmq-connection-string
                   mountPath: /var/run/secrets/rabbitmqConnectionString

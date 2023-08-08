@@ -1,0 +1,22 @@
+{{- if (.Values.knowledgeSearch.enabled) }}
+{{- if (.Values.podMonitors.enabled) }}
+{{- with .Values.podMonitors }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: prom-cognigy-monitor-cognigy-ai-service-search-orchestrator
+  namespace: {{ .namespace }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+  podMetricsEndpoints:
+    - path: /metrics
+      port: metrics
+  selector:
+    matchLabels:
+      app: service-search-orchestrator
+{{- end }}
+{{- end }}
+{{- end }}
