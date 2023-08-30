@@ -2260,7 +2260,7 @@ statefulRedisPersistent:
 ## Cognigy.AI components
 ##
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-250d4ce8a5-1692693707
+  image: cognigy.azurecr.io/service-ai:release-13d29cd3ca-1692974480
   replicaCount: 3
   resources:
     requests:
@@ -2487,7 +2487,7 @@ serviceCustomModules:
   tolerations: []
   priorityClassName: ""
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-250d4ce8a5-1692693707
+  image: cognigy.azurecr.io/service-endpoint:release-9b3d2345d3-1692019875
   replicaCount: 3
   resources:
     requests:
@@ -3567,7 +3567,7 @@ serviceSearchOrchestrator:
 ##
 
 taskProcessKnowledgeSourceFile:
-  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-6c451cd-1691425311
+  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-994c0d7-1693326572
   resources:
     requests:
       cpu: '0.1'
