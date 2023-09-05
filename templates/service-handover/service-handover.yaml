@@ -1,5 +1,6 @@
 {{- $cognigyServiceHandoverApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceHandoverApiAccessToken.existingSecret "defaultSecret" "cognigy-service-handover-api-access-token") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $cognigyRceCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyRceCredentials.existingSecret "defaultSecret" "cognigy-rce-credentials") }}
 {{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceHandover_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceHandover.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceHandover.serviceName)) }}
 {{- with .Values.serviceHandover }}
@@ -23,6 +24,7 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceHandover_dbSecret) }}{{ $serviceHandover_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceHandover_dbSecret).data | sha256sum }}{{ end }}
+        checksum/cognigy-rce-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyRceCredentials_secret) }}{{ $cognigyRceCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyRceCredentials_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-service-handover-api-access-token: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceHandoverApiAccessToken_secret) }}{{ $cognigyServiceHandoverApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceHandoverApiAccessToken_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
@@ -70,6 +72,11 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigyServiceHandoverApiAccessToken_secret }}
                   key: api-access-token
+            - name: RCE_VERIFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyRceCredentials_secret }}
+                  key: rce-verify-token
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
