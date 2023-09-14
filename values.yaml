@@ -2373,7 +2373,7 @@ serviceAlexaManagement:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsCollector:
-  image: cognigy.azurecr.io/service-analytics-collector:release-9e57a81-1692258014
+  image: cognigy.azurecr.io/service-analytics-collector:release-c2df84e-1694681950
   replicaCount: 3
   resources:
     requests:
@@ -2421,7 +2421,7 @@ serviceAnalyticsOdata:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsReporter:
-  image: cognigy.azurecr.io/service-analytics-reporter:release-f60868e-1692187035
+  image: cognigy.azurecr.io/service-analytics-reporter:release-e7fa434-1694681954
   replicaCount: 3
   resources:
     requests:
@@ -2696,7 +2696,7 @@ serviceCollector:
   tolerations: []
   priorityClassName: ""
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-7dea4de-1693212844
+  image: cognigy.azurecr.io/service-insights-ui:release-81011aa-1694681947
   replicaCount: 3
   resources:
     requests:
