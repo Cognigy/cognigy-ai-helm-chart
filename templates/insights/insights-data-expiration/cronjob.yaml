@@ -30,7 +30,7 @@ spec:
           containers:
             - name: insights-data-expiration
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.postgresqlExtras.dataExpiration.image) }}
-              command: ["sh", "-c", "psql 'postgresql://'${INSIGHTS_POSTGRES_USER}':'${INSIGHTS_POSTGRES_PASSWORD}'@'${INSIGHTS_POSTGRES_HOST}':'${INSIGHTS_POSTGRES_PORT}'/'${INSIGHTS_POSTGRES_DB}'' -c 'SET timezone = '\''UTC'\''; DELETE FROM public.conversations WHERE \"expiresAt\" < NOW(); DELETE FROM public.sessions WHERE \"expiresAt\" < NOW(); DELETE FROM public.analytics WHERE \"expiresAt\" < NOW(); DELETE FROM public.stepevents WHERE \"expiresAt\" < NOW(); '"]
+              command: ["sh", "-c", "psql 'postgresql://'${INSIGHTS_POSTGRES_USER}':'${INSIGHTS_POSTGRES_PASSWORD}'@'${INSIGHTS_POSTGRES_HOST}':'${INSIGHTS_POSTGRES_PORT}'/'${INSIGHTS_POSTGRES_DB}'' -c 'SET timezone = '\''UTC'\''; DELETE FROM public.conversations WHERE \"expiresAt\" < NOW(); DELETE FROM public.sessions WHERE \"expiresAt\" < NOW(); DELETE FROM public.analytics WHERE \"expiresAt\" < NOW(); DELETE FROM public.liveagentescalations WHERE \"expiresAt\" < NOW(); DELETE FROM public.voicegatewayevents WHERE \"expiresAt\" < NOW(); DELETE FROM public.stepevents WHERE \"expiresAt\" < NOW(); '"]
               env:
               - name: INSIGHTS_POSTGRES_HOST
                 value: {{ $.Values.postgresqlExtras.hosts.pgpool | quote }}

@@ -1,0 +1,78 @@
+{{- with .Values.cronNfsCleanup }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-nfs-cleanup
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: {{ .concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .backoffLimit }}
+      parallelism: {{ .parallelism }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          restartPolicy: {{ .restartPolicy }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: cron-nfs-cleanup
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+              resources: {{- toYaml .resources | nindent 16 }}
+              env:
+                - name: MAX_SNAPSHOT_AGE
+                  value: {{ .maxSnapshotAge | quote }}
+                - name: TRACING_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
+                - name: TRACING_BASE_URL_WITH_PROTOCOL
+                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+                - name: TRACING_ERRORS_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
+                - name: TRACING_EVENTS_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.eventsSampleRate | quote }}
+                - name: TRACING_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.sampleRate | quote }}
+                - name: ENVIRONMENT
+                  value: {{ $.Values.tracing.environment | quote }}
+                - name: COGNIGY_AI_RELEASE_VERSION
+                  value: {{ $.Chart.AppVersion | quote }}		
+                {{- if .extraEnvVars }}
+                {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
+                {{- end }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              volumeMounts:
+                - name: functions
+                  mountPath: /app/functions
+                {{- if .extraVolumeMounts }}
+                {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
+                {{- end }}
+          volumes: 
+            - name: functions
+              persistentVolumeClaim:
+                claimName: functions
+            {{- if .extraVolumes }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
+            {{- end }}
+          {{- include "image.pullSecrets" $ | nindent 10 }}  
+{{- end }}
+
