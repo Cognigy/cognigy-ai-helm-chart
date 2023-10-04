@@ -1,5 +1,5 @@
-{{- if .Values.cubejs.enabled }}
-{{- $cubejs_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresqlExtras.passwords.services.cubejs.auth.existingSecret "defaultSecret" (printf "cognigy-insights-%s-postgres-password" $.Values.postgresqlExtras.passwords.services.cubejs.serviceName)) }}
+{{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
+{{- $cubejs_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
 {{- with .Values.cubejs.refreshWorker }}
 ---
@@ -19,7 +19,7 @@ spec:
         app: cube-refresh-worker
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
-        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cubejs_dbSecret) }}{{ $cubejs_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cubejs_dbSecret).data | sha256sum }}{{ end }}
+        checksum/postgres: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cubejs_dbSecret) }}{{ $cubejs_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cubejs_dbSecret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -43,14 +43,16 @@ spec:
           env:
             - name: CUBEJS_DB_TYPE
               value: "postgres"
+            - name: CUBEJS_DB_SSL
+              value: {{ $.Values.cubejs.postgresql.ssl | quote }}
             - name: CUBEJS_DB_HOST
-              value: {{ $.Values.postgresqlExtras.hosts.pgpool | quote }}
+              value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
             - name: CUBEJS_DB_PORT
-              value: {{ $.Values.postgresqlExtras.port | quote }}
+              value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: CUBEJS_DB_NAME
-              value: {{ $.Values.postgresql.postgresql.database | quote }}
+              value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: CUBEJS_DB_USER
-              value: {{ $.Values.postgresqlExtras.passwords.services.cubejs.serviceName | quote }}
+              value: {{ $.Values.cubejs.postgresql.username | quote }}
             # Enable refresh worker
             - name: CUBEJS_REFRESH_WORKER
               value: "true"

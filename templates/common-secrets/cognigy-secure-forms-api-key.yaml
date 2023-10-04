@@ -1,0 +1,16 @@
+{{- if (not .Values.commonSecrets.cognigySecureFormsApiKey.existingSecret) }}
+  {{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-secure-forms-api-key") }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-secure-forms-api-key
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  # use the key from the secure-forms cluster
+  api-key: "{{ .Values.commonSecrets.cognigySecureFormsApiKey.token | default "" | b64enc }}"
+  {{- end }}
+{{- end }}

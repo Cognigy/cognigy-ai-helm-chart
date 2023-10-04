@@ -40,6 +40,10 @@ spec:
               env:
                 - name: MAX_SNAPSHOT_AGE
                   value: {{ .maxSnapshotAge | quote }}
+                - name: MAX_PACKAGE_AGE
+                  value: {{ .maxPackageAge | quote }}
+                - name: MAX_UPLOADED_BINARY_AGE
+                  value: {{ .maxUploadedBinaryAge | quote }}
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL

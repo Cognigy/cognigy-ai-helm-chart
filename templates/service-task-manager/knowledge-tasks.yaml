@@ -122,6 +122,9 @@ data:
                 - name: weaviate-api-key
                   mountPath: /var/run/secrets/weaviateApiKey
                   subPath: weaviateApiKey
+                - name: redis-password
+                  mountPath: /var/run/secrets/redis-password.conf
+                  subPath: redis-password.conf
           volumes:
             - name: rabbitmq-connection-string
               secret:
@@ -135,6 +138,9 @@ data:
                 items:
                   - key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
                     path: weaviateApiKey
+            - name: redis-password
+              secret:
+                secretName: cognigy-redis-password
           {{- include "image.pullSecrets" $ | nindent 10 }}
 
 {{- end }}

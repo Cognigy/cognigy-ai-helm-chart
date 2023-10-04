@@ -1,4 +1,5 @@
 {{- $cognigyOauthClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyOauthClientSecret.existingSecret "defaultSecret" "cognigy-oauth-client-secret") }}
+{{- $cognigyVoicegatewayClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyVoicegatewayClientSecret.existingSecret "defaultSecret" "cognigy-voicegateway-client-secret") }}
 {{- with .Values.serviceUi }}
 ---
 apiVersion: apps/v1
@@ -16,6 +17,7 @@ spec:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/cognigy-oauth-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret) }}{{ $cognigyOauthClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-voicegateway-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret) }}{{ $cognigyVoicegatewayClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret).data | sha256sum }}{{ end }}
       labels:
         app: service-ui
     spec:
@@ -55,6 +57,11 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ $cognigyOauthClient_secret }}
+                  key: secret
+            - name: CLIENT_SECRET_COGNIGY_VOICE_GATEWAY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyVoicegatewayClient_secret }}
                   key: secret
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}

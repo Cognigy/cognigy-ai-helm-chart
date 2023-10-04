@@ -5,6 +5,7 @@
 {{- $cognigyServiceAiSmtpEmailCredsAuthType := $.Values.smtpEmailNotificationCredentials.authType | default "basic" }}
 {{- $cognigyServiceAiSmtpEmailCreds_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpEmailNotificationCredentials.existingSecret "defaultSecret" "cognigy-service-ai-smtp-email-creds") }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
+{{- $cognigySecureFormsApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySecureFormsApiKey.existingSecret "defaultSecret" "cognigy-secure-forms-api-key") }}
 {{- $cognigyInsightsCollectorApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsCollectorApiKey.existingSecret "defaultSecret" "cognigy-insights-collector-api-key") }}
 {{- with .Values.serviceAi }}
 ---
@@ -32,6 +33,7 @@ spec:
         {{- if $.Values.knowledgeSearch.enabled }}
         checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
         {{- end }}
+        checksum/cognigy-secure-forms-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySecureFormsApiKey_secret) }}{{ $cognigySecureFormsApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySecureFormsApiKey_secret).data | sha256sum }}{{ end }}
         checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
@@ -82,6 +84,11 @@ spec:
                     name: {{ $cognigySearchOrchestratorApiKey }}
                     key: api-key
             {{- end }}
+            - name: SERVICE_SECURE_FORMS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                    name: {{ $cognigySecureFormsApiKey_secret }}
+                    key: api-key
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:
                 secretKeyRef:

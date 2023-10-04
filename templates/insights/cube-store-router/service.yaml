@@ -20,6 +20,11 @@ spec:
     - name: meta
       port: 9999
       targetPort: 9999
+    {{- if and .Values.cubejs.storeRouter.metrics.enabled}}
+    - name: metrics
+      port: 8002
+      targetPort: metrics
+    {{- end }}
   selector:
     app: cube-store-router
 {{- end }}

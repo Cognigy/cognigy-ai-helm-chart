@@ -1,4 +1,4 @@
-{{- $serviceCollector_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.postgresqlExtras.passwords.services.serviceCollector.auth.existingSecret "defaultSecret" (printf "cognigy-insights-%s-postgres-password" $.Values.postgresqlExtras.passwords.services.serviceCollector.serviceName)) }}
+{{- $serviceCollector_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
 {{- $cognigyInsightsCollectorApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsCollectorApiKey.existingSecret "defaultSecret" "cognigy-insights-collector-api-key") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
@@ -23,7 +23,7 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
         checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
-        {{- if $.Values.postgresql.enabled }}
+        {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
         checksum/postgres: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCollector_dbSecret) }}{{ $serviceCollector_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCollector_dbSecret).data | sha256sum }}{{ end }}
         {{- end }}
     spec:
@@ -50,15 +50,15 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- if $.Values.postgresql.enabled }}
+            {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
-              value: {{ $.Values.postgresql.postgresql.database | quote }}
+              value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ $.Values.postgresqlExtras.hosts.pgpool | quote }}
+              value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
             - name: INSIGHTS_POSTGRES_DB_PORT
-              value: {{ $.Values.postgresqlExtras.port | quote }}
+              value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: INSIGHTS_POSTGRES_DB_USERNAME
-              value: {{ $.Values.postgresqlExtras.passwords.services.serviceCollector.serviceName }}
+              value: {{ $.Values.cubejs.postgresql.username | quote }}
             - name: INSIGHTS_POSTGRES_DB_PASSWORD
               valueFrom:
                 secretKeyRef:

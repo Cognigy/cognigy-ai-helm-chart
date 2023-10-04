@@ -1,6 +1,7 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
+{{- $vgWebappDefaultLoginCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret "defaultSecret" "cognigy-vg-webapp-default-login-creds") }}
 {{- with .Values.serviceSecurity }}
 ---
 apiVersion: apps/v1
@@ -20,6 +21,7 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret) }}{{ $serviceSecurity_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret).data | sha256sum }}{{ end }}
+        checksum/cognigy-vg-webapp-default-login-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret) }}{{ $vgWebappDefaultLoginCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret).data | sha256sum }}{{ end }}
       labels:
         app: service-security
     spec:
@@ -57,6 +59,11 @@ spec:
                 secretKeyRef:
                   name: {{- include "liveAgentCredentials.secretName.render" $ | indent 1 }}
                   key: cognigy-live-agent-platform-token
+            - name: COGNIGY_VOICE_GATEWAY_WEB_APP_DEFAULT_USER_CREDENTIAL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $vgWebappDefaultLoginCredentials_secret }}
+                  key: vg-webapp-login-creds
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
@@ -115,6 +122,9 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $statefulRedis_secret }}
+        - name: vg-webapp-login-creds
+          secret:
+            secretName: {{ $vgWebappDefaultLoginCredentials_secret }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

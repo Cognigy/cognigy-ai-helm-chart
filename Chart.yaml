@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 4.60.1
-appVersion: "4.60.1"
+version: 4.61.0
+appVersion: "4.61.0"
 kubeVersion: ">=v1.19.0-0,<v1.27.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
@@ -22,11 +22,6 @@ dependencies:
     version: "16.1.0"
     repository: "https://weaviate.github.io/weaviate-helm"
     condition: knowledgeSearch.enabled
-  - name: postgresql-ha
-    version: "11.7.6"
-    repository: "https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami"
-    condition: postgresql.enabled
-    alias: postgresql
   - name: redis
     version: "17.4.1"
     repository: "https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami"
@@ -37,3 +32,8 @@ dependencies:
     repository: "https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami"
     condition: redisPersistentHa.enabled
     alias: redisPersistentHa
+  - name: postgres-operator
+    version: "1.10.1"
+    repository: "https://opensource.zalando.com/postgres-operator/charts/postgres-operator"
+    condition: pgoperator.enabled
+    alias: pgoperator

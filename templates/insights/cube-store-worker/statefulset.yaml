@@ -1,4 +1,4 @@
-{{- if .Values.cubejs.enabled }}
+{{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
 {{- with .Values.cubejs.storeWorker }}
 ---
 apiVersion: apps/v1

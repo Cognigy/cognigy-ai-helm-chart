@@ -1,0 +1,6 @@
+{{- if .Values.pgoperator.enabled }}
+{{- range .Values.pgoperator.postgresqlClusters }}
+---
+{{ include "common.tplvalues.render" (dict "value" . "context" $) | replace "{{ $.Release.Namespace }}" $.Release.Namespace }}
+{{- end }}
+{{- end }}

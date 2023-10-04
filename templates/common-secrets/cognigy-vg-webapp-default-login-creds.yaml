@@ -1,0 +1,17 @@
+{{- if (not .Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret) }}
+  {{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-vg-webapp-default-login-creds") }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-vg-webapp-default-login-creds
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  # the VG Webapp Default Login credentials should contain a base64 encoded JSON string,
+  # this is the default login credential for the VG Webapp, which should be same as the one in the VG cluster
+  vg-webapp-login-creds: "{{ .Values.commonSecrets.vgWebappDefaultLoginCredentials.credential | b64enc }}"
+  {{- end }}
+{{- end }}

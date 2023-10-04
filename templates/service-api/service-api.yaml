@@ -7,6 +7,8 @@
 {{- $cognigySmtpOauth2Credentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpOAuth2.auth.existingSecret "defaultSecret" "cognigy-smtp-oauth2-credentials") }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 {{- $cognigyOauthClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyOauthClientSecret.existingSecret "defaultSecret" "cognigy-oauth-client-secret") }}
+{{- $cognigyVoicegatewayClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyVoicegatewayClientSecret.existingSecret "defaultSecret" "cognigy-voicegateway-client-secret") }}
+{{- $vgWebappDefaultLoginCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret "defaultSecret" "cognigy-vg-webapp-default-login-creds") }}
 {{- with .Values.serviceApi }}
 ---
 apiVersion: apps/v1
@@ -36,6 +38,8 @@ spec:
         {{- end }}
         checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-oauth-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret) }}{{ $cognigyOauthClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-voicegateway-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret) }}{{ $cognigyVoicegatewayClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-vg-webapp-default-login-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret) }}{{ $vgWebappDefaultLoginCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -120,6 +124,16 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigyOauthClient_secret }}
                   key: secret
+            - name: CLIENT_SECRET_COGNIGY_VOICE_GATEWAY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyVoicegatewayClient_secret }}
+                  key: secret
+            - name: COGNIGY_VOICE_GATEWAY_WEB_APP_DEFAULT_USER_CREDENTIAL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $vgWebappDefaultLoginCredentials_secret }}
+                  key: vg-webapp-login-creds
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
@@ -199,6 +213,9 @@ spec:
         - name: management-ui-creds
           secret:
             secretName: {{- include "managementUiCredentials.secretName.render" $ | indent 1 }}
+        - name: vg-webapp-login-creds
+          secret:
+            secretName: {{ $vgWebappDefaultLoginCredentials_secret }}
         - name: functions
           persistentVolumeClaim:
             claimName: functions

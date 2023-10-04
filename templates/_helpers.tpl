@@ -496,14 +496,21 @@ Usage:
 {{- end }}
 
 {{/*
-  Create a list of postgresql statefulset pods dns names based on replica count
+Return name of the secret with the password for CubeJS Postgres database
+Usage:
+{{- include "cubejs.postgresql.password.existingSecret" $ }}
 */}}
-{{- define "statefulPostgresql.hosts" -}}
-  {{- $hosts := list }}
-  {{- $postgresqlFullName := printf "%s-%s" .Values.postgresql.fullnameOverride "postgresql" }}
-  {{- range $i, $e := until (int .Values.postgresql.postgresql.replicaCount) }}
-    {{- $hosts = append $hosts (printf "%s-%d.%s-headless" $postgresqlFullName $i $postgresqlFullName) }}
-  {{- end }}
-
-  {{- printf "%s" (join " " $hosts | quote) }}
-{{- end }}
+{{- define "cubejs.postgresql.password.existingSecret" -}}
+  {{- $passwordSecret := "" -}}
+  {{- if .Values.cubejs.enabled -}}
+    {{- if and (.Values.cubejs.postgresql.cluster ) (.Values.cubejs.postgresql.username) }}
+      {{- $passwordSecret = printf "%s.%s.credentials.postgresql.acid.zalan.do" $.Values.cubejs.postgresql.username $.Values.cubejs.postgresql.cluster | quote  }}
+    {{- else -}}
+        {{ required "A valid value for .Values.cubejs.postgresql.cluster is required!" .Values.cubejs.postgresql.cluster }}
+        {{ required "A valid value for .Values.cubejs.postgresql.username is required!" .Values.cubejs.postgresql.username }}
+		{{- end -}}
+    {{- else -}}
+      {{ required "CubeJS stack must be enabled! .Values.cubejs.enabled" .Values.cubejs.enabled }}
+		{{- end -}}
+  {{- printf $passwordSecret -}}
+{{- end -}}

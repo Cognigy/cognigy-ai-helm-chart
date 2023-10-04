@@ -1,4 +1,4 @@
-{{- if .Values.cubejs.enabled }}
+{{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
 {{- with .Values.cubejs.storeRouter }}
 ---
 apiVersion: apps/v1
@@ -78,6 +78,26 @@ spec:
             - name: datadir
               mountPath: /cube/data
           {{- end }}
+        {{- if .metrics.enabled }}
+        - name: metrics
+          image: {{ .metrics.image }}
+          args:
+            - '--web.listen-address=0.0.0.0:8002'
+            - --web.telemetry-path=/metrics
+            - '--statsd.listen-udp=0.0.0.0:8125'
+            - --statsd.cache-size=1000
+            - --statsd.event-queue-size=10000
+            - --statsd.event-flush-threshold=1000
+            - --statsd.event-flush-interval=200ms
+          ports:
+            - name: metrics
+              containerPort: 8002 # Prometheus will extract from here
+              protocol: TCP
+            - name: udp-metrics
+              containerPort: 8125 # Default UDP port where cube sends metrics
+              protocol: UDP
+          resources: {{- toYaml .metrics.resources | nindent 12 }}
+        {{- end }}
       {{- if $.Values.cubejs.persistence.enabled }}
       volumes:
         - name: datadir
