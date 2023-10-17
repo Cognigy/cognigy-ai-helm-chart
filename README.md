@@ -141,13 +141,9 @@ serviceAi:
 ```
 
 ### NLP Configuration
-To enable NLP capabilities for additional languages, you can set `enabled: true` for related `Train` and `Score` components, for example to enable NLP capabilities for Japanese:
-```yaml
-serviceNlpScoreJa:
-  enabled: true
-serviceNlpTrainJa:
-  enabled: true
-```
+We recommend to install NLPv2 stack, NLPv1 stack is deprecated. 
+See [Install the NLP V2 Stack](https://docs.cognigy.com/ai/installation/migration/from-nlu-v1-to-v2-migration/#install-the-nlp-v2-stack) for details and an example in `values_prod.yaml` files.
+
 ### Cognigy.AI Secrets Backup
 During the installation process `dbinit-generate.sh` initialization script generates connection strings for Cognigy.AI microservices to MongoDB, RabbitMQ and Redis backends and stores these connection strings in form of [Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in `cognigy-ai` installation namespace. In case you loose the cluster where Cognigy.AI is running or accidentally delete these secrets, there will be no possibility to connect to the existing databases anymore. 
 

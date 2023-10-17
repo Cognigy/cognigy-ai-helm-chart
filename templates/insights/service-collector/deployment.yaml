@@ -23,7 +23,7 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
         checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
-        {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
+        {{- if $.Values.pgoperator.enabled }}
         checksum/postgres: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCollector_dbSecret) }}{{ $serviceCollector_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCollector_dbSecret).data | sha256sum }}{{ end }}
         {{- end }}
     spec:
@@ -50,7 +50,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
+            {{- if $.Values.pgoperator.enabled }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST

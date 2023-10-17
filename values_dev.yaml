@@ -79,6 +79,8 @@ ingress:
     host: "insights-api"
   serviceRuntimeFileManager:
     host: "files-api.test"
+  serviceStaticFiles:
+    host: "static-api.test"
   serviceUi:
     host: "ui.test"
   serviceWebchat:
@@ -145,11 +147,24 @@ serviceUi:
   replicaCount: 1
 serviceWebchat:
   replicaCount: 1
-### Enable NLP train and scoring services explicitly for the required language
-serviceNlpTrainEn:
+
+## Enable NLPv2 Stack
+cognigyEnv:
+  FEATURE_USE_SERVICE_NLP_V2: "true"
+
+serviceNlpOrchestrator:
   enabled: true
   replicaCount: 1
-serviceNlpScoreEn:
+
+serviceNlpEmbeddingEn:
+  enabled: true
+  replicaCount: 1
+
+serviceNlpClassifierScoreEn:
+  enabled: true
+  replicaCount: 1
+
+serviceNlpClassifierTrainEn:
   enabled: true
   replicaCount: 1
 

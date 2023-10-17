@@ -43,11 +43,8 @@ functions:
 cognigyLiveAgent:
   platformToken: ""
 
-## Enable your choice of NLU service by following the below example
-# serviceNlpScoreEn:
-#   enabled: true
-# serviceNlpTrainEn:
-#   enabled: true
+cognigyAgentAssist:
+  accessToken: ""
 
 # Install Management UI on the cluster.
 # It is not required, since if not installed and the API endpoint is accessible from the Internet,
@@ -84,6 +81,8 @@ ingress:
     host: ""
   serviceRuntimeFileManager:
     host: ""
+  serviceStaticFiles:
+    host: ""
   serviceUi:
     host: ""
   serviceWebchat:
@@ -99,10 +98,22 @@ amazonCredentials:
 # serviceAi:
 #   securityContext: {}
 
-## Enable NLP train and scoring services explicitly for the required language
-serviceNlpTrainEn:
+## Enable NLPv2 Stack
+## For more details on language packs see: https://docs.cognigy.com/ai/installation/migration/from-nlu-v1-to-v2-migration/#install-the-nlp-v2-stack
+cognigyEnv:
+  FEATURE_USE_SERVICE_NLP_V2: "true"
+  FEATURE_MIGRATE_SNAPSHOTS_TO_NLP_V2: "true"
+
+serviceNlpOrchestrator:
   enabled: true
-serviceNlpScoreEn:
+
+serviceNlpEmbeddingEn:
+  enabled: true
+
+serviceNlpClassifierScoreEn:
+  enabled: true
+
+serviceNlpClassifierTrainEn:
   enabled: true
 
 ## You can use the x-forwarded-for header to collect the source IP on EKS cluster configured
