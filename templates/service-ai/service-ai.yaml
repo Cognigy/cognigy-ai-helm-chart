@@ -94,6 +94,13 @@ spec:
                 secretKeyRef:
                   name: {{- include "liveAgentCredentials.secretName.render" $ | indent 1 }}
                   key: cognigy-live-agent-platform-token
+            {{- if $.Values.cognigyAgentAssist.enabled }}
+            - name: AGENT_ASSIST_WORKSPACE_API_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{- include "agentAssistCredentials.secretName.render" $ | indent 1 }}
+                  key: api-access-token
+            {{- end }}
             {{- if eq $cognigyServiceAiSmtpEmailCredsAuthType "basic" }}
             - name: EMAIL_NOTIFICATION_SMTP_USERNAME
               valueFrom:
@@ -205,7 +212,7 @@ spec:
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}
-      {{- include "image.pullSecrets" $ | nindent 6 }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

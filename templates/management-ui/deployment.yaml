@@ -43,7 +43,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: cognigy-env
-      {{- include "image.pullSecrets" $ | nindent 6 }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

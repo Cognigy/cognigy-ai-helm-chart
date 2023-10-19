@@ -325,6 +325,19 @@ cognigyLiveAgent:
   ## "cognigyLiveAgent.platformToken" is ignored.
   existingSecret: ""
 
+# The API access token is used to authenticate the requests performed to the Agent Assist Workspace API.
+# These includes the config and tile updates defined in the Agent Assist flows containing Agent Assist flow nodes.
+cognigyAgentAssist:
+  # Set to true to enable Agent Assist Workspace
+  enabled: false
+  accessToken: ""
+  ## Existing secret with agent-assist credentials. The secret must have the following key:
+  ##   "api-access-token": The access token for cognigy agent assist
+  ##
+  ## NOTE: When cognigyAgentAssist.existingSecret is set, clear text token passed in the previous parameter
+  ## "cognigyAgentAssist.accessToken" is ignored.
+  existingSecret: ""
+
 # Install Management UI on the cluster.
 # It is not required, since if not installed and the API endpoint is accessible from the Internet, you can still use the provided Management UI at https://management-ui-v4.cognigy.ai/
 managementUi:
@@ -950,6 +963,11 @@ cognigyEnv:
   # Cognigy LiveAgent setup
   # COGNIGY_LIVE_AGENT_API_BASE_URL_WITH_PROTOCOL:
   # COGNIGY_LIVE_AGENT_PLATFORM_TOKEN:
+
+  # Cognigy Agent Assist setup
+  # FEATURE_ENABLE_AGENT_ASSIST_WORKSPACE_WHITELIST:
+  # AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL:
+  # AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL:
 
   # URL pointing to the Endpoint service
   # ENDPOINT_BASE_URL_WITH_PROTOCOL:
@@ -3615,7 +3633,10 @@ serviceSearchOrchestrator:
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
-
+migration:
+  handoverRequest:
+    image: ""
+    enabled: false
 ##
 # Configuration for knowledge search tasks that run as Kubernetes jobs
 ##

@@ -83,7 +83,7 @@ spec:
             items:
               - key: connection-string-api
                 path: rabbitmqAPIConnectionString
-      {{- include "image.pullSecrets" $ | nindent 6 }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}
