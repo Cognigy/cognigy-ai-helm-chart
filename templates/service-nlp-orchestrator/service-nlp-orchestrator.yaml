@@ -107,7 +107,7 @@ spec:
         - name: locales-config
           configMap:
             name: locales-config-file
-      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

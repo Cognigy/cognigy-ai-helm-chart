@@ -48,7 +48,7 @@ data:
             - name: redis-password
               secret:
                 secretName: cognigy-redis-password
-          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+          {{- include "image.pullSecrets" $ | nindent 10 }}
   
   processKnowledgeSourceUrl.yaml: |
     apiVersion: batch/v1
@@ -90,7 +90,7 @@ data:
             - name: redis-password
               secret:
                 secretName: cognigy-redis-password
-          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+          {{- include "image.pullSecrets" $ | nindent 10 }}
 
   ingestKnowledgeChunks.yaml: |
     apiVersion: batch/v1
@@ -141,6 +141,6 @@ data:
             - name: redis-password
               secret:
                 secretName: cognigy-redis-password
-          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+          {{- include "image.pullSecrets" $ | nindent 10 }}
 
 {{- end }}

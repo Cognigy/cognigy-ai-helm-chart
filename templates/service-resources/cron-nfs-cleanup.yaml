@@ -77,6 +77,6 @@ spec:
             {{- if .extraVolumes }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
             {{- end }}
-          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}  
+          {{- include "image.pullSecrets" $ | nindent 10 }}  
 {{- end }}
 

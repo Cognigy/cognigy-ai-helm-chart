@@ -67,13 +67,6 @@ spec:
                 secretKeyRef:
                   name: {{- include "liveAgentCredentials.secretName.render" $ | indent 1 }}
                   key: cognigy-live-agent-platform-token
-            {{- if $.Values.cognigyAgentAssist.enabled }}
-            - name: AGENT_ASSIST_WORKSPACE_API_ACCESS_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{- include "agentAssistCredentials.secretName.render" $ | indent 1 }}
-                  key: api-access-token
-            {{- end }}
             - name: SERVICE_HANDOVER_API_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -126,7 +119,7 @@ spec:
             items:
               - key: connection-string
                 path: mongodbConnectionString
-      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

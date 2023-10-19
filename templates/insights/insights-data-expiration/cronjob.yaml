@@ -45,5 +45,5 @@ spec:
                   secretKeyRef:
                     name: {{ $dataExpiration_dbSecret }}
                     key: password
-          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+          {{- include "image.pullSecrets" $ | nindent 10 }}
 {{- end }}

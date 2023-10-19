@@ -119,7 +119,7 @@ spec:
           configMap:
             name: knowledge-tasks-config
         {{- end }}
-      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      {{- include "image.pullSecrets" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}
