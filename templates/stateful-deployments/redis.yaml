@@ -57,7 +57,7 @@ spec:
         - name: redis-config
           configMap:
             name: redis
-      {{- include "image.pullSecrets" $ | nindent 6 }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

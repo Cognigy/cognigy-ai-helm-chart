@@ -93,7 +93,7 @@ spec:
         - name: redis-persistent-password
           secret:
             secretName: {{ $statefulRedisPersistent_secret }}
-      {{- include "image.pullSecrets" $ | nindent 6 }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

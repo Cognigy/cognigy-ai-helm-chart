@@ -78,7 +78,7 @@ spec:
                 path: advanced.config
               {{- end }}
             defaultMode: 0644
-      {{- include "image.pullSecrets" $ | nindent 6 }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

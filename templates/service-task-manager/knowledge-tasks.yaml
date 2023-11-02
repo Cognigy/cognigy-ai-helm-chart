@@ -31,6 +31,20 @@ data:
                   value: "_JOB_ARGUMENTS_"
                 - name: UNSTRUCTURED_EXTRACTOR_URL
                   value: "http://unstructured-io/general/v0/general"
+                - name: TRACING_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
+                - name: TRACING_BASE_URL_WITH_PROTOCOL
+                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+                - name: TRACING_ERRORS_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
+                - name: TRACING_EVENTS_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.eventsSampleRate | quote }}
+                - name: TRACING_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.sampleRate | quote }}
+                - name: ENVIRONMENT
+                  value: {{ $.Values.tracing.environment | quote }}
+                - name: COGNIGY_AI_RELEASE_VERSION
+                  value: {{ $.Chart.AppVersion | quote }}
               volumeMounts:
                 - name: rabbitmq-connection-string
                   mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -48,7 +62,7 @@ data:
             - name: redis-password
               secret:
                 secretName: cognigy-redis-password
-          {{- include "image.pullSecrets" $ | nindent 10 }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
   
   processKnowledgeSourceUrl.yaml: |
     apiVersion: batch/v1
@@ -73,6 +87,20 @@ data:
               env:
                 - name: JOB_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
+                - name: TRACING_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
+                - name: TRACING_BASE_URL_WITH_PROTOCOL
+                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+                - name: TRACING_ERRORS_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
+                - name: TRACING_EVENTS_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.eventsSampleRate | quote }}
+                - name: TRACING_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.sampleRate | quote }}
+                - name: ENVIRONMENT
+                  value: {{ $.Values.tracing.environment | quote }}
+                - name: COGNIGY_AI_RELEASE_VERSION
+                  value: {{ $.Chart.AppVersion | quote }}
               volumeMounts:
                 - name: rabbitmq-connection-string
                   mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -90,7 +118,7 @@ data:
             - name: redis-password
               secret:
                 secretName: cognigy-redis-password
-          {{- include "image.pullSecrets" $ | nindent 10 }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
 
   ingestKnowledgeChunks.yaml: |
     apiVersion: batch/v1
@@ -115,6 +143,20 @@ data:
               env:
                 - name: JOB_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
+                - name: TRACING_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
+                - name: TRACING_BASE_URL_WITH_PROTOCOL
+                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+                - name: TRACING_ERRORS_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
+                - name: TRACING_EVENTS_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.eventsSampleRate | quote }}
+                - name: TRACING_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.sampleRate | quote }}
+                - name: ENVIRONMENT
+                  value: {{ $.Values.tracing.environment | quote }}
+                - name: COGNIGY_AI_RELEASE_VERSION
+                  value: {{ $.Chart.AppVersion | quote }}
               volumeMounts:
                 - name: rabbitmq-connection-string
                   mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -141,6 +183,6 @@ data:
             - name: redis-password
               secret:
                 secretName: cognigy-redis-password
-          {{- include "image.pullSecrets" $ | nindent 10 }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
 
 {{- end }}

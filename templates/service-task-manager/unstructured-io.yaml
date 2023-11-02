@@ -22,7 +22,7 @@ spec:
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
             - containerPort: 8000
-      {{- include "image.pullSecrets" $ | nindent 6 }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
 
 ---
 apiVersion: v1

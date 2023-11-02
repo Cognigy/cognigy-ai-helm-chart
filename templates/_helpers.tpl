@@ -65,7 +65,7 @@ Create the name of the service account to use
 {{/*
 Return the proper Docker Image Registry Secret Names
 */}}
-{{- define "image.pullSecrets" -}}
+{{- define "image.pullSecretsCognigy" -}}
   {{- $pullSecrets := list -}}
 
   {{- if and (.Values.imageCredentials.registry) (.Values.imageCredentials.username) (.Values.imageCredentials.password) -}}
@@ -214,6 +214,21 @@ Return the proper cognigyLiveAgent Credentials Secret Name
   {{- end -}}
 
   {{- printf "%s" (tpl $liveAgentCredentialsSecretName $) -}}
+{{- end -}}
+
+{{/*
+Return the proper cognigyAgentAssist Credentials Secret Name
+*/}}
+{{- define "agentAssistCredentials.secretName.render" -}}
+  {{- $agentAssistCredentialsSecretName := "" -}}
+
+  {{- if .Values.cognigyAgentAssist.existingSecret -}}
+    {{- $agentAssistCredentialsSecretName = .Values.cognigyAgentAssist.existingSecret -}}
+  {{- else -}}
+    {{- $agentAssistCredentialsSecretName = "cognigy-agent-assist-credentials" -}}
+  {{- end -}}
+
+  {{- printf "%s" (tpl $agentAssistCredentialsSecretName $) -}}
 {{- end -}}
 
 {{/*

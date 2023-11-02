@@ -1,0 +1,50 @@
+{{- $serviceHandover_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceHandover.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceHandover.serviceName)) }}
+{{- if .Values.migration.handoverRequest.enabled }}
+{{- with .Values.migration.handoverRequest }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migration-handover-request-idle-container
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-3"
+    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      volumes:
+        - name: mongodb-connection-string
+          secret:
+            secretName: {{ $serviceHandover_dbSecret }}
+            items:
+              - key: connection-string
+                path: mongodbConnectionString
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      containers:
+        - name: handover-request-migrator-all
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: mongodb-connection-string
+              mountPath: /var/run/secrets/mongodbConnectionString
+              subPath: mongodbConnectionString
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: SERVICE_HANDOVER_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceHandover_dbSecret }}
+                  key: connection-string                 
+          args:
+            - -g
+{{- end }}
+{{- end }}
