@@ -44,6 +44,8 @@ cognigyLiveAgent:
   platformToken: ""
 
 cognigyAgentAssist:
+  enabled: false
+  enableGenesysNotificationsForwarder: false
   accessToken: ""
 
 # Install Management UI on the cluster.
@@ -88,6 +90,10 @@ ingress:
     host: "ui.test"
   serviceWebchat:
     host: "webchat.test"
+  agentAssistBackend:
+    host: "api-agent-assist.test"
+  agentAssistFrontend:
+    host: "agent-assist-ui.test"
 
 ### overriding default 3-replica deployments
 serviceAi:
@@ -169,6 +175,12 @@ serviceNlpClassifierScoreEn:
 
 serviceNlpClassifierTrainEn:
   enabled: true
+  replicaCount: 1
+agentAssistBackend:
+  replicaCount: 1
+agentAssistFrontend:
+  replicaCount: 1
+agentAssistGenesysNotificationsForwarder:
   replicaCount: 1
 
 traefik:

@@ -16,6 +16,11 @@ mountOptions:
   - cache=strict
 parameters:
   skuName: {{ $storage_class_val.skuName }}
+{{- if hasKey ($storage_class_val) "lfs" }}
+  {{- if ($storage_class_val.lfs) }}
+  enableLargeFileShares: "true"
+  {{- end }}
+{{- end }}
 provisioner: {{ $storage_class_val.provisioner }}
 reclaimPolicy: {{ $storage_class_val.reclaimPolicy }}
 volumeBindingMode: {{ $storage_class_val.volumeBindingMode }}

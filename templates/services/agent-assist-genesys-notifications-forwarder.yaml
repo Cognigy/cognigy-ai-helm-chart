@@ -1,0 +1,21 @@
+{{- if and ($.Values.cognigyAgentAssist.enabled) ($.Values.cognigyAgentAssist.enableGenesysNotificationsForwarder) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-assist-genesys-notifications-forwarder
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: agent-assist-genesys-notifications-forwarder
+  annotations:
+    {{- if .Values.service.agentAssistGenesysNotificationsForwarder.annotations }}
+      {{- toYaml .Values.service.agentAssistGenesysNotificationsForwarder.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: agent-assist-genesys-notifications-forwarder
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: agent-assist-genesys-notifications-forwarder
+{{- end }}
