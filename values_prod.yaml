@@ -16,6 +16,8 @@ imageCredentials:
 # - generic for on-premises installation e.g. with OpenShift
 cloud:
   provider: aws
+  ## For AWS cloud provider only
+  ## specify region for EKS cluster and EFS volumes
   region: ""
 
 ## For AWS cloud provider only:
