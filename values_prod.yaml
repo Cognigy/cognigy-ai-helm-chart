@@ -16,8 +16,6 @@ imageCredentials:
 # - generic for on-premises installation e.g. with OpenShift
 cloud:
   provider: aws
-  ## For AWS cloud provider only
-  ## specify region for EKS cluster and EFS volumes
   region: ""
 
 ## For AWS cloud provider only:
@@ -46,8 +44,6 @@ cognigyLiveAgent:
   platformToken: ""
 
 cognigyAgentAssist:
-  enabled: false
-  enableGenesysNotificationsForwarder: false
   accessToken: ""
 
 # Install Management UI on the cluster.
@@ -60,7 +56,7 @@ managementUi:
     host: ""
 
 # managementUiCredentials: '[{"username": "example_username", "password": "example_password"}]'
-managementUiCredentials: "[]"
+managementUiCredentials: '[]'
 
 smtpPassword: ""
 
@@ -91,10 +87,6 @@ ingress:
     host: ""
   serviceWebchat:
     host: ""
-  agentAssistBackend:
-    host: ""
-  agentAssistFrontend:
-    host: ""
 
 amazonCredentials:
   clientId: ""
@@ -123,11 +115,12 @@ serviceNlpClassifierScoreEn:
 
 serviceNlpClassifierTrainEn:
   enabled: true
+
 ## You can use the x-forwarded-for header to collect the source IP on EKS cluster configured
 # with classic load balancer following the below code. For other system this part needs to be
 # configured with proper annotation specified with the Load balancer you are using.
 
 # traefik:
 #   service:
-#     annotations:
+#     annotations: 
 #       "service.beta.kubernetes.io/aws-load-balancer-proxy-protocol" : "*"

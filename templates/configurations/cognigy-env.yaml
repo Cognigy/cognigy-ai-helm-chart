@@ -12,8 +12,6 @@ data:
   RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceRuntimeFileManager.host | quote}}
   WEBCHAT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceWebchat.host | quote}}
   APPS_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceAppSessionManager.host | quote}}
-  AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.agentAssistBackend.host | quote}}
-  AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.agentAssistFrontend.host | quote}}
   {{- if .Values.knowledgeSearch.enabled }}
   FEATURE_ENABLE_KNOWLEDGE_SEARCH: "true"
   {{- end }}

@@ -39,18 +39,6 @@ spec:
             - name: metrics
               containerPort: 8002
           env:
-            - name: TRACING_ENABLED
-              value: {{ $.Values.tracing.sentry.insights.enabled | quote }}
-            - name: TRACING_BASE_URL_WITH_PROTOCOL
-              value: {{ $.Values.tracing.sentry.insights.baseUrl | quote }}      
-            - name: TRACING_ERRORS_ENABLED
-              value: {{ $.Values.tracing.sentry.insights.errorsEnabled | quote }}
-            - name: TRACING_EVENTS_SAMPLE_RATE
-              value: {{ $.Values.tracing.sentry.insights.eventsSampleRate | quote }}
-            - name: TRACING_SAMPLE_RATE
-              value: {{ $.Values.tracing.sentry.insights.sampleRate | quote }}
-            - name: ENVIRONMENT
-              value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             - name: OAUTH_CLIENT_SECRET

@@ -189,10 +189,7 @@
 		"serviceNlpClassifierScoreKo",
 		"serviceNlpClassifierTrainKo",
 		"serviceNlpClassifierScoreXx",
-		"serviceNlpClassifierTrainXx",
-		"agentAssistBackend",
-		"agentAssistFrontend",
-		"agentAssistGenesysNotificationsForwarder"
+		"serviceNlpClassifierTrainXx"
 	],
 	"title": "Values",
 	"type": "object"

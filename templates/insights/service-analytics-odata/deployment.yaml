@@ -4,7 +4,6 @@
 {{- $serviceAnalyticsCollector_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }}
 {{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
 {{- $serviceAnalyticsConversations_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsConversations.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsConversations.serviceName)) }}
-{{- $serviceAnalyticsOdata_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
 {{- with .Values.serviceAnalyticsOdata }}
 ---
 apiVersion: apps/v1
@@ -29,9 +28,7 @@ spec:
         checksum/service-analytics-collector: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsCollector_dbSecret) }}{{ $serviceAnalyticsCollector_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsCollector_dbSecret).data | sha256sum }}{{ end }}
         checksum/service-security: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret) }}{{ $serviceSecurity_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret).data | sha256sum }}{{ end }}
         checksum/service-analytics-conversation: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsConversations_dbSecret) }}{{ $serviceAnalyticsConversations_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsConversations_dbSecret).data | sha256sum }}{{ end }}
-        {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
-        checksum/postgres: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsOdata_dbSecret) }}{{ $serviceAnalyticsOdata_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsOdata_dbSecret).data | sha256sum }}{{ end }}
-        {{- end }}
+
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -56,21 +53,6 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
-            - name: INSIGHTS_POSTGRES_DB_NAME
-              value: {{ $.Values.cubejs.postgresql.database | quote }}
-            - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
-            - name: INSIGHTS_POSTGRES_DB_PORT
-              value: {{ $.Values.cubejs.postgresql.port | quote }}
-            - name: INSIGHTS_POSTGRES_DB_USERNAME
-              value: {{ $.Values.cubejs.postgresql.username | quote }}
-            - name: INSIGHTS_POSTGRES_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $serviceAnalyticsOdata_dbSecret }}
-                  key: password
-            {{- end }}
             - name: ANALYTICS_COLLECTOR_DB_NAME
               value: service-analytics-collector
             - name: SECURITY_DB_NAME
