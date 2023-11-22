@@ -187,6 +187,11 @@ spec:
               items:
               - key: connection-string
                 path: cognigy-service-trainer
+          - secret:
+              name: cognigy-agent-assist
+              items:
+              - key: connection-string
+                path: cognigy-agent-assist
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
 {{- end }}
 {{- if and (.Values.mongodb.enabled) (eq .Values.mongodb.scheme "mongodb") (not .Values.mongodb.auth.existingSecret) }}

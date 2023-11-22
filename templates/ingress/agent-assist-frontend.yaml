@@ -1,0 +1,69 @@
+{{- if .Values.cognigyAgentAssist.enabled }}
+{{- if .Values.ingress.agentAssistFrontend.tls.enabled }}
+{{- if not (.Values.ingress.agentAssistFrontend.tls.existingSecret) }}
+{{- if and (.Values.ingress.agentAssistFrontend.tls.crt) (.Values.ingress.agentAssistFrontend.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-agent-assist-frontend-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.ingress.agentAssistFrontend.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.ingress.agentAssistFrontend.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.agentAssistFrontend.tls is required!" .Values.ingress.agentAssistFrontend.tls.crt }}
+  {{ required "A valid value for .Values.ingress.agentAssistFrontend.tls is required!" .Values.ingress.agentAssistFrontend.tls.key }}
+  {{ required "A valid value for .Values.ingress.agentAssistFrontend.tls is required!" .Values.ingress.agentAssistFrontend.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agent-assist-frontend
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+    {{- if .Values.ingress.agentAssistFrontend.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistagentassistfrontend@kubernetescrd
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.ingress.agentAssistFrontend.tls.enabled) }}
+  {{- if (.Values.ingress.agentAssistFrontend.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.agentAssistFrontend.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.agentAssistFrontend.tls.crt) (.Values.ingress.agentAssistFrontend.tls.key) }}
+  tls:
+    - secretName: cognigy-agent-assist-frontend-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.agentAssistFrontend.tls is required!" .Values.ingress.agentAssistFrontend.tls.crt }}
+    {{ required "A valid value for .Values.ingress.agentAssistFrontend.tls is required!" .Values.ingress.agentAssistFrontend.tls.key }}
+    {{ required "A valid value for .Values.ingress.agentAssistFrontend.tls is required!" .Values.ingress.agentAssistFrontend.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.agentAssistFrontend.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: agent-assist-frontend
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+{{- end }}
+{{- end }}

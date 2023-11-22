@@ -1,0 +1,21 @@
+{{- if $.Values.cognigyAgentAssist.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-assist-backend
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: agent-assist-backend
+  annotations:
+    {{- if .Values.service.agentAssistBackend.annotations }}
+      {{- toYaml .Values.service.agentAssistBackend.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: agent-assist-backend
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: agent-assist-backend
+{{- end }}

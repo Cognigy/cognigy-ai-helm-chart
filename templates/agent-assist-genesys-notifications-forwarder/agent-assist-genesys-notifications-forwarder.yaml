@@ -1,28 +1,28 @@
-{{- if .Values.knowledgeSearch.enabled }}
-{{- with .Values.serviceSearchOrchestrator }}
+{{- if and ($.Values.cognigyAgentAssist.enabled) ($.Values.cognigyAgentAssist.enableGenesysNotificationsForwarder) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- $cognigyWeaviateApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyWeaviateApiKey.existingSecret "defaultSecret" "cognigy-weaviate-api-key") }}
-{{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
+{{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
+{{- with .Values.agentAssistGenesysNotificationsForwarder }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-search-orchestrator
+  name: agent-assist-genesys-notifications-forwarder
   namespace: {{ $.Release.Namespace | quote }}
 spec:
   selector:
     matchLabels:
-      app: service-search-orchestrator
+      app: agent-assist-genesys-notifications-forwarder
   replicas: {{ .replicaCount }}
   template:
     metadata:
       labels:
-        app: service-search-orchestrator
+        app: agent-assist-genesys-notifications-forwarder
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
-        checksum/cognigy-weaviate-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey) }}{{ $cognigyWeaviateApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey).data | sha256sum }}{{ end }}
-        checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-agent-assist-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret) }}{{ $agentAssistBackendApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -37,50 +37,50 @@ spec:
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-search-orchestrator
+        - name: agent-assist-genesys-notifications-forwarder
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: ACCESS_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $agentAssistBackendApiAccessToken_secret }}
+                  key: api-access-token
+            - name: SERVER_PORT
+              value: "8000"
+            - name: SERVER_HOST
+              value: "0.0.0.0"
           ports:
-            - name: http
-              containerPort: 8000
             - name: metrics
+              containerPort: 8002
+            - name: health
               containerPort: 8001
           startupProbe:
             httpGet:
               path: /health/startup
-              port: 8000
+              port: 8001
           livenessProbe:
             httpGet:
               path: /health/liveness
-              port: 8000
+              port: 8001
             failureThreshold: 3
             initialDelaySeconds: 90
             periodSeconds: 60
             timeoutSeconds: 10
           volumeMounts:
+            - name: redis-password
+              mountPath: /var/run/secrets/redis-password.conf
+              subPath: redis-password.conf
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
               subPath: rabbitmqConnectionString
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
-          env:
-            - name: COGNIGY_AI_RELEASE_VERSION
-              value: {{ $.Chart.AppVersion | quote }}
-            - name: WEAVIATE_API_KEY
-              valueFrom:
-                secretKeyRef:
-                    name: {{ $cognigyWeaviateApiKey }}
-                    key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
-            - name: SEARCH_ORCHESTRATOR_API_KEY
-              valueFrom:
-                secretKeyRef:
-                    name: {{ $cognigySearchOrchestratorApiKey }}
-                    key: api-key
-            {{- if .extraEnvVars }}
-            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}
       volumes:
+        - name: redis-password
+          secret:
+            secretName: {{ $statefulRedis_secret }}
         - name: rabbitmq-connection-string
           secret:
             secretName: {{ $statefulRabbitMq_secret }}

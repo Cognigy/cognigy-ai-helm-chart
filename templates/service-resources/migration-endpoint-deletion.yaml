@@ -1,0 +1,41 @@
+{{- if .Values.migration.endpointDeletion.enabled }}
+{{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
+{{- with .Values.migration.endpointDeletion }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migration-endpoint-deletion
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/hook": {{ .hooks }}
+    "helm.sh/hook-weight": "-2"
+    "helm.sh/hook-delete-policy": {{ .hookDeletePolicy }}
+spec:
+  ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+  template:
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      containers:
+        - name: endpoint-deletor-all
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: SERVICE_RESOURCES_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceResources_dbSecret }}
+                  key: connection-string
+            - name: BATCH_SIZE
+              value: {{ .batchSize | quote }}
+          args:
+            - -g
+{{- end }}
+{{- end }}
