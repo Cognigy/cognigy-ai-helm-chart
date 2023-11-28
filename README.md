@@ -9,7 +9,7 @@ This chart installs a Cognigy.AI deployment on a [Kubernetes](https://kubernetes
 - Kubernetes v1.19-1.26 running on either:
   - AWS EKS
   - Azure AKS
-  - "generic" on-premises kubernetes platform. Running Cognigy.AI on-premises will require additional manual steps, we recommend to use public clouds (AWS or Azure) instead.
+  - "generic" on-premises or GKE kubernetes platform. Running Cognigy.AI on-premises will require additional manual steps, we recommend to use public clouds (AWS or Azure) instead.
 - kubectl utility connected to the kubernetes cluster
 - Helm 3.9.0+
 - Persistent Volume provisioner in the underlying infrastructure for Cognigy.AI stateful services (for AWS/Azure no further configuration is required):
@@ -22,12 +22,12 @@ This chart installs a Cognigy.AI deployment on a [Kubernetes](https://kubernetes
    2. Deployment must have 3 replicas
    3. Note down `rootUser` and `rootPassword` from the MongoDB Helm release, you will need to set them later in Cognigy.AI configuration.
 2. For AWS only: Create two [EFS volumes](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/efs-volumes.html) for `functions` and `flow-modules` PVCs. Note down their `File system ID` values. **IMPORTANT:** EFS volumes must be reachable from a VPC in which your EKS cluster is running!
-3. For generic (on-premises) cloud provider you need to prepare following objects for stateful services manually:
+3. For generic (GKE on GCP or on-premises) cloud providers you need to prepare following objects for stateful services manually:
    1. `flow-modules` and `functions` file storage PVCs in `cognigy-ai` namespace (the same namespace where Cognigy.AI will be deployed) with:
       - `accessModes`: `ReadWriteMany`
       - `requests.storage: 100Gi`
    Provisioning of such PVCs depends on [Storage Class Provisioners](https://kubernetes.io/docs/concepts/storage/storage-classes/#provisioner) with `ReadWriteMany` access mode supported by your underlying infrastructure (typically NFS). Please, contact official documentation of your cloud provider for that.
-   2. `redis-persistent` `StorageClass` for `redis-persistent` PVC. The requirements are the same as for `mongodb` `StorageClass` created during installation of MongoDB Helm Chart. StorageClass must support high IO throughput, see [AWS example](templates/aws/redis-persistent-sc.yaml) for reference.
+   2. `redis-persistent-ha` `StorageClass` for `redis-persistent-ha` PVCs. See [values.yaml](values.yaml) as a reference for AWS or Azure. The storage class must support equal performance parameters in terms of IOPS and bandwidth.
 
 ## Configuration
 To deploy a new Cognigy.AI setup you need to create a separate file with Helm release values. You can use `values_prod.yaml` as a baseline, we recommend to start with it:

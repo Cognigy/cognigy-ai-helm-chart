@@ -7,7 +7,9 @@ metadata:
   name: cube-store-worker
   namespace: {{ $.Release.Namespace | quote }}
 spec:
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   serviceName: cube-store-worker
   selector:
     matchLabels:

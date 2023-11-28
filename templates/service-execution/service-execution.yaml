@@ -10,7 +10,9 @@ spec:
   selector:
     matchLabels:
       app: service-execution
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       labels:

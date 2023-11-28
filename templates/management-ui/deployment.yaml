@@ -10,7 +10,9 @@ spec:
   selector:
     matchLabels:
       app: management-ui
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       labels:

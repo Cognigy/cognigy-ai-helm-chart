@@ -10,7 +10,9 @@ spec:
   selector:
     matchLabels:
       app: service-nlp-ner
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       annotations:

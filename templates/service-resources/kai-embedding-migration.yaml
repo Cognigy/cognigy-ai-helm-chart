@@ -1,0 +1,57 @@
+{{- if and (.Values.migration.kaiEmbeddingMigration.enabled) (.Values.knowledgeSearch.enabled) (.Values.weaviate.enabled)  }}
+{{- with .Values.migration.kaiEmbeddingMigration }}
+{{- $cognigyWeaviateApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyWeaviateApiKey.existingSecret "defaultSecret" "cognigy-weaviate-api-key") }}
+{{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kai-embedding-migration
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/hook": {{ .hooks }}
+    "helm.sh/hook-weight": "-2"
+    "helm.sh/hook-delete-policy": {{ .hookDeletePolicy }}
+    checksum/cognigy-weaviate-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey) }}{{ $cognigyWeaviateApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey).data | sha256sum }}{{ end }}
+    checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceResources_dbSecret) }}{{ $serviceResources_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceResources_dbSecret).data | sha256sum }}{{ end }}
+spec:
+  ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+  template:
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      volumes:
+        - name: mongodb-connection-string
+          secret:
+            secretName: {{ $serviceResources_dbSecret }}
+            items:
+              - key: connection-string
+                path: mongodbConnectionString
+        - name: weaviate-api-key
+          secret:
+            secretName: {{ $cognigyWeaviateApiKey }}
+            items:
+              - key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
+                path: weaviateApiKey
+      containers:
+        - name: kai-embedding-migration-all
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: mongodb-connection-string
+              mountPath: /var/run/secrets/mongodbConnectionString
+              subPath: mongodbConnectionString
+            - name: weaviate-api-key
+              mountPath: /var/run/secrets/weaviateApiKey
+              subPath: weaviateApiKey
+          envFrom:
+            - configMapRef:
+                name: cognigy-env           
+          args:
+            - -g
+{{- end }}
+{{- end }}

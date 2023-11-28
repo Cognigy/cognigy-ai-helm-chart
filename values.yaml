@@ -230,7 +230,7 @@ cloud:
   provider: aws
   region: ""
 
-## Cognigy Flow Modules
+## flow-modules ReadWriteMany PVC
 ##
 flowModules:
   ## Persistence parameters
@@ -265,12 +265,12 @@ flowModules:
     ##
     storageClass: ""
     ## PVC Storage Request for flowModules data volume.
-    ## Default value for aws is 1Mi and for azure 100Gi
+    ## Default value for AWS is 1Mi and for Azure 100Gi
     ## Note: The storage request has no effect for NFS
     ##
     size: ""
 
-## Cognigy Functions
+## functions ReadWriteMany PVC
 ##
 functions:
   ## Persistence parameters
@@ -331,8 +331,8 @@ cognigyLiveAgent:
   ## "cognigyLiveAgent.platformToken" is ignored.
   existingSecret: ""
 
-# The API access token is used to authenticate the requests performed to the Agent Assist Workspace API.
-# These includes the config and tile updates defined in the Agent Assist flows containing Agent Assist flow nodes.
+# The API access token for Agent Assist Workspace API requests authentication
+# These requests include the config and tile updates defined in the Agent Assist flows containing Agent Assist flow nodes.
 cognigyAgentAssist:
   # Set to true to enable Agent Assist Workspace
   enabled: false
@@ -347,7 +347,7 @@ cognigyAgentAssist:
   existingSecret: ""
 
 # Install Management UI on the cluster.
-# It is not required, since if not installed and the API endpoint is accessible from the Internet, you can still use the provided Management UI at https://management-ui-v4.cognigy.ai/
+# It is not required, since if not installed and the API endpoint is accessible from the Internet, you can still use Cognigy Management UI at https://management-ui-v4.cognigy.ai/
 managementUi:
   enabled: false
   ingress:
@@ -365,7 +365,7 @@ managementUi:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
-  image: cognigy.azurecr.io/management-ui:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/management-ui:release-a974aa0c7a-1700828726
   replicaCount: 1
   resources:
     limits:
@@ -900,10 +900,6 @@ service:
     annotations: {}
   statefulRabbitMq:
     annotations: {}
-  statefulRedis:
-    annotations: {}
-  statefulRedisPersistent:
-    annotations: {}
   serviceNlpEmbeddingEn:
     annotations: {}
   serviceNlpEmbeddingXx:
@@ -936,13 +932,16 @@ cognigyEnv:
   # by our 'service-monitoring'.
   MONITOR_RPC_CALLS: "true"
 
-  # Redis configuration, will soon be a connection string
-  REDIS_HOST: redis
-  REDIS_PORT: "6379"
-
-  # Redis (persistent) configuration, will soon be a connection string
-  REDIS_PERSISTENT_PORT: "6379"
-  REDIS_PERSISTENT_HOST: redis-persistent
+  # Enable Redis Sentinel (HA mode)
+  FEATURE_REDIS_SENTINEL_MODE_ENABLED: "true"
+  REDIS_SENTINEL_MASTER_NAME: "mymaster"
+  REDIS_SENTINEL_HOST: "redis-ha-headless"
+  REDIS_SENTINEL_PORT: "26379"
+  # Enable Redis Persistent Sentinel (HA mode)
+  FEATURE_REDIS_PERSISTENT_SENTINEL_MODE_ENABLED: "true"
+  REDIS_PERSISTENT_SENTINEL_MASTER_NAME: "mymaster"
+  REDIS_PERSISTENT_SENTINEL_HOST: "redis-persistent-ha-headless"
+  REDIS_PERSISTENT_SENTINEL_PORT: "26379"
 
   # limits (api requests, db queries, context-size)
   MESSAGE_TTL_SECONDS: "120"
@@ -990,8 +989,6 @@ cognigyEnv:
 
   # Path to files containing pre-computed noise embeddings
   NLP_PRECOMPUTED_EMBEDDINGS_PATH: "/embedding/precomputed_embeddings"
-  ### Shared ENV variables ###
-
   # A link to an online instance of the adaptive cards designer
   # ADAPTIVE_CARDS_DESIGNER_URL:
 
@@ -999,19 +996,36 @@ cognigyEnv:
   # AMAZON_CLIENT_ID:
   # AMAZON_CLIENT_SECRET:
 
-  # Cognigy Live Agent (Chatwoot based)
+  # Enable links to docs.cognigy.com
+  # FEATURE_USE_COGNIGY_DOC_LINKS:
+
+  ### Cognigy Live Agent Configuration ###
+  # Activate Cognigy Live Agent
+  # FEATURE_USE_COGNIGY_LIVE_AGENT:
+  # CLIENT_SECRET_COGNIGY_LIVE_AGENT:
+  # REDIRECT_URI_COGNIGY_LIVE_AGENT:
   # CLIENT_ID_COGNIGY_LIVE_AGENT:
 
-  # Cognigy LiveAgent setup
-  # COGNIGY_LIVE_AGENT_API_BASE_URL_WITH_PROTOCOL:
+  # Live Agent base URL
+  # LIVE_AGENT_BACKEND_BASE_URL_WITH_PROTOCOL:
+
   # COGNIGY_LIVE_AGENT_PLATFORM_TOKEN:
 
-  # Cognigy Agent Assist setup
+  # CORS whitelist for the live-agent API
+  # LIVE_AGENT_API_CORS_WHITELIST:
+
+  # Live Agent API secret
+  # LIVE_AGENT_API_SECRET:
+
+  # The TTL of the JWT + access token in seconds
+  # LIVE_AGENT_TOKEN_TTL_IN_SECONDS:
+
+  # activate Cognigy Live Agent Dashboard
+  # FEATURE_USE_COGNIGY_LIVE_AGENT_DASHBOARD:
+
+  ### Cognigy Agent Assist setup ###
   # FEATURE_ENABLE_AGENT_ASSIST_WORKSPACE_WHITELIST:
   # FEATURE_ENABLE_AGENT_ASSIST_WORKSPACE_GENESYS_CREDENTIALS_WHITELIST:
-
-  # URL pointing to the Endpoint service
-  # ENDPOINT_BASE_URL_WITH_PROTOCOL:
 
   # Genesys Cloud handover provider feature flag
   # FEATURE_USE_GENESYS_CLOUD:
@@ -1021,9 +1035,6 @@ cognigyEnv:
 
   # The JWT secret to sign JWT-tokens with, this is used e.g. for realtime-tokens (endpoint, backend connection, xApp submit payload with voice preview test call from interaction panel)
   # JWT_SECRET:
-
-  # The key for the built-in pendo. If set, pendo routines will be activated.
-  # PENDO_KEY:
 
   # The app-id for the official workplace by facebook cognigy.AI APP
   # WORKPLACE_APP_ID:
@@ -1040,21 +1051,24 @@ cognigyEnv:
   # If true, service nlp matcher will be disabled, but not for the ids in FEATURE_USE_SERVICE_NLP_MATCHER_ORG_FILTER
   # FEATURE_DISABLE_SERVICE_NLP_MATCHER:
 
-  # connection details for rabbit mq
+  ### Connection details for RabbitMQ ###
   # RABBITMQ_HOST:
   # RABBITMQ_PORT:
   # RABBITMQ_USER:
   # RABBITMQ_PASSWORD:
 
-  # Redis configuration
+  ### Connection details for Redis self-managed configuration ###
   # REDIS_HOST:
   # REDIS_PORT:
+  # REDIS_PASSWORD:
   # REDIS_USE_TLS:
+  # REDIS_DEFAULT_TTL:
   # REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS:
 
-  # Redis persistent configuration
+  ### Connection details for Redis persistent self-managed configuration ###
   # REDIS_PERSISTENT_HOST:
   # REDIS_PERSISTENT_PORT:
+  # REDIS_PERSISTENT_PASSWORD:
   # REDIS_PERSISTENT_USE_TLS:
   # REDIS_PERSISTENT_KEEP_ALIVE_INTERVAL_IN_SECONDS:
 
@@ -1066,8 +1080,6 @@ cognigyEnv:
 
   # Can be set to 0 to never expire session states
   # MAX_SESSION_STATE_TTL_IN_MINUTES: "0"
-
-  ### Platform Integration ENV Variables ###
 
   # Agent Bot description for Live Agent, Chatwoot, etc.
   # AGENT_BOT_DESCRIPTION:
@@ -1132,24 +1144,6 @@ cognigyEnv:
   # Handover TTL for persisting agent bot id into redis
   # HANDOVER_TTL:
 
-  # CORS whitelist for the live-agent API
-  # LIVE_AGENT_API_CORS_WHITELIST:
-
-  # Live Agent API secret
-  # LIVE_AGENT_API_SECRET:
-
-  # Live Agent base URL
-  # LIVE_AGENT_BACKEND_BASE_URL_WITH_PROTOCOL:
-
-  # Message displayed when handover session is aborted
-  # LIVE_AGENT_LITE_EXPIRED_MESSAGE:
-
-  # Time after which handover requests should automatically be closed in minutes. Defaults to 30. 0 means "no cleanup"
-  # LIVE_AGENT_LITE_HANDOVER_TTL:
-
-  # The TTL of the JWT + access token in seconds
-  # LIVE_AGENT_TOKEN_TTL_IN_SECONDS:
-
   # Register a rotue for loader.io verification
   # LOADER_IO_TOKEN:
 
@@ -1211,10 +1205,6 @@ cognigyEnv:
   # WORKPLACE_APP_SECRET:
 
   ### service-ui env variables ###
-
-  # Enables / Disables some features
-  # FEATURE_LICENSE_AGREEMENT:
-
   # sets the RSS-feed for the projects view
   # RSS_FEED_URL:https://www.cognigy.com/blog/tag/product/rss.xml
 
@@ -1241,7 +1231,7 @@ cognigyEnv:
   # Set a Signup Link on the login page
   # FEATURE_USE_SIGNUP_FOR_FREE_LINK:
 
-  ### Temp
+  ### Temp variables ###
   # Activate the translation feature
   # FEATURE_TMP_USE_ENDPOINT_TRANSLATION:
 
@@ -1267,9 +1257,6 @@ cognigyEnv:
 
   # Activate possibility of Non-Conversational endpoint creation
   # FEATURE_USE_NON_CONVERSATIONAL_ENDPOINT:
-
-  # whether Cognigy Live Agent should be activated - e.g. has it been deployed?
-  # FEATURE_USE_COGNIGY_LIVE_AGENT:
 
   # If set to "true", the customer will be able to update the 'trustedCode'
   # property of an extension (and its node descriptor set)
@@ -1322,7 +1309,6 @@ cognigyEnv:
   # VOICE_GATEWAY_SIP_WS_URI_WITH_PROTOCOL:
 
   ### service-resources env variables ###
-
   # database credentials for resources
   # RESOURCES_DB_USERNAME:
   # RESOURCES_DB_PASSWORD:
@@ -1385,8 +1371,12 @@ cognigyEnv:
   # GENERATIVE_AI_FLOW_GENERATION_TRANSCRIPT_PROMPT:
   # GENERATIVE_AI_FLOW_GENERATION_DESCRIPTION_TIMEOUT_MS:
 
-  ### service-security env variables ###
+  # Temporary Generative AI Features
+  # FEATURE_TMP_GENERATIVE_AI_REPHRASE_STATMENT_PROMPT:
+  # FEATURE_TMP_GENERATIVE_AI_REPHRASE_MULTIPLE_STATEMENTS_PROMPT:
+  # FEATURE_GENERATIVE_AI_REPHRASE_TIMEOUT_IN_SECONDS:
 
+  ### service-security env variables ###
   # connection details for the database
   # SECURITY_DB_USERNAME:
   # SECURITY_DB_PASSWORD:
@@ -1401,11 +1391,10 @@ cognigyEnv:
   # CONVERSATION_COUNTER_PREFECTH:
 
   ### service-api env variables ###
-
   # licensing server url, default value present
   # LICENSING_SERVER_URL_WITH_PROTOCOL:
 
-  # cognigy licensing server, default value present
+  # Cognigy licensing server, default value present
   # LICENSING_PING_INTERVAL_IN_MINUTES:
 
   # ability to disable reporting (reporting is enabled by default!)
@@ -1418,10 +1407,7 @@ cognigyEnv:
   # AUTHENTICATION_DB_PORT:
   # AUTHENTICATION_DB_NAME:
 
-  # Redis persistent configuration
-  # REDIS_PERSISTENT_PASSWORD:
-
-  # connection details for smtp
+  # Connection details for SMTP server
   # SYSTEM_SMTP_HOST:
   # SYSTEM_SMTP_PORT:
   # SYSTEM_SMTP_CONNECTION_TYPE:
@@ -1436,11 +1422,17 @@ cognigyEnv:
   # INTERNAL_API_USERNAME:
   # INTERNAL_API_PASSWORD:
 
-  # Static URLs to parts of the system
-  # protocol + domain + port, without trailing slash
+  # Override URLs to services of the system. By default, Ingress host is used for every URL
+  # Use the following format: protocol + domain + port (optional), without trailing slash
   # e.g. "https://subdomain.domain.tld:1234"
   # FRONTEND_BASE_URL_WITH_PROTOCOL:
   # BACKEND_BASE_URL_WITH_PROTOCOL:
+  # INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL:
+  # ENDPOINT_BASE_URL_WITH_PROTOCOL:
+  # RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL
+  # APPS_BASE_URL_WITH_PROTOCOL:
+  # AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL:
+  # AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL:
   # WEBCHAT_BASE_URL_WITH_PROTOCOL:
 
   # Decides whether users need to accept a license agreement
@@ -1477,7 +1469,7 @@ cognigyEnv:
   # The default value is: 30 days.
   # API_REFRESH_TOKEN_LONG_EXPIRATION_IN_MINUTES:
 
-  # Can be set to 0 to never expire contact profiles
+  # Conversation collection data Expiration time in minutes. Can be set to 0 to never expire contact profiles
   # MAX_CONVERSATION_TTL_IN_MINUTES:
 
   # The amount of seconds how long audit-events are buffered before
@@ -1530,21 +1522,10 @@ cognigyEnv:
   # will be limited to this value.
   # REFRESH_TOKEN_MAX_AMOUNT_PER_USER:
 
-  # location of the authentication json for using the management ui, default: /run/secrets/management-ui-creds.json
-  # AUTHENTICATION_MANAGEMENT_UI_CRED_LOCATION:
-
-  #
-  # Cognigy Live Agent (chatwoot based)
-  #
-  # CLIENT_SECRET_COGNIGY_LIVE_AGENT:
-  # REDIRECT_URI_COGNIGY_LIVE_AGENT:
-
   # Email used to validate the organisation delition process
   # SYS_ADMINISTRATOR_EMAIL:
 
   # DELETE_ORGANIZATION_TOKEN_TTL_IN_MINUTES:
-
-  # MANAGEMENTUI_BASE_URL_WITH_PROTOCOL:
 
   # Flag to conditionally use request-promise to execute transformer
   # USE_REQUEST_PROMISE_FOR_TRANSFORMER:
@@ -1560,7 +1541,6 @@ cognigyEnv:
   # CONVERSATION_COUNTER_TIMEOUT_IN_MS:
 
   ### service-journeys env variables ###
-
   # database credentials for resources
   # JOURNEYS_DB_USERNAME:
   # JOURNEYS_DB_PASSWORD:
@@ -1575,7 +1555,6 @@ cognigyEnv:
   # HSMWALERTURL:
 
   ### service-trainer env variables ###
-
   # connection details for the database
   # TRAINER_DB_USERNAME:
   # TRAINER_DB_PASSWORD:
@@ -1587,7 +1566,6 @@ cognigyEnv:
   # TRAINER_PACKAGE_ENCRYPTION_KEY:
 
   ### service-logs env variables ###
-
   # connection details for the database
   # LOG_DB_USERNAME:
   # LOG_DB_PASSWORD:
@@ -1606,7 +1584,6 @@ cognigyEnv:
   # MAX_LOGS_AMOUNT_IN_REDIS:
 
   ### service-task-manager env variables ###
-
   # connection details for the database
   # TASK_MANAGER_DB_USERNAME:
   # TASK_MANAGER_DB_PASSWORD:
@@ -1622,12 +1599,10 @@ cognigyEnv:
   # TRAIN_INTENTS_EXPIRATION_MILLISECONDS:
 
   ### service-custom-modules env variables ###
-
   # Whether to use a cert for installing npm modules
   # USE_PROXY_CA_CERT:
 
   ### service-ai env variables ###
-
   # max number of queues for consistent-hash-exchange in service-ai. default is 20.
   # AI_MESSAGE_QUEUES_AMOUNT: "20"
 
@@ -1739,13 +1714,7 @@ cognigyEnv:
   # Timeout for Question node datepicker function.
   # AI_DATEPICKER_FUNCTION_VM_TIMEOUT_IN_MS: "150"
 
-  # Generative AI
-  # FEATURE_TMP_GENERATIVE_AI_REPHRASE_STATMENT_PROMPT:
-  # FEATURE_TMP_GENERATIVE_AI_REPHRASE_MULTIPLE_STATMENTs_PROMPT:
-  # FEATURE_GENERATIVE_AI_REPHRASE_TIMEOUT_IN_SECONDS:
-
   ### service-execution env variables ###
-
   # Default value is 512 MiB
   # MAX_EXTENSIONS_CACHE_DIR_SIZE_IN_MB: "512"
 
@@ -1759,7 +1728,6 @@ cognigyEnv:
   # EXECUTE_EXTENSIONS_IN_VM: "true"
 
   ### service-function-execution env variables ###
-
   # The total number of http requests a customer can send via the httpRequest API
   # FUNCTION_MAX_OUTGOING_HTTP_REQUESTS: ""
 
@@ -1771,7 +1739,6 @@ cognigyEnv:
   # FUNCTION_EXECUTION_MAX_EXECUTION_TIME_IN_MINUTES: ""
 
   ### service-function-scheduler env variables ###
-
   # how long should we store instance information in the database -
   # we use a time-based index in order to rotate the data
   # FUNCTION_INSTANCE_EXPIRATION_IN_MINUTES: ""
@@ -1785,7 +1752,6 @@ cognigyEnv:
   # FUNCTION_PARAMETERS_SIZE_MAX_IN_BYTES: ""
 
   ### service-http env variables ###
-
   # The amount of messages service-http can handle in parallel
   # SERVICE_HTTP_PREFETCH: ""
 
@@ -1793,7 +1759,6 @@ cognigyEnv:
   # RESPONSE_BYTES_LIMIT: ""
 
   ### service-parser env variables ###
-
   # The timeout for rpc calls made by service-parser
   # SERVICE_PARSER_RPC_TIMEOUT_IN_SEC: "20"
 
@@ -1807,12 +1772,10 @@ cognigyEnv:
   # SERVICE_PARSER_MAXIMUM_LEXICONS_ENTRIES_IMPORT: "1000000"
 
   ### service-playbook-execution env variables ###
-
-  # Maximum excutions Default:10
+  # Maximum executions Default: 10
   # MAX_CONCURRENT_PLAYBOOK_EXECUTIONS: "10"
 
   ### service-profiles env variables ###
-
   # connection details for the database
   # PROFILES_DB_USERNAME:
   # PROFILES_DB_PASSWORD:
@@ -1821,7 +1784,6 @@ cognigyEnv:
   # PROFILES_DB_NAME:
 
   ### service-runtime-file-manager env variables ###
-
   # Allows our customers to specify CORS origins. Please note that you need to have this configured
   # in order for Cognigy Live Agent and the Webchat Widget demo page to work properly. You can specify
   # CORS origins by providing a comma-delimited list like so:
@@ -1832,7 +1794,6 @@ cognigyEnv:
   # RUNTIME_FILE_MANAGER_MAX_FILE_SIZE: "10485760"
 
   ### service-session-state-manager env variables ###
-
   # The amount of time to buffer events before saving them. Can be set to 0 to disable buffering
   # SESSION_STATE_MANAGER_BUFFER_TIME_IN_SECONDS: "10"
 
@@ -1840,7 +1801,6 @@ cognigyEnv:
   # SESSION_STATE_MANAGER_BUFFER_COUNT: 100
 
   ### service-nlp env variables ###
-
   # Optional log level string: INFO | DEBUG | ERROR
   # NLP_LOG_LEVEL: ""
 
@@ -1888,7 +1848,7 @@ cognigyEnv:
   # Log memory consumption on every hourly update. Defaults to False
   # NLP_SCORE_LOG_CACHE_MEM: ""
 
-  # Not case sensitive.
+  # Not case-sensitive
   # "All" when all possible Any Slot matches should be returned.
   # "Exact" when only the exact Any Slot match should be returned, i.e. the exact sentence
   # structure with the Any Slot.
@@ -1903,7 +1863,6 @@ cognigyEnv:
   # NLP_DEBUG_IS_INFO: "False"
 
   ### service-nlp-matcher env variables ###
-
   # amount of items we store in the memory cache, default 20000
   # NLP_MATCHER_CACHE_ITEMS: ""
 
@@ -1922,7 +1881,6 @@ cognigyEnv:
   # NLP_MATCHER_QUEUE_TTL_IN_SECS_WRITE: ""
 
   ### service-nlp-ner env variables ###
-
   # Maximum restarts of child process before process exit
   # NER_MAX_CHILD_PROCESS_RESTARTS: ""
 
@@ -1939,7 +1897,6 @@ cognigyEnv:
   # NLP_NER_DISABLE_CHILD_PROCESSES: ""
 
   ### service-analytics-reporter env variables ###
-
   ## connection details for the database
   # ANALYTICS_REPORTER_DB_USERNAME:
   # ANALYTICS_REPORTER_DB_PASSWORD:
@@ -1947,211 +1904,82 @@ cognigyEnv:
   # ANALYTICS_REPORTER_DB_PORT:
   # ANALYTICS_REPORTER_DB_NAME:
 
-  # # connection details for rabbit mq
-  # RABBITMQ_HOST:
-  # RABBITMQ_PORT:
-  # RABBITMQ_USER:
-  # RABBITMQ_PASSWORD:
-
-  # # connection details for redis
-  # REDIS_HOST:
-  # REDIS_PORT:
-  # REDIS_PASSWORD:
-
-  # # how long should Cognigy Insights cache generated reports until
-  # # they have to be re-generated? (default 180 minutes)
+  # Regeneration period for Cognigy Insights cache reports (default 180 minutes)
   # INSIGHTS_REPORTS_CACHE_TIME_IN_MINUTES:
 
   ### service-analytics-collector env variables ###
-  # # connection details for the database
+  # connection details for the database
   # ANALYTICS_COLLECTOR_DB_USERNAME:
   # ANALYTICS_COLLECTOR_DB_PASSWORD:
   # ANALYTICS_COLLECTOR_DB_HOST:
   # ANALYTICS_COLLECTOR_DB_PORT:
   # ANALYTICS_COLLECTOR_DB_NAME:
 
-  # # connection details for rabbit mq
-  # RABBITMQ_HOST:
-  # RABBITMQ_PORT:
-  # RABBITMQ_USER:
-  # RABBITMQ_PASSWORD:
-
-  # # connection details for redis
-  # REDIS_HOST:
-  # REDIS_PORT:
-  # REDIS_USE_TLS:
-  # REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS:
-
   ### service-analytics-conversations env variables ###
-  # # connection details for the database# connection details for the database
+  # connection details for the database
   # CONVERSATION_COLLECTOR_DB_USERNAME:
   # CONVERSATION_COLLECTOR_DB_PASSWORD:
   # CONVERSATION_COLLECTOR_DB_HOST:
   # CONVERSATION_COLLECTOR_DB_PORT:
   # CONVERSATION_COLLECTOR_DB_NAME:
 
-  # # connection details for rabbit mq
-  # RABBITMQ_HOST:
-  # RABBITMQ_PORT:
-  # RABBITMQ_USER:
-  # RABBITMQ_PASSWORD:
-
-  # # connection details for redis
-  # REDIS_HOST:
-  # REDIS_PORT:
-  # REDIS_USE_TLS:
-  # REDIS_DEFAULT_TTL:
-
-  # enabled detailed logs for RPC calls handling
-  # FEATURE_RPC_LOGS:
-
-  # # how long should Cognigy Insights cache generated reports until
-  # # they have to be re-generated? (default 180 minutes)
-  # INSIGHTS_REPORTS_CACHE_TIME_IN_MINUTES:
-
-  # Conversation collection data Expiration time in minutes
-  # MAX_CONVERSATION_TTL_IN_MINUTES:
-
   # contact Profile Expiration in minutes
   # MAX_CONTACT_PROFILE_TTL_IN_MINUTES:
 
-  ### service-analytics-odata env variables ###
-
-  # # connection details for the odata database with analytics collection
-  # ANALYTICS_COLLECTOR_DB_USERNAME:
-  # ANALYTICS_COLLECTOR_DB_PASSWORD:
-  # ANALYTICS_COLLECTOR_DB_HOST:
-  # ANALYTICS_COLLECTOR_DB_PORT:
-  # ANALYTICS_COLLECTOR_DB_NAME:
-
-  # # connection details for the database with organisation collection
-  # SECURITY_DB_USERNAME:
-  # SECURITY_DB_PASSWORD:
-  # SECURITY_DB_HOST:
-  # SECURITY_DB_PORT:
-  # SECURITY_DB_NAME:
-
-  # # connection details for the flows database
+  # connection details for the flows database
   # FLOWS_DB_USERNAME:
   # FLOWS_DB_PASSWORD:
   # FLOWS_DB_HOST:
   # FLOWS_DB_PORT:
   # FLOWS_DB_NAME:
 
-  # # odata server port
+  # odata server port
   # ODATA_HOSTNAME:
 
-  # # Should be either http or https
+  # Odata protocol (http or https)
   # ODATA_PROTOCOL:
 
-  # # The amount of seconds a query
-  # # is cached in Redis
+  # The amount of seconds a query is cached in Redis
   # ODATA_CACHE_TIME_IN_SECONDS:
 
-  # # connection details of our rabbit mq installation
-  # RABBITMQ_HOST:
-  # RABBITMQ_PORT:
-  # RABBITMQ_USER:
-  # RABBITMQ_PASSWORD:
-
-  # # connection details for redis
-  # REDIS_HOST:
-  # REDIS_PORT:
-  # REDIS_USE_TLS:
-  # REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS:
-
-  ### service-insights-api env variables ##
-  # RABBITMQ_HOST:
-  # RABBITMQ_PORT:
-  # RABBITMQ_USER:
-  # RABBITMQ_PASSWORD:
-
-  # REDIS_HOST:
-  # REDIS_PORT:
-  # REDIS_PASSWORD:
-
+  ### service-insights-api env variables ###
   # INSIGHTS_JWT_SECRET:
-
-  # INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL:
-
-  # # If set to "true", will exchange "Cogngiy.AI" for a generic name
-  # FEATURE_USE_WHITELABELING:
-
   # INSIGHTS_API_CORS_WHITELIST:
-
   # HTTP_JSON_BODY_LIMIT:
-
   # PRODUCT_DISPLAY_NAME:
-
-  # FEATURE_RPC_LOGS:
-
   # SERVICE_PREFIX:
   # INSIGHTS_API_VERSION:
-  # PRODUCT_DISPLAY_NAME:
 
-  ### service-insights-api env variables ##
-  # urls where services are reachable
-
-  # FRONTEND_BASE_URL_WITH_PROTOCOL:
-  # BACKEND_BASE_URL_WITH_PROTOCOL:
-  # ENDPOINT_BASE_URL_WITH_PROTOCOL:
-  # WEBCHAT_BASE_URL_WITH_PROTOCOL:
-  # INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL:
-
-  # # The key for the built-in pendo. If set, pendo routines will be activated.
-
+  # The key for the built-in pendo. If set, pendo routines will be activated.
   # PENDO_KEY:
 
-  # # Flag that can be used to disable the 'get help / get tech support'
-
-  # # button within the navigation to file a support ticket a Cognigy
-
-  # DISABLE_GET_TECH_SUPPORT:true
-
-  # # Allow the customer to whitelabel our frontend
-
-  # FEATURE_USE_WHITELABELING:false
-
-  # # Cognigy Live Agent (chatwoot based)
-
-  # CLIENT_ID_COGNIGY_LIVE_AGENT:
-
-  # # whether Cognigy Live Agent should be activated - e.g. has it been deployed?
-
-  # FEATURE_USE_COGNIGY_LIVE_AGENT:
-  # FEATURE_USE_COGNIGY_DOC_LINKS:
-
-  # whether Cognigy Live Agent Dashboard should be activated
-  # FEATURE_USE_COGNIGY_LIVE_AGENT_DASHBOARD:
+  # Flag that can be used to disable the 'get help / get tech support'
+  # button within the navigation to file a support ticket to Cognigy
+  # DISABLE_GET_TECH_SUPPORT: true
 
   ### service-collector env variables ###
-  # RabbitMQ configuration
-
-  # RABBITMQ_HOST:
-  # RABBITMQ_PORT:
-  # RABBITMQ_USER:
-  # RABBITMQ_PASSWORD:
-
-  # # api key configuration
+  # api key configuration
   # INSIGHTS_COLLECTOR_API_KEY:
 
-  # # http2 configuration (optional)(defaults to 0.0.0.0:8000)
+  # http2 configuration (optional)(defaults to 0.0.0.0:8000)
   # INSIGHTS_COLLECTOR_HTTP_HOST:
   # INSIGHTS_COLLECTOR_HTTP_PORT:
 
   ### management-ui env variables ###
-
-  # The port of the Cognigy Management UI
+  # Base URL for Management UI
+  # MANAGEMENTUI_BASE_URL_WITH_PROTOCOL:
+  # Management UI port
   # CMUI_HTTP_PORT:
 
-  ### Knowledge Search env variables ###
+  # location of the authentication json for using the management ui, default: /run/secrets/management-ui-creds.json
+  # AUTHENTICATION_MANAGEMENT_UI_CRED_LOCATION:
 
+  ### Knowledge Search env variables ###
   # SERVICE_SEARCH_ORCHESTRATOR_URL_WITH_PROTOCOL:
   # SERVICE_SEARCH_ORCHESTRATOR_OPERATION_TIMEOUT_IN_MS:
 
-  ##
-  ## Configuration for the embedding-models config map.
-  ##
+
+  ### Configuration for the embedding-models config map ###
 embeddingModelConfig:
   usev4Config:
     maxBatchSize: "256"
@@ -2163,9 +1991,7 @@ embeddingModelConfig:
     maxBatchSize: "64"
     maxQueueDelayMicroseconds: "100"
 
-##
-## Stateful Backend Components
-##
+### RabbitMQ Message Broker Configuration ###
 statefulRabbitMq:
   image: cognigy.azurecr.io/rabbitmq:3.9.29_cognigy-4.X
   replicaCount: 1
@@ -2270,110 +2096,9 @@ statefulRabbitMq:
   tolerations: []
   priorityClassName: ""
 
-## If redis is not required to deploy then you can set the "statefulRedis.enabled" flag to false. By default it is always enabled.
-## statefulRedis:
-##   enabled: false
-
-statefulRedis:
-  enabled: true
-  image: cognigy.azurecr.io/redis:7.0.10_cognigy_4.X
-  replicaCount: 1
-  resources:
-    limits:
-      memory: 512Mi
-      cpu: "0.5"
-    requests:
-      memory: 100Mi
-      cpu: "0.2"
-  extraEnvVars: []
-  securityContext: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
-  priorityClassName: ""
-  conf:
-    ## The default maxmemory for redis is 512mb which is equal to the memory limit of the redis, in case if you are using higher limit for redis then increase the maxmeory accordingly.
-    ## The default maxmemory-policy is "noeviction".
-    ## ref: https://redis.io/docs/reference/eviction/
-    maxMemory: "512mb"
-    maxMemoryPolicy: "volatile-ttl"
-  ## Redis authentication parameters
-  ##
-  auth:
-    ## Redis password. Defaults to base 16 of a random 64 character alphanumeric string if not set.
-    ##
-    password: ""
-    ## The name of an existing secret with Redis credentials.
-    ## The secret must contain "redis-password.conf" and "REDIS_PASSWORD" keys.
-    ##
-    ## Example secret data format:
-    ##
-    ## redis-password.conf: requirepass <redis_password>
-    ## REDIS_PASSWORD: <redis_password>
-    ##
-    ## NOTE: When it's set, the previous "statefulRedis.auth.password" parameter is ignored.
-    ##
-    existingSecret: ""
-
-## If redis-persistent is not required to deploy then you can set the "statefulRedis.enabled" flag to false. By default it is always enabled.
-## statefulRedisPersistent:
-##   enabled: false
-
-statefulRedisPersistent:
-  enabled: true
-  image: cognigy.azurecr.io/redis:7.0.10_cognigy_4.X
-  replicaCount: 1
-  resources:
-    limits:
-      memory: 512Mi
-      cpu: "0.5"
-    requests:
-      memory: 100Mi
-      cpu: "0.2"
-  extraEnvVars: []
-  securityContext: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
-  priorityClassName: ""
-  ## Stateful Redis-Persistent authentication parameters
-  ##
-  auth:
-    ## Redis-Persistent password. Defaults to base 16 of a random 64 character alphanumeric string if not set.
-    ##
-    password: ""
-    ## The name of an existing secret with Redis-Persistent credentials.
-    ## The secret must contain "redis-persistent-password.conf" and "REDIS_PERSISTENT_PASSWORD" keys.
-    ##
-    ## Example secret data format:
-    ##
-    ## redis-persistent-password.conf: requirepass <redis_persistent_password>
-    ## REDIS_PERSISTENT_PASSWORD: <redis_persistent_password>
-    ##
-    ## NOTE: When it's set, the previous "statefulRedisPersistent.auth.password" parameter is ignored.
-    ##
-    existingSecret: ""
-  ## Persistence parameters
-  ##
-  ## Enable persistence using Persistent Volume Claims
-  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
-  ##
-  persistence:
-    ## Optionally specify StorageClass for Redis Persistent data volume
-    ## If defined, storageClassName: <storageClass>
-    ## If undefined or set to null, storageClassName is set according to the value defined in "cloud.provider"
-    ##
-    storageClass: ""
-    ## Optionally specify PVC Storage Request for RedisPersistent data volume
-    ## Note: Default value is 10Gi
-    ##
-    size: ""
-
-##
-## Cognigy.AI components
-##
+### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-ai:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2470,7 +2195,7 @@ serviceAi:
             averageUtilization: 70
     behavior: {}
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-alexa-management:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2486,7 +2211,7 @@ serviceAlexaManagement:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsCollector:
-  image: cognigy.azurecr.io/service-analytics-collector:release-c5d0af9-1700048992
+  image: cognigy.azurecr.io/service-analytics-collector:release-3e8afbc-1699892527
   replicaCount: 3
   resources:
     requests:
@@ -2518,7 +2243,7 @@ serviceAnalyticsConversations:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsOdata:
-  image: cognigy.azurecr.io/service-analytics-odata:release-d334e52-1694421076
+  image: cognigy.azurecr.io/service-analytics-odata:release-e7151de-1700145923
   replicaCount: 3
   resources:
     requests:
@@ -2550,7 +2275,7 @@ serviceAnalyticsReporter:
   tolerations: []
   priorityClassName: ""
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-api:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2568,7 +2293,7 @@ serviceApi:
   tolerations: []
   priorityClassName: ""
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-app-session-manager:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2584,7 +2309,7 @@ serviceAppSessionManager:
   tolerations: []
   priorityClassName: ""
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-custom-modules:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2600,7 +2325,7 @@ serviceCustomModules:
   tolerations: []
   priorityClassName: ""
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-2a0241aae0-1700049942
+  image: cognigy.azurecr.io/service-endpoint:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2616,7 +2341,7 @@ serviceEndpoint:
   tolerations: []
   priorityClassName: ""
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-execution:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2644,7 +2369,7 @@ serviceExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-function-execution:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2672,7 +2397,7 @@ serviceFunctionExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-function-scheduler:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2700,7 +2425,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-handover:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2745,7 +2470,7 @@ serviceHandoverInactivity:
             averageUtilization: 70
     behavior: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-http:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2773,7 +2498,7 @@ serviceHttp:
             averageUtilization: 70
     behavior: {}
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-d247fac-1700575761
+  image: cognigy.azurecr.io/service-insights-api:release-9c6cc00-1700668349
   replicaCount: 3
   resources:
     requests:
@@ -2791,7 +2516,7 @@ serviceInsightsApi:
   tolerations: []
   priorityClassName: ""
 serviceCollector:
-  image: cognigy.azurecr.io/service-collector:release-3b4dc8d-1700049372
+  image: cognigy.azurecr.io/service-collector:release-fbf6c6e-1699978718
   replicaCount: 3
   resources:
     requests:
@@ -2809,7 +2534,7 @@ serviceCollector:
   tolerations: []
   priorityClassName: ""
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-5ea0956-1699622733
+  image: cognigy.azurecr.io/service-insights-ui:release-80c843f-1700668646
   replicaCount: 3
   resources:
     requests:
@@ -2827,7 +2552,7 @@ serviceInsightsUi:
   tolerations: []
   priorityClassName: ""
 serviceJourneys:
-  image: cognigy.azurecr.io/service-journeys:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-journeys:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2843,7 +2568,7 @@ serviceJourneys:
   tolerations: []
   priorityClassName: ""
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-logs:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2875,7 +2600,7 @@ serviceNlpMatcher:
   tolerations: []
   priorityClassName: ""
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-nlp-ner:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2919,7 +2644,7 @@ serviceParser:
   tolerations: []
   priorityClassName: ""
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-playbook-execution:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2935,7 +2660,7 @@ servicePlaybookExecution:
   tolerations: []
   priorityClassName: ""
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-profiles:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2963,7 +2688,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-a7b0dad060-1700646660
+  image: cognigy.azurecr.io/service-resources:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -2979,7 +2704,7 @@ serviceResources:
   tolerations: []
   priorityClassName: ""
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-runtime-file-manager:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -3007,7 +2732,7 @@ serviceRuntimeFileManager:
             averageUtilization: 70
     behavior: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-security:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -3025,7 +2750,7 @@ serviceSecurity:
   tolerations: []
   priorityClassName: ""
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-session-state-manager:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -3053,7 +2778,7 @@ serviceSessionStateManager:
             averageUtilization: 70
     behavior: {}
 serviceStaticFiles:
-  image: cognigy.azurecr.io/service-static-files:release-ccd9181e4d-1699441647
+  image: cognigy.azurecr.io/service-static-files:release-2a9b477e11-1698999894
   replicaCount: 3
   resources:
     requests:
@@ -3069,7 +2794,7 @@ serviceStaticFiles:
   tolerations: []
   priorityClassName: ""
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-task-manager:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -3085,7 +2810,7 @@ serviceTaskManager:
   tolerations: []
   priorityClassName: ""
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-trainer:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -3101,7 +2826,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-ui:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -3119,7 +2844,7 @@ serviceUi:
   tolerations: []
   priorityClassName: ""
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:release-b957e92b22-1700035606
+  image: cognigy.azurecr.io/service-webchat:release-a974aa0c7a-1700828726
   replicaCount: 3
   resources:
     requests:
@@ -3659,7 +3384,7 @@ serviceNlpClassifierTrainXx:
   tolerations: []
   priorityClassName: ""
 serviceSearchOrchestrator:
-  image: cognigy.azurecr.io/service-search-orchestrator:release-2fe92f8-1699523311
+  image: cognigy.azurecr.io/service-search-orchestrator:release-d406e3b-1699338233
   replicaCount: 3
   resources:
     requests:
@@ -3675,7 +3400,7 @@ serviceSearchOrchestrator:
   tolerations: []
   priorityClassName: ""
 agentAssistBackend:
-  image: cognigy.azurecr.io/agent-assist-backend:1c8b475-1699880668
+  image: cognigy.azurecr.io/agent-assist-backend:af6381e-1700210578
   replicaCount: 3
   resources:
     limits:
@@ -3684,8 +3409,6 @@ agentAssistBackend:
     requests:
       cpu: 400m
       memory: 400Mi
-  extraVolumes: []
-  extraVolumeMounts: []
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -3693,7 +3416,7 @@ agentAssistBackend:
   tolerations: []
   priorityClassName: ""
 agentAssistFrontend:
-  image: cognigy.azurecr.io/agent-assist-frontend:f56e62a-1697724049
+  image: cognigy.azurecr.io/agent-assist-frontend:91474ec-1700210584
   replicaCount: 3
   resources:
     limits:
@@ -3702,8 +3425,6 @@ agentAssistFrontend:
     requests:
       cpu: 400m
       memory: 400Mi
-  extraVolumes: []
-  extraVolumeMounts: []
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -3720,8 +3441,6 @@ agentAssistGenesysNotificationsForwarder:
     requests:
       cpu: 400m
       memory: 400Mi
-  extraVolumes: []
-  extraVolumeMounts: []
   extraEnvVars: []
   securityContext: {}
   affinity: {}
@@ -3732,6 +3451,20 @@ migration:
   handoverRequest:
     image: ""
     enabled: false
+  ### 
+  # Kai Embedding Migration from WeaviateDB into MongoDB
+  # This KaiEmbedding migration Job will go over all the sources in the MongoDB and pull of the Weaviate Objects 
+  # belonging to thouse sources. and then update the MongoDB chunks with the embedding vector.
+  # This Job needs to be run ONCE and be disabled afterwards
+  # Job connects to 'service-resource' db in production using mongodbConnectionString value set from existing secret.
+  # Job connects to 'weaviate' db in production using the weaviateApiKey value set from existing secret.
+  # Important: For fresh installation, please make this job disabled.
+  kaiEmbeddingMigration:
+    enabled: true
+    hooks: post-upgrade
+    hookDeletePolicy: "before-hook-creation"
+    image: cognigy.azurecr.io/kai-embedding-migration:380586885cf71f51c0ae9859cd134eca63de9cd3
+    ttlSecondsAfterFinished: 100
   ### Sunsetted/Retired Endpoint Deletion/Migration Job
   # This enables migration job which removes all sunsetted or retired endpoints, which are for example by default deleting `google`, `twilio-autopilo` channels.
   # Job connects to 'service-resource' db using 'SERVICE_RESOURCES_CONNECTION_STRING' environment variable, value set from existing secret.
@@ -3745,10 +3478,7 @@ migration:
     image: cognigy.azurecr.io/endpoint-deletion:18539e1e00749e46714614e6e180f2c045bad5cf
     batchSize: 100
 
-##
-# Configuration for knowledge search tasks that run as Kubernetes jobs
-##
-
+### Configuration for knowledge search tasks that run as Kubernetes jobs ###
 taskProcessKnowledgeSourceFile:
   image: cognigy.azurecr.io/task-process-knowledge-source-file:release-92b1f84-1698134899
   resources:
@@ -3847,7 +3577,173 @@ cronNfsCleanup:
   tolerations: []
   priorityClassName: ""
 
-## Optionally create priorityClass
+## Optionally enable HorizontalPodAutoscaler for pods
+## ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+##
+## Make sure that pods have resources limits and requests defined and the 'metrics server' has been deployed and configured in the cluster.
+## https://github.com/kubernetes-sigs/metrics-server
+##
+## Note: This is an experimental feature and should not be used in production.
+## Please don't enable this flag for now if you are a customer running Cognigy.AI/Cognigy Insights using this Helm Chart. 
+## This note will be removed once we are done with the testing and the feature will be production ready.
+##
+hpa:
+  enabled: false
+  serviceAi:
+    ## Enable horizontal pod autoscaler
+    ##
+    enabled: false
+    name: service-ai
+    ## Minimum allowed replicas to which the scaling target can be scaled down
+    ##
+    minReplicas: 3
+    ## Maximum allowed replicas to which the scaling target can be scaled up
+    ##
+    maxReplicas: 10
+    ## Define metrics against which HorizontalPodAutoscaler will react
+    ## metrics:
+    ##   - type: Resource
+    ##     resource:
+    ##       name: memory
+    ##       target:
+    ##         type: Utilization
+    ##         averageUtilization: 80
+    ##   - type: Resource
+    ##     resource:
+    ##       name: cpu
+    ##       target:
+    ##         type: Utilization
+    ##         averageUtilization: 70
+    ##
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            ## Define the CPU target to trigger the scaling actions (utilization percentage)
+            ##
+            averageUtilization: 50
+    behavior: {}
+  serviceExecution:
+    enabled: false
+    name: service-execution
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+    behavior: {}
+  serviceFunctionExecution:
+    enabled: false
+    name: service-function-execution
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+    behavior: {}
+  serviceFunctionScheduler:
+    name: service-function-scheduler
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+    behavior: {}
+  serviceHandoverInactivity:
+    name: service-handover-inactivity
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+    behavior: {}
+  serviceHttp:
+    name: service-http
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+    behavior: {}
+  serviceNlpNer:
+    name: service-nlp-ner
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+    behavior: {}
+  serviceProfiles:
+    name: service-profiles
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+    behavior: {}
+  serviceRuntimeFileManager:
+    name: service-runtime-file-manager
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+    behavior: {}
+  serviceSessionStateManager:
+    name: service-session-state-manager
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+    behavior: {}
+
+## PriorityClass(es) for services
 ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass
 ##
 priorityClass:
@@ -3881,16 +3777,16 @@ priorityClass:
     globalDefault: false
     description: "PriorityClass for low priority services"
 
-## You can enable the pod monitor if any prometheus instance is ruinning on your cluster.
+## You can enable the pod monitors only if Prometheus instance is running or Prometheus CRDs are created in your cluster
 podMonitors:
   enabled: false
   ## The namespace for the pod-monitor should be the same namespace where your prometheus instance is running
   namespace: ""
 
-## Create custom StorageClass for StateFull services
+## Create custom StorageClass(es) for stateful services
 ##
 storageClass:
-  ## StorageClass parameters for aws cloud
+  ## StorageClass(es) parameters for AWS
   ##
   aws:
     enabled: true
@@ -3907,7 +3803,7 @@ storageClass:
         reclaimPolicy: Retain
         volumeBindingMode: WaitForFirstConsumer
       redisPersistentHa:
-        enabled: false
+        enabled: true
         storageClassName: "redis-persistent-ha"
         provisionerName: "ebs.csi.aws.com"
         awsEBSVolumeType: "gp3"
@@ -3936,7 +3832,7 @@ storageClass:
         reclaimPolicy: Retain
         volumeBindingMode: Immediate
 
-  ## StorageClass parameters for azure cloud
+  ## StorageClass(es) parameters for Azure
   ##
   azure:
     enabled: true
@@ -3952,7 +3848,7 @@ storageClass:
         volumeBindingMode: WaitForFirstConsumer
         reclaimPolicy: Retain
       redisPersistentHa:
-        enabled: false
+        enabled: true
         storageClassName: "redis-persistent-ha"
         provisionerName: "disk.csi.azure.com"
         azureStorageAccountType: "Premium_LRS"
@@ -3965,7 +3861,7 @@ storageClass:
         azureStorageAccountType: "StandardSSD_LRS"
         volumeBindingMode: WaitForFirstConsumer
         reclaimPolicy: Retain
-    ## Azure File
+    ## Azure Files
     ## ref: https://learn.microsoft.com/en-us/azure/aks/azure-csi-files-storage-provision
     ##
     file:
@@ -3999,9 +3895,9 @@ storageClass:
         uid: "1000"
         lfs: true
 
-# Anti Virus Scanning
+# Antivirus assets scanning
 clamd:
-  # 4000M is the maximum
+  # streamMaxLength: 4000M is the maximum value
   streamMaxLength: 4000M
   maxScanSize: 300M
   maxFileSize: 100M
@@ -4042,6 +3938,12 @@ tracing:
       eventsSampleRate: ""
       sampleRate: ""
     insights:
+      enabled: false
+      errorsEnabled: false
+      baseUrl: ""
+      eventsSampleRate: ""
+      sampleRate: ""
+    liveAgent:
       enabled: false
       errorsEnabled: false
       baseUrl: ""
@@ -4279,7 +4181,7 @@ cubejs:
     tolerations: []
     securityContext: {}
   apiServer:
-    image: "cognigy.azurecr.io/insights-cube:release-a87e536-1699622737"
+    image: "cognigy.azurecr.io/insights-cube:release-4ba24fc-1700669982"
     replicaCount: 1
     resources:
       requests:
@@ -4295,7 +4197,7 @@ cubejs:
     tolerations: []
     priorityClassName: ""
   refreshWorker:
-    image: "cognigy.azurecr.io/insights-cube:release-a87e536-1699622737"
+    image: "cognigy.azurecr.io/insights-cube:release-4ba24fc-1700669982"
     replicaCount: 1 # Don't increase the replica count, refresh worker can't be scaled independently and a whole cluster has to be replicated
     resources:
       requests:
@@ -4466,10 +4368,9 @@ pgoperator:
     connection_pooler_default_memory_request: 100Mi
     connection_pooler_default_memory_limit: 512Mi
 
-## Stateful Redis installation in high availibility mode
-##
+### Redis installation in high availability (HA) mode ###
 redisHa:
-  enabled: false
+  enabled: true
   global:
     imagePullSecrets:
       - cognigy-registry-token
@@ -4479,7 +4380,22 @@ redisHa:
     registry: cognigy.azurecr.io
     repository: redis
     tag: 7.0.10-debian-11-r8
+  ## Redis-HA authentication parameters
+  ##
   auth:
+    ## Redis-HA password string. If not set, a random 64-character string is generated and stored in cognigy-redis-password secret
+    ## Do not set the password manually unless absolutely necessary!
+    ##
+    password: ""
+    ## The name of an existing secret with Redis-HA credentials.
+    ## The secret must contain "redis-password.conf" and "REDIS_PASSWORD" keys.
+    ## Example:
+    ## redis-password.conf: requirepass <redis_password>
+    ## REDIS_PASSWORD: <redis_password>
+    ##
+    ## NOTE: When it's set, the previous "redisHa.auth.password" parameter is ignored.
+    ## Do not change existingSecret value unless absolutely necessary!
+    ## If existingSecret != cognigy-redis-password, the secret will not be auto-generated and must be created manually!
     existingSecret: cognigy-redis-password
     existingSecretPasswordKey: REDIS_PASSWORD
   commonConfiguration: |-
@@ -4547,10 +4463,9 @@ redisHa:
     serviceMonitor:
       enabled: false
 
-## Stateful Redis-Persistent installation in high availibility mode
-##
+### Stateful Redis-Persistent installation in high availability (HA) mode ###
 redisPersistentHa:
-  enabled: false
+  enabled: true
   global:
     storageClass: "redis-persistent-ha"
     imagePullSecrets:
@@ -4562,6 +4477,19 @@ redisPersistentHa:
     repository: redis
     tag: 7.0.10-debian-11-r8
   auth:
+    ## Redis-persistent-HA password string. If not set, a random 64-character string is generated and stored
+    ## in cognigy-redis-persistent-password secret. Do not set the password manually unless absolutely necessary!
+    ##
+    password: ""
+    ## The name of an existing secret with Redis-persistent-HA credentials.
+    ## The secret must contain "redis-persistent-password.conf" and "REDIS_PERSISTENT_PASSWORD" keys.
+    ## Example:
+    ## redis-persistent-password.conf: requirepass <redis_persistent_password>
+    ## REDIS_PERSISTENT_PASSWORD: <redis_persistent_password>
+    ##
+    ## NOTE: When it's set, the previous "redisPersistentHa.auth.password" parameter is ignored.
+    ## Do not change existingSecret value unless absolutely necessary!
+    ## If existingSecret != cognigy-redis-persistent-password, the secret will not be auto-generated and must be created manually!
     existingSecret: cognigy-redis-persistent-password
     existingSecretPasswordKey: REDIS_PERSISTENT_PASSWORD
   commonConfiguration: |-

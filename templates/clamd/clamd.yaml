@@ -8,7 +8,9 @@ spec:
   selector:
     matchLabels:
       app: clamd
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       labels:

@@ -21,6 +21,7 @@
 .idea/
 *.tmproj
 .vscode/
+.history
 local-temp-files
 
 # Don't package + expose CHANGELOG folder

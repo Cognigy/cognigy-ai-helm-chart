@@ -1,8 +1,9 @@
 {{- $cognigyServiceHandoverApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceHandoverApiAccessToken.existingSecret "defaultSecret" "cognigy-service-handover-api-access-token") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $cognigyRceCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyRceCredentials.existingSecret "defaultSecret" "cognigy-rce-credentials") }}
-{{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceHandover_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceHandover.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceHandover.serviceName)) }}
+{{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
 {{- with .Values.serviceHandover }}
 ---
 apiVersion: apps/v1
@@ -14,7 +15,9 @@ spec:
   selector:
     matchLabels:
       app: service-handover
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       labels:
@@ -22,10 +25,13 @@ spec:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceHandover_dbSecret) }}{{ $serviceHandover_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceHandover_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-rce-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyRceCredentials_secret) }}{{ $cognigyRceCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyRceCredentials_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-service-handover-api-access-token: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceHandoverApiAccessToken_secret) }}{{ $cognigyServiceHandoverApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceHandoverApiAccessToken_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.cognigyAgentAssist.enabled }}
+        checksum/cognigy-agent-assist-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret) }}{{ $agentAssistBackendApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret).data | sha256sum }}{{ end }}
+        {{- end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -71,7 +77,7 @@ spec:
             - name: AGENT_ASSIST_WORKSPACE_API_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{- include "agentAssistCredentials.secretName.render" $ | indent 1 }}
+                  name: {{ $agentAssistBackendApiAccessToken_secret }}
                   key: api-access-token
             {{- end }}
             - name: SERVICE_HANDOVER_API_ACCESS_TOKEN
@@ -119,7 +125,7 @@ spec:
                 path: rabbitmqConnectionString
         - name: redis-password
           secret:
-            secretName: {{ $statefulRedis_secret }}
+            secretName: {{ $redisHa_secret }}
         - name: mongodb-connection-string
           secret:
             secretName: {{ $serviceHandover_dbSecret }}

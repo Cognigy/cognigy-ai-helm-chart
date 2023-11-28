@@ -7,7 +7,9 @@ metadata:
   name: cube-store-router
   namespace: {{ $.Release.Namespace | quote }}
 spec:
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   serviceName: cube-store-router
   selector:
     matchLabels:

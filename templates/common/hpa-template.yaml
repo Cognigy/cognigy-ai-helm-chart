@@ -1,0 +1,28 @@
+{{- if .Values.hpa.enabled }}
+  {{- range $hpa_key, $hpa_val := .Values.hpa }}
+    {{- if kindIs "map" $hpa_val }}
+      {{- if $hpa_val.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $hpa_val.name | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $hpa_val.name | quote }}
+  minReplicas: {{ $hpa_val.minReplicas }}
+  maxReplicas: {{ $hpa_val.maxReplicas }}
+  metrics:
+    {{- include "common.tplvalues.render" ( dict "value" $hpa_val.metrics "context" $ ) | nindent 4 }}
+  {{- if $hpa_val.behavior }}
+  behavior:
+    {{- include "common.tplvalues.render" ( dict "value" $hpa_val.behavior "context" $ ) | nindent 4 }}
+  {{- end }}
+
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

@@ -295,35 +295,6 @@ Usage:
 
 
 {{/*
-Return the proper storageClassName for Redis Persistent
-Usage:
-{{- include "statefulRedisPersistent.storage.class" $ | nindent 2 }}
-*/}}
-{{- define "statefulRedisPersistent.storage.class" -}}
-
-  {{- $storageClass := "" -}}
-
-  {{- if .Values.statefulRedisPersistent.persistence.storageClass -}}
-    {{- $storageClass = .Values.statefulRedisPersistent.persistence.storageClass -}}
-  {{- else if eq .Values.cloud.provider "aws" -}}
-    {{- $storageClass = "redis-persistent" -}}
-  {{- else if eq .Values.cloud.provider "azure" -}}
-    {{- $storageClass = "managed-premium" -}}
-  {{- else if eq .Values.cloud.provider "generic" -}}
-    {{- $storageClass = "redis-persistent" -}}
-  {{- else if eq .Values.cloud.provider "local-microk8s" -}}
-    {{- $storageClass = "microk8s-hostpath" -}}
-  {{- else if eq .Values.cloud.provider "local-rancher" -}}
-    {{- $storageClass = "local-path" -}}
-  {{- end -}}
-
-  {{- if (not (empty $storageClass)) -}}
-    {{- printf "storageClassName: %s" $storageClass -}}
-  {{- end -}}
-{{- end -}}
-
-
-{{/*
 Return the proper storageClassName for Flow Modules
 Usage:
 {{- include "flowModules.storage.class" $ | nindent 2 }}

@@ -13,7 +13,9 @@ spec:
   selector:
     matchLabels:
       app: service-search-orchestrator
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       labels:

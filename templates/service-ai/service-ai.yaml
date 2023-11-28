@@ -1,12 +1,13 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $statefulRedisPersistent_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedisPersistent.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $redisPersistentHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisPersistentHa.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- $serviceAi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAi.serviceName)) }}
 {{- $cognigyServiceAiSmtpEmailCredsAuthType := $.Values.smtpEmailNotificationCredentials.authType | default "basic" }}
 {{- $cognigyServiceAiSmtpEmailCreds_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpEmailNotificationCredentials.existingSecret "defaultSecret" "cognigy-service-ai-smtp-email-creds") }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 {{- $cognigySecureFormsApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySecureFormsApiKey.existingSecret "defaultSecret" "cognigy-secure-forms-api-key") }}
 {{- $cognigyInsightsCollectorApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsCollectorApiKey.existingSecret "defaultSecret" "cognigy-insights-collector-api-key") }}
+{{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
 {{- with .Values.serviceAi }}
 ---
 apiVersion: apps/v1
@@ -18,7 +19,9 @@ spec:
   selector:
     matchLabels:
       app: service-ai
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       labels:
@@ -26,8 +29,8 @@ spec:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
-        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret) }}{{ $statefulRedisPersistent_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
+        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret) }}{{ $serviceAi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-service-ai-smtp-email-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceAiSmtpEmailCreds_secret) }}{{ $cognigyServiceAiSmtpEmailCreds_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceAiSmtpEmailCreds_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.knowledgeSearch.enabled }}
@@ -35,6 +38,9 @@ spec:
         {{- end }}
         checksum/cognigy-secure-forms-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySecureFormsApiKey_secret) }}{{ $cognigySecureFormsApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySecureFormsApiKey_secret).data | sha256sum }}{{ end }}
         checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.cognigyAgentAssist.enabled }}
+        checksum/cognigy-agent-assist-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret) }}{{ $agentAssistBackendApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret).data | sha256sum }}{{ end }}
+        {{- end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -98,7 +104,7 @@ spec:
             - name: AGENT_ASSIST_WORKSPACE_API_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{- include "agentAssistCredentials.secretName.render" $ | indent 1 }}
+                  name: {{ $agentAssistBackendApiAccessToken_secret }}
                   key: api-access-token
             {{- end }}
             {{- if eq $cognigyServiceAiSmtpEmailCredsAuthType "basic" }}
@@ -202,10 +208,10 @@ spec:
                 path: rabbitmqAPIConnectionString
         - name: redis-persistent-password
           secret:
-            secretName: {{ $statefulRedisPersistent_secret }}
+            secretName: {{ $redisPersistentHa_secret }}
         - name: redis-password
           secret:
-            secretName: {{ $statefulRedis_secret }}
+            secretName: {{ $redisHa_secret }}
         - name: flow-modules
           persistentVolumeClaim:
             claimName: flow-modules

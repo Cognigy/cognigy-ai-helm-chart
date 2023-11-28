@@ -1,5 +1,5 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- $statefulRedisPersistent_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedisPersistent.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
+{{- $redisPersistentHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisPersistentHa.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
 {{- with .Values.serviceNlpMatcher }}
 ---
@@ -12,13 +12,15 @@ spec:
   selector:
     matchLabels:
       app: service-nlp-matcher
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret) }}{{ $statefulRedisPersistent_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret).data | sha256sum }}{{ end }}
+        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
         checksum/service-resources: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceResources_dbSecret) }}{{ $serviceResources_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceResources_dbSecret).data | sha256sum }}{{ end }}
       labels:
         app: service-nlp-matcher
@@ -92,7 +94,7 @@ spec:
                 path: mongodbConnectionString
         - name: redis-persistent-password
           secret:
-            secretName: {{ $statefulRedisPersistent_secret }}
+            secretName: {{ $redisPersistentHa_secret }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

@@ -11,7 +11,9 @@ spec:
   selector:
     matchLabels:
       app: service-ui
+  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       annotations:
