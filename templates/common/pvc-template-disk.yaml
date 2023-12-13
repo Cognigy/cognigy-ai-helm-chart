@@ -1,0 +1,21 @@
+{{- if and (.Values.persistentVolumeClaim.enabled) }}
+  {{- range $pvc_key, $pvc_val := .Values.persistentVolumeClaim }}  
+    {{- if kindIs "map" $pvc_val }}
+      {{- if $pvc_val.enabled }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ $pvc_val.pvcName | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  accessModes:
+    - {{ $pvc_val.accessModes | quote }}
+  storageClassName: {{ $pvc_val.storageClassName | quote }}
+  resources:
+    requests:
+      storage: {{ $pvc_val.storage | quote  }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
