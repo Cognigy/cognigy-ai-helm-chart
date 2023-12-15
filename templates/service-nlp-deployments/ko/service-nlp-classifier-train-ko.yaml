@@ -13,9 +13,7 @@ spec:
   selector:
     matchLabels:
       app: service-nlp-classifier-train-ko
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       annotations:

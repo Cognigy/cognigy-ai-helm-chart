@@ -12,9 +12,7 @@ spec:
   selector:
     matchLabels:
       app: service-parser
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       annotations:

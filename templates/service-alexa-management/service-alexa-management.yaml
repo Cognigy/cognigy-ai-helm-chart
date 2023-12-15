@@ -12,9 +12,7 @@ spec:
   selector:
     matchLabels:
       app: service-alexa-management
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       labels:

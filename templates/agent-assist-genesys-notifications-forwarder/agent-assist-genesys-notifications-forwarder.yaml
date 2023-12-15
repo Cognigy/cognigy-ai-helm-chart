@@ -13,9 +13,7 @@ spec:
   selector:
     matchLabels:
       app: agent-assist-genesys-notifications-forwarder
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       labels:

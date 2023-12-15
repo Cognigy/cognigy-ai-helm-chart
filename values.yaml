@@ -365,7 +365,7 @@ managementUi:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
-  image: cognigy.azurecr.io/management-ui:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/management-ui:release-cf5aa574ab-1702128981
   replicaCount: 1
   resources:
     limits:
@@ -2098,7 +2098,7 @@ statefulRabbitMq:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-ai:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2195,7 +2195,7 @@ serviceAi:
             averageUtilization: 70
     behavior: {}
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-alexa-management:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2211,7 +2211,7 @@ serviceAlexaManagement:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsCollector:
-  image: cognigy.azurecr.io/service-analytics-collector:release-3e8afbc-1699892527
+  image: cognigy.azurecr.io/service-analytics-collector:release-3914122-1700737495
   replicaCount: 3
   resources:
     requests:
@@ -2227,7 +2227,7 @@ serviceAnalyticsCollector:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsConversations:
-  image: cognigy.azurecr.io/service-analytics-conversations:release-4df9f9c-1697203873
+  image: cognigy.azurecr.io/service-analytics-conversations:release-b858b44-1701680007
   replicaCount: 3
   resources:
     requests:
@@ -2275,7 +2275,7 @@ serviceAnalyticsReporter:
   tolerations: []
   priorityClassName: ""
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-api:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2293,7 +2293,7 @@ serviceApi:
   tolerations: []
   priorityClassName: ""
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-app-session-manager:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2309,7 +2309,7 @@ serviceAppSessionManager:
   tolerations: []
   priorityClassName: ""
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-custom-modules:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2325,7 +2325,7 @@ serviceCustomModules:
   tolerations: []
   priorityClassName: ""
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-endpoint:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2341,7 +2341,7 @@ serviceEndpoint:
   tolerations: []
   priorityClassName: ""
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-execution:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2369,7 +2369,7 @@ serviceExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-function-execution:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2397,7 +2397,7 @@ serviceFunctionExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-function-scheduler:release-81d5f2ebdc-1701943681
   replicaCount: 3
   resources:
     requests:
@@ -2425,7 +2425,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-handover:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2470,7 +2470,7 @@ serviceHandoverInactivity:
             averageUtilization: 70
     behavior: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-http:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2498,7 +2498,7 @@ serviceHttp:
             averageUtilization: 70
     behavior: {}
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-9c6cc00-1700668349
+  image: cognigy.azurecr.io/service-insights-api:release-c6bf13e-1701347480
   replicaCount: 3
   resources:
     requests:
@@ -2516,7 +2516,7 @@ serviceInsightsApi:
   tolerations: []
   priorityClassName: ""
 serviceCollector:
-  image: cognigy.azurecr.io/service-collector:release-fbf6c6e-1699978718
+  image: cognigy.azurecr.io/service-collector:release-518c29d-1700824676
   replicaCount: 3
   resources:
     requests:
@@ -2534,7 +2534,7 @@ serviceCollector:
   tolerations: []
   priorityClassName: ""
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-80c843f-1700668646
+  image: cognigy.azurecr.io/service-insights-ui:release-73fa008-1701680356
   replicaCount: 3
   resources:
     requests:
@@ -2552,7 +2552,7 @@ serviceInsightsUi:
   tolerations: []
   priorityClassName: ""
 serviceJourneys:
-  image: cognigy.azurecr.io/service-journeys:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-journeys:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2568,7 +2568,7 @@ serviceJourneys:
   tolerations: []
   priorityClassName: ""
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-logs:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2600,7 +2600,7 @@ serviceNlpMatcher:
   tolerations: []
   priorityClassName: ""
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-nlp-ner:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2644,7 +2644,7 @@ serviceParser:
   tolerations: []
   priorityClassName: ""
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-playbook-execution:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2660,7 +2660,7 @@ servicePlaybookExecution:
   tolerations: []
   priorityClassName: ""
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-profiles:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2688,7 +2688,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-resources:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2704,7 +2704,7 @@ serviceResources:
   tolerations: []
   priorityClassName: ""
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-runtime-file-manager:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2732,7 +2732,7 @@ serviceRuntimeFileManager:
             averageUtilization: 70
     behavior: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-security:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2750,7 +2750,7 @@ serviceSecurity:
   tolerations: []
   priorityClassName: ""
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-session-state-manager:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2794,7 +2794,7 @@ serviceStaticFiles:
   tolerations: []
   priorityClassName: ""
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-task-manager:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2810,7 +2810,7 @@ serviceTaskManager:
   tolerations: []
   priorityClassName: ""
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-trainer:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2826,7 +2826,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-ui:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -2844,7 +2844,7 @@ serviceUi:
   tolerations: []
   priorityClassName: ""
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:release-aece8e95b3-1702568299
+  image: cognigy.azurecr.io/service-webchat:release-cf5aa574ab-1702128981
   replicaCount: 3
   resources:
     requests:
@@ -3384,7 +3384,7 @@ serviceNlpClassifierTrainXx:
   tolerations: []
   priorityClassName: ""
 serviceSearchOrchestrator:
-  image: cognigy.azurecr.io/service-search-orchestrator:release-8c39961-1702567007
+  image: cognigy.azurecr.io/service-search-orchestrator:release-634957a-1702632661
   replicaCount: 3
   resources:
     requests:
@@ -3400,7 +3400,7 @@ serviceSearchOrchestrator:
   tolerations: []
   priorityClassName: ""
 agentAssistBackend:
-  image: cognigy.azurecr.io/agent-assist-backend:af6381e-1700210578
+  image: cognigy.azurecr.io/agent-assist-backend:1976e92-1701178740
   replicaCount: 3
   resources:
     limits:
@@ -3416,7 +3416,7 @@ agentAssistBackend:
   tolerations: []
   priorityClassName: ""
 agentAssistFrontend:
-  image: cognigy.azurecr.io/agent-assist-frontend:91474ec-1700210584
+  image: cognigy.azurecr.io/agent-assist-frontend:58653db-1700826987
   replicaCount: 3
   resources:
     limits:
@@ -3470,7 +3470,7 @@ migration:
   # Job connects to 'service-resource' db using 'SERVICE_RESOURCES_CONNECTION_STRING' environment variable, value set from existing secret.
   # Important: For fresh installation, please make this job disabled.
   endpointDeletion:
-    enabled: true
+    enabled: false
     hooks: pre-upgrade
     hookDeletePolicy: "before-hook-creation"
     ttlSecondsAfterFinished: 900 # 15 minutes
@@ -3478,9 +3478,37 @@ migration:
     image: cognigy.azurecr.io/endpoint-deletion:18539e1e00749e46714614e6e180f2c045bad5cf
     batchSize: 100
 
-### Configuration for knowledge search tasks that run as Kubernetes jobs ###
+### Configuration for Kubernetes jobs that sync data between mongodb and weaviate###
+jobSyncKnowledgeData:
+  enabled: false
+  image: cognigy.azurecr.io/job-sync-knowledge-data:release-c57ec3f-1702313341
+  resources:
+    requests:
+      cpu: '0.3'
+      memory: 150M
+    limits:
+      cpu: '0.5'
+      memory: 300M
+  schedule: "0 1 * * *" # every day at 1 AM
+  backoffLimit: 3
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  parallelism: 1
+  concurrencyPolicy: Forbid
+  restartPolicy: OnFailure
+  activeDeadlineSeconds: 3600 # 60 minutes
+  ttlSecondsAfterFinished: 3600 # 60 minutes
+  extraEnvVars: []
+  extraVolumes: []
+  extraVolumeMounts: []
+  securityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
+
 taskProcessKnowledgeSourceFile:
-  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-92b1f84-1698134899
+  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-90711e9-1701268698
   resources:
     requests:
       cpu: '0.1'
@@ -3589,159 +3617,181 @@ cronNfsCleanup:
 ##
 hpa:
   enabled: false
-  serviceAi:
-    ## Enable horizontal pod autoscaler
-    ##
-    enabled: false
-    name: service-ai
-    ## Minimum allowed replicas to which the scaling target can be scaled down
-    ##
-    minReplicas: 3
-    ## Maximum allowed replicas to which the scaling target can be scaled up
-    ##
-    maxReplicas: 10
-    ## Define metrics against which HorizontalPodAutoscaler will react
-    ## metrics:
-    ##   - type: Resource
-    ##     resource:
-    ##       name: memory
-    ##       target:
-    ##         type: Utilization
-    ##         averageUtilization: 80
-    ##   - type: Resource
-    ##     resource:
-    ##       name: cpu
-    ##       target:
-    ##         type: Utilization
-    ##         averageUtilization: 70
-    ##
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            ## Define the CPU target to trigger the scaling actions (utilization percentage)
-            ##
-            averageUtilization: 50
-    behavior: {}
-  serviceExecution:
-    enabled: false
-    name: service-execution
-    minReplicas: 3
-    maxReplicas: 10
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    behavior: {}
-  serviceFunctionExecution:
-    enabled: false
-    name: service-function-execution
-    minReplicas: 3
-    maxReplicas: 10
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    behavior: {}
-  serviceFunctionScheduler:
-    name: service-function-scheduler
-    enabled: false
-    minReplicas: 3
-    maxReplicas: 10
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    behavior: {}
-  serviceHandoverInactivity:
-    name: service-handover-inactivity
-    enabled: false
-    minReplicas: 3
-    maxReplicas: 10
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    behavior: {}
-  serviceHttp:
-    name: service-http
-    enabled: false
-    minReplicas: 3
-    maxReplicas: 10
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    behavior: {}
-  serviceNlpNer:
-    name: service-nlp-ner
-    enabled: false
-    minReplicas: 3
-    maxReplicas: 10
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    behavior: {}
-  serviceProfiles:
-    name: service-profiles
-    enabled: false
-    minReplicas: 3
-    maxReplicas: 10
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    behavior: {}
-  serviceRuntimeFileManager:
-    name: service-runtime-file-manager
-    enabled: false
-    minReplicas: 3
-    maxReplicas: 10
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    behavior: {}
-  serviceSessionStateManager:
-    name: service-session-state-manager
-    enabled: false
-    minReplicas: 3
-    maxReplicas: 10
-    metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    behavior: {}
+  ## When set to true, and "hpa.enabled" is true, the "spec.replicas" field will be omitted from the deployment manifest of all the HPA managed services.
+  ##
+  removeReplicas: true
+  ## Enabling this flag would apend the tolerations defined in "hpa.hpaTolerations" to the deployment manifest of all the HPA managed services.
+  ##
+  useHpaTolerations: true
+  ## default totaltions to be added to the deployment manifest of all the HPA managed services.
+  ##
+  hpaTolerations:
+    - key: "node-role.cognigy.ai"
+      value: "autoscaler"
+      effect: "NoSchedule"
+  ## Enabling this flag would apend the nodeSelector defined in "hpa.hpaNodeSelector" to the deployment manifest of all the HPA managed services.
+  ##
+  useHpaNodeSelector: true
+  ## default nodeSelector to be added to the deployment manifest of all the HPA managed services.
+  ##
+  hpaNodeSelector:
+    "node-role": "autoscaler"
+  ## HorizontalPodAutoscaler (HPA) managed services 
+  ##
+  services:
+    serviceAi:
+      ## Enable horizontal pod autoscaler
+      ##
+      enabled: true
+      name: service-ai
+      ## Minimum allowed replicas to which the scaling target can be scaled down
+      ##
+      minReplicas: 3
+      ## Maximum allowed replicas to which the scaling target can be scaled up
+      ##
+      maxReplicas: 10
+      ## Define metrics against which HorizontalPodAutoscaler will react
+      ## metrics:
+      ##   - type: Resource
+      ##     resource:
+      ##       name: memory
+      ##       target:
+      ##         type: Utilization
+      ##         averageUtilization: 80
+      ##   - type: Resource
+      ##     resource:
+      ##       name: cpu
+      ##       target:
+      ##         type: Utilization
+      ##         averageUtilization: 70
+      ##
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              ## Define the CPU target to trigger the scaling actions (utilization percentage)
+              ##
+              averageUtilization: 50
+      behavior: {}
+    serviceExecution:
+      enabled: true
+      name: service-execution
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior: {}
+    serviceFunctionExecution:
+      enabled: true
+      name: service-function-execution
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior: {}
+    serviceFunctionScheduler:
+      name: service-function-scheduler
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior: {}
+    serviceHandoverInactivity:
+      name: service-handover-inactivity
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior: {}
+    serviceHttp:
+      name: service-http
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior: {}
+    serviceNlpNer:
+      name: service-nlp-ner
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior: {}
+    serviceProfiles:
+      name: service-profiles
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior: {}
+    serviceRuntimeFileManager:
+      name: service-runtime-file-manager
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior: {}
+    serviceSessionStateManager:
+      name: service-session-state-manager
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior: {}
 
 ## PriorityClass(es) for services
 ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass
@@ -3917,6 +3967,10 @@ clamd:
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
+  httpProxyServer: ""
+  httpProxyPort: 8080
+  httpProxyUsername: ""
+  httpProxyPassword: ""
 
 ##
 ## Tracing configurations. Create sentry project and get the DSN from there and assign it to the baseUrl
@@ -4181,7 +4235,7 @@ cubejs:
     tolerations: []
     securityContext: {}
   apiServer:
-    image: "cognigy.azurecr.io/insights-cube:release-4ba24fc-1700669982"
+    image: "cognigy.azurecr.io/insights-cube:release-44d600e-1700488313"
     replicaCount: 1
     resources:
       requests:
@@ -4197,7 +4251,7 @@ cubejs:
     tolerations: []
     priorityClassName: ""
   refreshWorker:
-    image: "cognigy.azurecr.io/insights-cube:release-4ba24fc-1700669982"
+    image: "cognigy.azurecr.io/insights-cube:release-44d600e-1700488313"
     replicaCount: 1 # Don't increase the replica count, refresh worker can't be scaled independently and a whole cluster has to be replicated
     resources:
       requests:

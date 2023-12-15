@@ -9,9 +9,7 @@ spec:
   selector:
     matchLabels:
       app: service-static-files
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       labels:

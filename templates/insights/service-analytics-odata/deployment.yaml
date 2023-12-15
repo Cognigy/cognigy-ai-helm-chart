@@ -16,9 +16,7 @@ spec:
   selector:
     matchLabels:
       app: service-analytics-odata
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       labels:

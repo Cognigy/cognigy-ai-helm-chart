@@ -12,9 +12,7 @@ spec:
   selector:
     matchLabels:
       app: cube-api-server
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       labels:

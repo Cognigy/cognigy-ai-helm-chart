@@ -12,9 +12,7 @@ spec:
   selector:
     matchLabels:
       app: service-logs
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       labels:

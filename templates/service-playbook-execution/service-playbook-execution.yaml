@@ -11,9 +11,7 @@ spec:
   selector:
     matchLabels:
       app: service-playbook-execution
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       annotations:

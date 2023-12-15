@@ -20,9 +20,7 @@ spec:
   selector:
     matchLabels:
       app: service-api
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       labels:

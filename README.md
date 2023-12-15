@@ -11,7 +11,7 @@ This chart installs a Cognigy.AI deployment on a [Kubernetes](https://kubernetes
   - Azure AKS
   - "generic" on-premises or GKE kubernetes platform. Running Cognigy.AI on-premises will require additional manual steps, we recommend to use public clouds (AWS or Azure) instead.
 - kubectl utility connected to the kubernetes cluster
-- Helm 3.9.0+
+- Helm v3.9.0 - v3.12.3
 - Persistent Volume provisioner in the underlying infrastructure for Cognigy.AI stateful services (for AWS/Azure no further configuration is required):
   - Block storage (disks) for Redis Persistent PVC
   - File storage (NFS) shares for `flow-modules` and `functions` PVCs

@@ -13,9 +13,7 @@ spec:
   selector:
     matchLabels:
       app: service-insights-api
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       labels:

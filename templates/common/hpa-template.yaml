@@ -1,5 +1,5 @@
 {{- if .Values.hpa.enabled }}
-  {{- range $hpa_key, $hpa_val := .Values.hpa }}
+  {{- range $hpa_key, $hpa_val := .Values.hpa.services }}
     {{- if kindIs "map" $hpa_val }}
       {{- if $hpa_val.enabled }}
 ---

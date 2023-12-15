@@ -13,9 +13,7 @@ spec:
   selector:
     matchLabels:
       app: service-nlp-train-de
-  {{- if .replicaCount }}
   replicas: {{ .replicaCount }}
-  {{- end }}
   template:
     metadata:
       annotations:
