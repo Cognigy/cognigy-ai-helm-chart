@@ -304,7 +304,7 @@ data:
                 - configMapRef:
                     name: cognigy-env
               env:
-                - name: JOB_ARGUMENTS
+                - name: IMPORT_TASK_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
