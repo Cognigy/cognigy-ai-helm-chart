@@ -20,8 +20,8 @@ spec:
     spec:
       backoffLimit: {{ .backoffLimit }}
       parallelism: {{ .parallelism }}
-      activeDeadlineSeconds: {{ .jobActiveDeadlineSeconds }}
-      ttlSecondsAfterFinished: {{ .jobTtlSecondsAfterFinished }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
       template:
         spec:
           securityContext:
@@ -44,6 +44,8 @@ spec:
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
               resources: {{- toYaml .resources | nindent 16 }}
               env:
+                - name: PACKAGE_TASK_ARGUMENTS
+                  value: "_PACKAGE_TASK_ARGUMENTS_"
                 - name: REDIS_ENABLE_RECONNECT
                   value: "true"
                 - name: RABBITMQ_ENABLE_RECONNECT
