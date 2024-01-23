@@ -488,15 +488,13 @@ Usage:
 */}}
 {{- define "cubejs.postgresql.password.existingSecret" -}}
   {{- $passwordSecret := "" -}}
-  {{- if .Values.cubejs.enabled -}}
-    {{- if and (.Values.cubejs.postgresql.cluster ) (.Values.cubejs.postgresql.username) }}
-      {{- $passwordSecret = printf "%s.%s.credentials.postgresql.acid.zalan.do" $.Values.cubejs.postgresql.username $.Values.cubejs.postgresql.cluster | quote  }}
-    {{- else -}}
-        {{ required "A valid value for .Values.cubejs.postgresql.cluster is required!" .Values.cubejs.postgresql.cluster }}
-        {{ required "A valid value for .Values.cubejs.postgresql.username is required!" .Values.cubejs.postgresql.username }}
-		{{- end -}}
-    {{- else -}}
-      {{ required "CubeJS stack must be enabled! .Values.cubejs.enabled" .Values.cubejs.enabled }}
-		{{- end -}}
+
+  {{- if and (.Values.cubejs.postgresql.cluster ) (.Values.cubejs.postgresql.username) }}
+    {{- $passwordSecret = printf "%s.%s.credentials.postgresql.acid.zalan.do" $.Values.cubejs.postgresql.username $.Values.cubejs.postgresql.cluster | quote  }}
+  {{- else -}}
+      {{ required "A valid value for .Values.cubejs.postgresql.cluster is required!" .Values.cubejs.postgresql.cluster }}
+      {{ required "A valid value for .Values.cubejs.postgresql.username is required!" .Values.cubejs.postgresql.username }}
+  {{- end -}}
+
   {{- printf $passwordSecret -}}
 {{- end -}}

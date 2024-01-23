@@ -6,7 +6,7 @@
 This chart installs a Cognigy.AI deployment on a [Kubernetes](https://kubernetes.io/) cluster using the [Helm](https://helm.sh/) package manager.
 
 ## Prerequisites
-- Kubernetes v1.19-1.26 running on either:
+- Kubernetes v1.19-1.27 running on either:
   - AWS EKS
   - Azure AKS
   - "generic" on-premises or GKE kubernetes platform. Running Cognigy.AI on-premises will require additional manual steps, we recommend to use public clouds (AWS or Azure) instead.

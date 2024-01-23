@@ -65,5 +65,17 @@ spec:
               number: 8000
         path: /
         pathType: Prefix
+  {{- if .Values.ingress.agentAssistBackend.legacyHost }}
+  - host: {{ .Values.ingress.agentAssistBackend.legacyHost }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: agent-assist-backend
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+  {{- end }}
 {{- end }}
 {{- end }}
