@@ -1,0 +1,27 @@
+{{- if .Values.statefulRedis.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: redis
+  annotations:
+  {{- if .Values.service.statefulRedis.annotations }}
+    {{- toYaml .Values.service.statefulRedis.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+      {{- if and (eq .Values.service.statefulRedis.type "NodePort") .Values.service.statefulRedis.type }}
+      nodePort: {{ .Values.service.statefulRedis.nodePort | default 30003 }}
+      {{- end }}
+  {{- if .Values.service.statefulRedis.type }}
+  type: {{ .Values.service.statefulRedis.type | default "ClusterIP" }}
+  {{- end }}
+  selector:
+    app: redis
+{{- end }}

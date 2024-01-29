@@ -19,9 +19,9 @@ metadata:
   name: task-manager-jobs-admin
   namespace: {{ $.Release.Namespace | quote }}
 rules:
-- apiGroups: ["batch"]
-  resources: ["jobs", "jobs/status"]
-  verbs: ["get", "create"]
+- apiGroups: ["batch"] # "" indicates the core API group
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
 #
 # RoleBinding so our service account has access to the Role above
