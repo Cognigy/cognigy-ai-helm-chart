@@ -1,0 +1,114 @@
+{{- if and (.Values.jobSyncKnowledgeData.enabled) (.Values.knowledgeSearch.enabled) (.Values.weaviate.enabled) }}
+{{- $cognigyWeaviateApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyWeaviateApiKey.existingSecret "defaultSecret" "cognigy-weaviate-api-key") }}
+{{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- with .Values.jobSyncKnowledgeData }}
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: job-sync-knowledge-data
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: {{ .concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .backoffLimit }}
+      parallelism: {{ .parallelism }}
+      activeDeadlineSeconds: {{ .jobActiveDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .jobTtlSecondsAfterFinished }}
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          restartPolicy: {{ .restartPolicy }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: job-sync-knowledge-data
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+              resources: {{- toYaml .resources | nindent 16 }}
+              env:
+                - name: REDIS_ENABLE_RECONNECT
+                  value: "true"
+                - name: RABBITMQ_ENABLE_RECONNECT
+                  value: "true"
+                - name: TRACING_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
+                - name: TRACING_BASE_URL_WITH_PROTOCOL
+                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+                - name: TRACING_ERRORS_ENABLED
+                  value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
+                - name: TRACING_EVENTS_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.eventsSampleRate | quote }}
+                - name: TRACING_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.ide.sampleRate | quote }}
+                - name: ENVIRONMENT
+                  value: {{ $.Values.tracing.environment | quote }}
+                - name: COGNIGY_AI_RELEASE_VERSION
+                  value: {{ $.Chart.AppVersion | quote }}
+                {{- if .extraEnvVars }}
+                {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
+                {{- end }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              volumeMounts:
+                - name: mongodb-connection-string
+                  mountPath: /var/run/secrets/mongodbConnectionString
+                  subPath: mongodbConnectionString
+                - name: weaviate-api-key
+                  mountPath: /var/run/secrets/weaviateApiKey
+                  subPath: weaviateApiKey
+                - name: rabbitmq-connection-string
+                  mountPath: /var/run/secrets/rabbitmqConnectionString
+                  subPath: rabbitmqConnectionString
+                - name: redis-password
+                  mountPath: /var/run/secrets/redis-password.conf
+                  subPath: redis-password.conf
+                {{- if .extraVolumeMounts }}
+                {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
+                {{- end }}
+          volumes:
+            - name: mongodb-connection-string
+              secret:
+                secretName: {{ $serviceResources_dbSecret }}
+                items:
+                  - key: connection-string
+                    path: mongodbConnectionString
+            - name: weaviate-api-key
+              secret:
+                secretName: {{ $cognigyWeaviateApiKey }}
+                items:
+                  - key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
+                    path: weaviateApiKey
+            - name: rabbitmq-connection-string
+              secret:
+                secretName: {{ $statefulRabbitMq_secret }}
+                items:
+                  - key: connection-string
+                    path: rabbitmqConnectionString
+            - name: redis-password
+              secret:
+                secretName: {{ $redisHa_secret }}
+            {{- if .extraVolumes }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
+            {{- end }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}  
+{{- end }}
+{{- end }}

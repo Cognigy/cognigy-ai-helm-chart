@@ -107,6 +107,19 @@ data:
     LogTime yes
     Foreground yes
 
+    {{- if .Values.clamd.httpProxyServer }}
+    {{ printf "HTTPProxyServer %s" .Values.clamd.httpProxyServer }}
+    {{- end }}
+    {{- if (and .Values.clamd.httpProxyServer .Values.clamd.httpProxyPort) }}
+    {{ printf "HTTPProxyPort %s"  (.Values.clamd.httpProxyPort | quote) }}
+    {{- end }}
+    {{- if .Values.clamd.httpProxyUsername }}
+    {{ printf "HTTPProxyUsername %s" .Values.clamd.httpProxyUsername }}
+    {{- end }}
+    {{- if .Values.clamd.httpProxyPassword }}
+    {{ printf "HTTPProxyPassword %s" .Values.clamd.httpProxyPassword }}
+    {{- end }}
+
     ###############
     # Updates
     ###############

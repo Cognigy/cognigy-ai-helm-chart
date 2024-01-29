@@ -1,6 +1,6 @@
 {{- $cognigyJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyJwt.existingSecret "defaultSecret" "cognigy-jwt") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceRuntimeFileManager_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceRuntimeFileManager.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceRuntimeFileManager.serviceName)) }}
 {{- with .Values.serviceRuntimeFileManager }}
 ---
@@ -13,13 +13,15 @@ spec:
   selector:
     matchLabels:
       app: service-runtime-file-manager
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas)) }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}        
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceRuntimeFileManager_dbSecret) }}{{ $serviceRuntimeFileManager_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceRuntimeFileManager_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
       labels:
@@ -28,11 +30,23 @@ spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
-      {{- if .nodeSelector }}
-      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector))}}
+      nodeSelector:
+        {{- if .nodeSelector }}
+          {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) }}
+          {{- include "common.tplvalues.render" (dict "value" $.Values.hpa.hpaNodeSelector "context" $) | nindent 8 }}
+        {{- end }}
       {{- end }}
-      {{- if .tolerations }}
-      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- if or (.tolerations) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations))}}
+      tolerations: 
+        {{- if or (.tolerations) }}
+          {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations) }}
+          {{- include "common.tplvalues.render" (dict "value" $.Values.hpa.hpaTolerations "context" $) | nindent 8 }}
+        {{- end }}
       {{- end }}
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
@@ -109,7 +123,7 @@ spec:
                 path: mongodbConnectionString
         - name: redis-password
           secret:
-            secretName: {{ $statefulRedis_secret }}
+            secretName: {{ $redisHa_secret }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

@@ -51,6 +51,31 @@ spec:
               value: "8000"
             - name: SERVER_HOST
               value: "0.0.0.0"
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"
+            - name: TRACING_ENABLED
+              value: {{ $.Values.tracing.sentry.liveAgent.enabled | quote }}
+            - name: TRACING_BASE_URL_WITH_PROTOCOL
+              value: {{ $.Values.tracing.sentry.liveAgent.baseUrl | quote }}      
+            - name: TRACING_ERRORS_ENABLED
+              value: {{ $.Values.tracing.sentry.liveAgent.errorsEnabled | quote }}
+            - name: TRACING_EVENTS_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.liveAgent.eventsSampleRate | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.liveAgent.sampleRate | quote }}
+            - name: ENVIRONMENT
+              value: {{ $.Values.tracing.environment | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
+            {{- if $.Values.cognigyEnv.COGNIGY_LIVE_AGENT_UI_BASE_URL_WITH_PROTOCOL }}
+            - name: APP_LIVE_AGENT_URL
+              value: "{{ $.Values.cognigyEnv.COGNIGY_LIVE_AGENT_UI_BASE_URL_WITH_PROTOCOL }}"
+            {{- end }}
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           ports:
             - name: metrics
               containerPort: 8002

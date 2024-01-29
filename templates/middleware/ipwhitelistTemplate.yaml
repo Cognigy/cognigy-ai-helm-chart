@@ -1,7 +1,8 @@
 {{- if and (.Values.traefik.enabled) (.Values.ingress.enabled) }}
   {{- range $ingress_key, $ingress_val := .Values.ingress }}
     {{- if kindIs "map" $ingress_val }}
-      {{- if $ingress_val.ipWhiteListMiddleware.enabled }}
+      {{- if hasKey $ingress_val "ipWhiteListMiddleware" }}
+        {{- if $ingress_val.ipWhiteListMiddleware.enabled }}
 ---
 # Whitelisting Based on `X-Forwarded-For` with `depth=0`
 apiVersion: traefik.io/v1alpha1
@@ -11,6 +12,7 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
 spec:
   ipWhiteList: {{- toYaml $ingress_val.ipWhiteListMiddleware.ipWhiteList | nindent 4 }}
+        {{- end }}
       {{- end }}
     {{- end }}
   {{- end }}

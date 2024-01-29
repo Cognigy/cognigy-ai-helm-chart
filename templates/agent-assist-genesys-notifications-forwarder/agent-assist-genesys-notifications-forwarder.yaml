@@ -1,6 +1,6 @@
 {{- if and ($.Values.cognigyAgentAssist.enabled) ($.Values.cognigyAgentAssist.enableGenesysNotificationsForwarder) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
 {{- with .Values.agentAssistGenesysNotificationsForwarder }}
 ---
@@ -21,7 +21,7 @@ spec:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-agent-assist-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret) }}{{ $agentAssistBackendApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .affinity }}
@@ -53,6 +53,27 @@ spec:
               value: "8000"
             - name: SERVER_HOST
               value: "0.0.0.0"
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"
+            - name: TRACING_ENABLED
+              value: {{ $.Values.tracing.sentry.liveAgent.enabled | quote }}
+            - name: TRACING_BASE_URL_WITH_PROTOCOL
+              value: {{ $.Values.tracing.sentry.liveAgent.baseUrl | quote }}      
+            - name: TRACING_ERRORS_ENABLED
+              value: {{ $.Values.tracing.sentry.liveAgent.errorsEnabled | quote }}
+            - name: TRACING_EVENTS_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.liveAgent.eventsSampleRate | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.liveAgent.sampleRate | quote }}
+            - name: ENVIRONMENT
+              value: {{ $.Values.tracing.environment | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
           ports:
             - name: metrics
               containerPort: 8002
@@ -80,7 +101,7 @@ spec:
       volumes:
         - name: redis-password
           secret:
-            secretName: {{ $statefulRedis_secret }}
+            secretName: {{ $redisHa_secret }}
         - name: rabbitmq-connection-string
           secret:
             secretName: {{ $statefulRabbitMq_secret }}

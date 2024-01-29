@@ -45,5 +45,17 @@ spec:
               number: 8000
         path: /genesys-notifications
         pathType: Prefix
+  {{- if .Values.ingress.agentAssistBackend.legacyHost }}
+  - host: {{ .Values.ingress.agentAssistBackend.legacyHost }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: agent-assist-genesys-notifications-forwarder
+            port:
+              number: 8000
+        path: /genesys-notifications
+        pathType: Prefix
+  {{- end }}
 {{- end }}
 {{- end }}

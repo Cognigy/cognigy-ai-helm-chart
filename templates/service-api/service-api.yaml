@@ -1,8 +1,8 @@
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
 {{- $cognigyJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyJwt.existingSecret "defaultSecret" "cognigy-jwt") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $statefulRedisPersistent_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedisPersistent.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $redisPersistentHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisPersistentHa.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- $serviceApi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceApi.serviceName)) }}
 {{- $cognigySmtpOauth2Credentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpOAuth2.auth.existingSecret "defaultSecret" "cognigy-smtp-oauth2-credentials") }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
@@ -28,8 +28,8 @@ spec:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
-        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret) }}{{ $statefulRedisPersistent_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedisPersistent_secret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
+        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
         checksum/management-ui: {{ if not (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))) }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-management-ui-creds.yaml") $ | sha256sum }}{{ else }}{{ range $key, $value := (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))).data }}{{ $value | sha256sum }}{{ end }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceApi_dbSecret) }}{{ $serviceApi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceApi_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-smtp-oauth2-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret) }}{{ $cognigySmtpOauth2Credentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret).data | sha256sum }}{{ end }}
@@ -206,10 +206,10 @@ spec:
                 path: mongodbConnectionString
         - name: redis-password
           secret:
-            secretName: {{ $statefulRedis_secret }}
+            secretName: {{ $redisHa_secret }}
         - name: redis-persistent-password
           secret:
-            secretName: {{ $statefulRedisPersistent_secret }}
+            secretName: {{ $redisPersistentHa_secret }}
         - name: management-ui-creds
           secret:
             secretName: {{- include "managementUiCredentials.secretName.render" $ | indent 1 }}

@@ -1,5 +1,5 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- $statefulRedis_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRedis.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
 {{- $vgWebappDefaultLoginCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret "defaultSecret" "cognigy-vg-webapp-default-login-creds") }}
 {{- with .Values.serviceSecurity }}
@@ -19,7 +19,7 @@ spec:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret) }}{{ $statefulRedis_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRedis_secret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret) }}{{ $serviceSecurity_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-vg-webapp-default-login-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret) }}{{ $vgWebappDefaultLoginCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret).data | sha256sum }}{{ end }}
       labels:
@@ -121,7 +121,7 @@ spec:
                 path: mongodbConnectionString
         - name: redis-password
           secret:
-            secretName: {{ $statefulRedis_secret }}
+            secretName: {{ $redisHa_secret }}
         - name: vg-webapp-login-creds
           secret:
             secretName: {{ $vgWebappDefaultLoginCredentials_secret }}
