@@ -17,6 +17,9 @@ spec:
         app: rabbitmq
       annotations:
         checksum/cognigy-rabbitmq-config: {{ include (print $.Template.BasePath "/common-secrets/cognigy-rabbitmq-config.yaml") $ | sha256sum }}
+        {{- if $.Values.cognigyCommonPodAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
+        {{- end }}
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}

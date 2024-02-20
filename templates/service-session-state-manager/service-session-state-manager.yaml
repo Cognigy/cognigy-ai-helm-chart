@@ -23,6 +23,9 @@ spec:
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         # we use the 'service-ai' secret on purpose - this is NOT a mistake
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret) }}{{ $serviceAi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAi_dbSecret).data | sha256sum }}{{ end }}
+        {{- if $.Values.cognigyCommonPodAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
+        {{- end }}
       labels:
         app: service-session-state-manager
     spec:
