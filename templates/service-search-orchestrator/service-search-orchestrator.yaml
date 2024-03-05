@@ -3,6 +3,7 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $cognigyWeaviateApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyWeaviateApiKey.existingSecret "defaultSecret" "cognigy-weaviate-api-key") }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
+{{- $cognigyQdrantApiKey := "qdrant-apikey" }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -20,7 +21,13 @@ spec:
         app: service-search-orchestrator
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        {{- if $.Values.qdrant.enabled }}
+        checksum/vector-db-config: {{ include (print $.Template.BasePath "/service-search-orchestrator/vector-db-config.yaml") $ | sha256sum }}
+        checksum/qdrant-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyQdrantApiKey) }}{{ $cognigyQdrantApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyQdrantApiKey).data | sha256sum }}{{ end }}
+        {{- end }}
+        {{- if $.Values.weaviate.enabled }}
         checksum/cognigy-weaviate-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey) }}{{ $cognigyWeaviateApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey).data | sha256sum }}{{ end }}
+        {{- end }}
         checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
@@ -64,17 +71,27 @@ spec:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
               subPath: rabbitmqConnectionString
+            {{- if $.Values.qdrant.enabled }}
+            - name: qdrant-api-key
+              mountPath: /var/run/secrets/qdrant-api-key
+              subPath: qdrant-api-key
+            - name: vector-db-config
+              mountPath: /vector-db-config/qdrant/collection/config.json
+              subPath: qdrant-collection-config
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
           env:
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
+            {{- if $.Values.weaviate.enabled }}
             - name: WEAVIATE_API_KEY
               valueFrom:
                 secretKeyRef:
                     name: {{ $cognigyWeaviateApiKey }}
                     key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
+            {{- end }}
             - name: SEARCH_ORCHESTRATOR_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -90,6 +107,17 @@ spec:
             items:
               - key: connection-string
                 path: rabbitmqConnectionString
+        {{- if $.Values.qdrant.enabled }}
+        - name: qdrant-api-key
+          secret:
+            secretName: {{ $cognigyQdrantApiKey }}
+            items:
+              - key: api-key
+                path: qdrant-api-key
+        - name: vector-db-config
+          configMap:
+            name: vector-db-config
+        {{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

@@ -1,0 +1,25 @@
+{{- if and (.Values.knowledgeSearch.enabled) (.Values.qdrant.enabled) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-db-config
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  qdrant-collection-config: |
+    {
+      "vectors": {
+          "distance": "{{ .Values.vectordbConfig.qdrantCollectionConfig.vectors.distance }}",
+          "on_disk": {{ .Values.vectordbConfig.qdrantCollectionConfig.vectors.onDisk }}
+      },
+      "shard_number": {{ .Values.vectordbConfig.qdrantCollectionConfig.shardNumber }},
+      "replication_factor": {{ .Values.vectordbConfig.qdrantCollectionConfig.replicationFactor }},
+      "on_disk_payload": {{ .Values.vectordbConfig.qdrantCollectionConfig.onDiskPayload }},
+      "hnsw_config": {
+          "ef_construct": {{ .Values.vectordbConfig.qdrantCollectionConfig.hnswConfig.efConstruction }},
+          "m": {{ .Values.vectordbConfig.qdrantCollectionConfig.hnswConfig.m }},
+          "on_disk": {{ .Values.vectordbConfig.qdrantCollectionConfig.hnswConfig.onDisk }}
+      },
+      "write_consistency_factor": {{ .Values.vectordbConfig.qdrantCollectionConfig.writeConsistencyFactor }}
+    }
+{{- end }}

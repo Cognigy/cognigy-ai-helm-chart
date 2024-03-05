@@ -7,6 +7,7 @@
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 {{- $cognigySecureFormsApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySecureFormsApiKey.existingSecret "defaultSecret" "cognigy-secure-forms-api-key") }}
 {{- $cognigyInsightsCollectorApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsCollectorApiKey.existingSecret "defaultSecret" "cognigy-insights-collector-api-key") }}
+{{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
 {{- with .Values.serviceAi }}
 ---
@@ -38,6 +39,7 @@ spec:
         {{- end }}
         checksum/cognigy-secure-forms-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySecureFormsApiKey_secret) }}{{ $cognigySecureFormsApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySecureFormsApiKey_secret).data | sha256sum }}{{ end }}
         checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-live-agent-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret) }}{{ $cognigyLiveAgentCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyAgentAssist.enabled }}
         checksum/cognigy-agent-assist-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret) }}{{ $agentAssistBackendApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret).data | sha256sum }}{{ end }}
         {{- end }}
@@ -113,7 +115,7 @@ spec:
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{- include "liveAgentCredentials.secretName.render" $ | indent 1 }}
+                  name: {{ $cognigyLiveAgentCredentials_secret }}
                   key: cognigy-live-agent-platform-token
             {{- if $.Values.cognigyAgentAssist.enabled }}
             - name: AGENT_ASSIST_WORKSPACE_API_ACCESS_TOKEN

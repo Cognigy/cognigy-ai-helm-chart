@@ -3,7 +3,7 @@
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -236,12 +236,19 @@ data:
                 - name: rabbitmq-connection-string
                   mountPath: /var/run/secrets/rabbitmqConnectionString
                   subPath: rabbitmqConnectionString
-                - name: weaviate-api-key
-                  mountPath: /var/run/secrets/weaviateApiKey
-                  subPath: weaviateApiKey
                 - name: redis-password
                   mountPath: /var/run/secrets/redis-password.conf
                   subPath: redis-password.conf
+                {{- if $.Values.weaviate.enabled }}
+                - name: weaviate-api-key
+                  mountPath: /var/run/secrets/weaviateApiKey
+                  subPath: weaviateApiKey
+                {{- end }}
+                {{- if $.Values.qdrant.enabled }}
+                - name: qdrant-api-key
+                  mountPath: /var/run/secrets/qdrant-api-key
+                  subPath: qdrant-api-key
+                {{- end }}
                 {{- if .extraVolumeMounts }}
                 {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
                 {{- end }}
@@ -252,12 +259,22 @@ data:
                 items:
                   - key: connection-string
                     path: rabbitmqConnectionString
+            {{- if $.Values.weaviate.enabled }}
             - name: weaviate-api-key
               secret:
                 secretName: {{ $cognigyWeaviateApiKey }}
                 items:
                   - key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
                     path: weaviateApiKey
+            {{- end }}
+            {{- if $.Values.qdrant.enabled }}
+            - name: qdrant-api-key
+              secret:
+                secretName: qdrant-apikey
+                items:
+                  - key: api-key
+                    path: qdrant-api-key
+            {{- end }}
             - name: redis-password
               secret:
                 secretName: {{ $redisHa_secret }}
@@ -330,12 +347,22 @@ data:
                 - name: rabbitmq-connection-string
                   mountPath: /var/run/secrets/rabbitmqConnectionString
                   subPath: rabbitmqConnectionString
-                - name: weaviate-api-key
-                  mountPath: /var/run/secrets/weaviateApiKey
-                  subPath: weaviateApiKey
                 - name: redis-password
                   mountPath: /var/run/secrets/redis-password.conf
                   subPath: redis-password.conf
+                {{- if $.Values.weaviate.enabled }}
+                - name: weaviate-api-key
+                  mountPath: /var/run/secrets/weaviateApiKey
+                  subPath: weaviateApiKey
+                {{- end }}
+                {{- if $.Values.qdrant.enabled }}
+                - name: qdrant-api-key
+                  mountPath: /var/run/secrets/qdrant-api-key
+                  subPath: qdrant-api-key
+                - name: vector-db-config
+                  mountPath: /vector-db-config/qdrant/collection/config.json
+                  subPath: qdrant-collection-config
+                {{- end }}
                 {{- if .extraVolumeMounts }}
                 {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
                 {{- end }}
@@ -352,15 +379,28 @@ data:
                 items:
                   - key: connection-string
                     path: rabbitmqConnectionString
+            - name: redis-password
+              secret:
+                secretName: {{ $redisHa_secret }}
+            {{- if $.Values.weaviate.enabled }}
             - name: weaviate-api-key
               secret:
                 secretName: {{ $cognigyWeaviateApiKey }}
                 items:
                   - key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
                     path: weaviateApiKey
-            - name: redis-password
+            {{- end }}
+            {{- if $.Values.qdrant.enabled }}
+            - name: qdrant-api-key
               secret:
-                secretName: {{ $redisHa_secret }}
+                secretName: qdrant-apikey
+                items:
+                  - key: api-key
+                    path: qdrant-api-key
+            - name: vector-db-config
+              configMap:
+                name: vector-db-config
+            {{- end }}
             {{- if .extraVolumes }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
             {{- end }}

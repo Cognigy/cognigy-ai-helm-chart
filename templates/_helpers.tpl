@@ -201,20 +201,6 @@ Return the proper amazonCredentials Secret Name
   {{- printf "%s" (tpl $amazonCredentialsSecretName $) -}}
 {{- end -}}
 
-{{/*
-Return the proper cognigyLiveAgent Credentials Secret Name
-*/}}
-{{- define "liveAgentCredentials.secretName.render" -}}
-  {{- $liveAgentCredentialsSecretName := "" -}}
-
-  {{- if .Values.cognigyLiveAgent.existingSecret -}}
-    {{- $liveAgentCredentialsSecretName = .Values.cognigyLiveAgent.existingSecret -}}
-  {{- else -}}
-    {{- $liveAgentCredentialsSecretName = "cognigy-live-agent-credentials" -}}
-  {{- end -}}
-
-  {{- printf "%s" (tpl $liveAgentCredentialsSecretName $) -}}
-{{- end -}}
 
 {{/*
 Return the proper cognigyAgentAssist Credentials Secret Name

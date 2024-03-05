@@ -1,5 +1,6 @@
 {{- $cognigyOauthClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyOauthClientSecret.existingSecret "defaultSecret" "cognigy-oauth-client-secret") }}
 {{- $cognigyVoicegatewayClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyVoicegatewayClientSecret.existingSecret "defaultSecret" "cognigy-voicegateway-client-secret") }}
+{{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $cognigyServiceEndpointApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceEndpointApiAccessToken.existingSecret "defaultSecret" "cognigy-service-endpoint-api-access-token") }}
 {{- with .Values.serviceUi }}
 ---
@@ -19,6 +20,7 @@ spec:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/cognigy-oauth-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret) }}{{ $cognigyOauthClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-voicegateway-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret) }}{{ $cognigyVoicegatewayClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-live-agent-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret) }}{{ $cognigyLiveAgentCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret) }}{{ $cognigyServiceEndpointApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
@@ -56,7 +58,7 @@ spec:
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{- include "liveAgentCredentials.secretName.render" $ | indent 1 }}
+                  name: {{ $cognigyLiveAgentCredentials_secret }}
                   key: cognigy-live-agent-platform-token
             - name: OAUTH_CLIENT_SECRET
               valueFrom:

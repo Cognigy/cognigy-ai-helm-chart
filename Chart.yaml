@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 4.70.0
-appVersion: "4.70.0"
+version: 4.71.0
+appVersion: "4.71.0"
 kubeVersion: ">=v1.19.0-0,<v1.28.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
@@ -18,10 +18,14 @@ dependencies:
     version: "23.1.0"
     repository: "https://helm.traefik.io/traefik"
     condition: traefik.enabled
+  - name: qdrant
+    version: "0.7.3"
+    repository: "https://qdrant.to/helm"
+    condition: qdrant.enabled
   - name: weaviate
     version: "16.8.0"
     repository: "https://weaviate.github.io/weaviate-helm"
-    condition: knowledgeSearch.enabled
+    condition: weaviate.enabled
   - name: redis
     version: "18.12.1"
     repository: "https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami"
