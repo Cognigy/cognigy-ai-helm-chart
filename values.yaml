@@ -1005,7 +1005,6 @@ cognigyEnv:
 
   # Enable Handover settings in the Voice Gateway Endpoint
   FEATURE_ENABLE_HANDOVER_SETTINGS_FOR_VG2: "true"
-
   # A link to an online instance of the adaptive cards designer
   # ADAPTIVE_CARDS_DESIGNER_URL:
 
@@ -2453,7 +2452,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-934d1c4781-1710835749
+  image: cognigy.azurecr.io/service-handover:release-25c4ff512b-1711360136
   replicaCount: 3
   resources:
     requests:
@@ -3240,7 +3239,7 @@ agentAssistBackend:
   tolerations: []
   priorityClassName: ""
 agentAssistFrontend:
-  image: cognigy.azurecr.io/agent-assist-frontend:release-eccbf57-1708085311
+  image: cognigy.azurecr.io/agent-assist-frontend:release-28c3132-1711459375
   replicaCount: 3
   resources:
     limits:
