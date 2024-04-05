@@ -47,6 +47,11 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: ACCESS_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $agentAssistBackendApiAccessToken_secret }}
+                  key: api-access-token
             - name: SERVER_PORT
               value: "8000"
             - name: SERVER_HOST

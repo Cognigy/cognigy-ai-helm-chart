@@ -19,7 +19,7 @@ data:
       name: _NAME_
       namespace: {{ $.Release.Namespace | quote }}
     spec:
-      backoffLimit: 0
+      backoffLimit: {{ .backoffLimit }}
       activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
       ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
       template:
@@ -103,7 +103,7 @@ data:
       name: _NAME_
       namespace: {{ $.Release.Namespace | quote }}
     spec:
-      backoffLimit: 0
+      backoffLimit: {{ .backoffLimit }}
       activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
       ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
       template:
@@ -185,7 +185,7 @@ data:
       name: _NAME_
       namespace: {{ $.Release.Namespace | quote }}
     spec:
-      backoffLimit: 0
+      backoffLimit: {{ .backoffLimit }}
       activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
       ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
       template:
@@ -293,7 +293,7 @@ data:
       name: _NAME_
       namespace: {{ $.Release.Namespace | quote }}
     spec:
-      backoffLimit: 0
+      backoffLimit: {{ .backoffLimit }}
       activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
       ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
       template:
