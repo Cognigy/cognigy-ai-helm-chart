@@ -13,7 +13,7 @@ spec:
   selector:
     matchLabels:
       app: service-nlp-classifier-score-en
-  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas)) }}
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceNlpClassifierScoreEn.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:

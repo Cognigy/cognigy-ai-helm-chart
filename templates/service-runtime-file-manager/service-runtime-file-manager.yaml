@@ -13,7 +13,7 @@ spec:
   selector:
     matchLabels:
       app: service-runtime-file-manager
-  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas)) }}
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceRuntimeFileManager.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:

@@ -12,7 +12,7 @@ spec:
   selector:
     matchLabels:
       app: service-handover-inactivity
-  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas)) }}
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceHandoverInactivity.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:

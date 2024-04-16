@@ -15,6 +15,7 @@ parameters:
   uid: {{ $storage_class_val.uid | quote }}
 provisioner: {{ $storage_class_val.provisioner }}
 reclaimPolicy: {{ $storage_class_val.reclaimPolicy }}
+allowVolumeExpansion: {{ $storage_class_val.allowVolumeExpansion }}
 volumeBindingMode: {{ $storage_class_val.volumeBindingMode }}
       {{- end -}}
     {{- end -}}

@@ -10,7 +10,7 @@ spec:
   selector:
     matchLabels:
       app: service-nlp-embedding-en
-  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas)) }}
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceNlpEmbeddingEn.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:

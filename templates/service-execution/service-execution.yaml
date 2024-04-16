@@ -10,7 +10,7 @@ spec:
   selector:
     matchLabels:
       app: service-execution
-  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas)) }}
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceExecution.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:

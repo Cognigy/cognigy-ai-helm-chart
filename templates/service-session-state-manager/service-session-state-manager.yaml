@@ -12,7 +12,7 @@ spec:
   selector:
     matchLabels:
       app: service-session-state-manager
-  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas)) }}
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceSessionStateManager.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:
