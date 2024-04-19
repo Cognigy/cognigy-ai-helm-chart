@@ -2125,7 +2125,7 @@ statefulRabbitMq:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-5896a2763f-1713263229
+  image: cognigy.azurecr.io/service-ai:release-6a1e2148c3-1713524276
   replicaCount: 3
   resources:
     requests:
