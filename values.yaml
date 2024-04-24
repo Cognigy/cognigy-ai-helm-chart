@@ -1308,6 +1308,9 @@ cognigyEnv:
   # COGNIGY_VOICE_GATEWAY_APP_BASE_URL_WITH_PROTOCOL:
   # COGNIGY_VOICE_GATEWAY_WEB_BASE_URL_WITH_PROTOCOL:
 
+  # Voice Gateway: Enable Handover settings in the VG2 Endpoint
+  FEATURE_ENABLE_HANDOVER_SETTINGS_FOR_VG2: "true"
+
   # Enable Central Configuration for Adaptive cards
   # FEATURE_USE_ADVANCED_ADAPTIVECARDS_INTEGRATION:
 
