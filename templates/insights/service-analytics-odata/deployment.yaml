@@ -59,6 +59,8 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"
             {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
