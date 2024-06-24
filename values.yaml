@@ -2568,7 +2568,7 @@ serviceHttp:
             averageUtilization: 70
     behavior: {}
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-aff4ba1-1716557990
+  image: cognigy.azurecr.io/service-insights-api:release-9239646-1719217169
   replicaCount: 3
   resources:
     requests:
