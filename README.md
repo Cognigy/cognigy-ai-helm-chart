@@ -1,4 +1,4 @@
-![Cognigy.AI banner](https://raw.githubusercontent.com/Cognigy/kubernetes/main/docs/assets/cognigy-ai.png)
+![Cognigy.AI banner](assets/cognigy-ai.png)
 
 # Cognigy.AI Helm Chart
 [Cognigy.AI](https://www.cognigy.com/) in an Enterprise Conversational Automation Platform for building advanced, integrated Conversational Automation Solutions through the use of cognitive bots.
