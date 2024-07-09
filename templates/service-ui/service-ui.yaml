@@ -2,6 +2,7 @@
 {{- $cognigyVoicegatewayClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyVoicegatewayClientSecret.existingSecret "defaultSecret" "cognigy-voicegateway-client-secret") }}
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $cognigyServiceEndpointApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceEndpointApiAccessToken.existingSecret "defaultSecret" "cognigy-service-endpoint-api-access-token") }}
+{{- $globalAzureDocumentIntelligenceEnabled := and $.Values.knowledgeSearch.enabled $.Values.knowledgeSearch.gloabalAzureDocumentIntelligenceConfig.enabled | default "false" | quote }}
 {{- with .Values.serviceUi }}
 ---
 apiVersion: apps/v1
@@ -75,6 +76,8 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigyServiceEndpointApiAccessToken_secret }}
                   key: api-access-token
+            - name: KNOWLEDGE_AI__AZURE_DOCUMENT_INTELLIGENCE_IS_CONFIGURED_SYSTEM_WIDE
+              value: {{ $globalAzureDocumentIntelligenceEnabled }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

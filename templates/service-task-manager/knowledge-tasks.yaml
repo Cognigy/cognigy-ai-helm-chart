@@ -1,8 +1,8 @@
 {{- if .Values.knowledgeSearch.enabled }}
-{{- $cognigyWeaviateApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyWeaviateApiKey.existingSecret "defaultSecret" "cognigy-weaviate-api-key") }}
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $azureDocumentIntelligence_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.knowledgeSearch.gloabalAzureDocumentIntelligenceConfig.existingSecret "defaultSecret" "cognigy-azure-ai-document-intelligence-credentials") }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -65,6 +65,18 @@ data:
                   value: {{ $.Values.tracing.environment | quote }}
                 - name: COGNIGY_AI_RELEASE_VERSION
                   value: {{ $.Chart.AppVersion | quote }}
+                {{- if $.Values.knowledgeSearch.gloabalAzureDocumentIntelligenceConfig.enabled }}
+                - name: AZURE_DOCUMENT_INTELLIGENCE_APIKEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $azureDocumentIntelligence_secret }}
+                      key: azureDocumentIntelligence-api-key
+                - name: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $azureDocumentIntelligence_secret }}
+                      key: azureDocumentIntelligence-endpoint-url
+                {{- end }}
                 {{- if .extraEnvVars }}
                 {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
                 {{- end }}
@@ -239,11 +251,6 @@ data:
                 - name: redis-password
                   mountPath: /var/run/secrets/redis-password.conf
                   subPath: redis-password.conf
-                {{- if $.Values.weaviate.enabled }}
-                - name: weaviate-api-key
-                  mountPath: /var/run/secrets/weaviateApiKey
-                  subPath: weaviateApiKey
-                {{- end }}
                 {{- if $.Values.qdrant.enabled }}
                 - name: qdrant-api-key
                   mountPath: /var/run/secrets/qdrant-api-key
@@ -259,14 +266,6 @@ data:
                 items:
                   - key: connection-string
                     path: rabbitmqConnectionString
-            {{- if $.Values.weaviate.enabled }}
-            - name: weaviate-api-key
-              secret:
-                secretName: {{ $cognigyWeaviateApiKey }}
-                items:
-                  - key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
-                    path: weaviateApiKey
-            {{- end }}
             {{- if $.Values.qdrant.enabled }}
             - name: qdrant-api-key
               secret:
@@ -350,11 +349,6 @@ data:
                 - name: redis-password
                   mountPath: /var/run/secrets/redis-password.conf
                   subPath: redis-password.conf
-                {{- if $.Values.weaviate.enabled }}
-                - name: weaviate-api-key
-                  mountPath: /var/run/secrets/weaviateApiKey
-                  subPath: weaviateApiKey
-                {{- end }}
                 {{- if $.Values.qdrant.enabled }}
                 - name: qdrant-api-key
                   mountPath: /var/run/secrets/qdrant-api-key
@@ -382,14 +376,6 @@ data:
             - name: redis-password
               secret:
                 secretName: {{ $redisHa_secret }}
-            {{- if $.Values.weaviate.enabled }}
-            - name: weaviate-api-key
-              secret:
-                secretName: {{ $cognigyWeaviateApiKey }}
-                items:
-                  - key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
-                    path: weaviateApiKey
-            {{- end }}
             {{- if $.Values.qdrant.enabled }}
             - name: qdrant-api-key
               secret:

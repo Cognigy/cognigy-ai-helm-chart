@@ -1,7 +1,7 @@
 {{- if .Values.knowledgeSearch.enabled }}
 {{- with .Values.serviceSearchOrchestrator }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- $cognigyWeaviateApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyWeaviateApiKey.existingSecret "defaultSecret" "cognigy-weaviate-api-key") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 {{- $cognigyQdrantApiKey := "qdrant-apikey" }}
 ---
@@ -25,11 +25,9 @@ spec:
         checksum/vector-db-config: {{ include (print $.Template.BasePath "/service-search-orchestrator/vector-db-config.yaml") $ | sha256sum }}
         checksum/qdrant-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyQdrantApiKey) }}{{ $cognigyQdrantApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyQdrantApiKey).data | sha256sum }}{{ end }}
         {{- end }}
-        {{- if $.Values.weaviate.enabled }}
-        checksum/cognigy-weaviate-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey) }}{{ $cognigyWeaviateApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyWeaviateApiKey).data | sha256sum }}{{ end }}
-        {{- end }}
         checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -68,6 +66,9 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
           volumeMounts:
+            - name: redis-password
+              mountPath: /var/run/secrets/redis-password.conf
+              subPath: redis-password.conf
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
               subPath: rabbitmqConnectionString
@@ -85,13 +86,6 @@ spec:
           env:
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
-            {{- if $.Values.weaviate.enabled }}
-            - name: WEAVIATE_API_KEY
-              valueFrom:
-                secretKeyRef:
-                    name: {{ $cognigyWeaviateApiKey }}
-                    key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
-            {{- end }}
             - name: SEARCH_ORCHESTRATOR_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -101,6 +95,9 @@ spec:
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
       volumes:
+        - name: redis-password
+          secret:
+            secretName: {{ $redisHa_secret }}
         - name: rabbitmq-connection-string
           secret:
             secretName: {{ $statefulRabbitMq_secret }}

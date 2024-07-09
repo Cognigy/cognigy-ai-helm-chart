@@ -1,5 +1,4 @@
 {{- if and (.Values.jobSyncKnowledgeData.enabled) (.Values.knowledgeSearch.enabled) }}
-{{- $cognigyWeaviateApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyWeaviateApiKey.existingSecret "defaultSecret" "cognigy-weaviate-api-key") }}
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
@@ -77,11 +76,6 @@ spec:
                 - name: redis-password
                   mountPath: /var/run/secrets/redis-password.conf
                   subPath: redis-password.conf
-                {{- if $.Values.weaviate.enabled }}
-                - name: weaviate-api-key
-                  mountPath: /var/run/secrets/weaviateApiKey
-                  subPath: weaviateApiKey
-                {{- end }}
                 {{- if $.Values.qdrant.enabled }}
                 - name: qdrant-api-key
                   mountPath: /var/run/secrets/qdrant-api-key
@@ -109,14 +103,6 @@ spec:
             - name: redis-password
               secret:
                 secretName: {{ $redisHa_secret }}
-            {{- if $.Values.weaviate.enabled }}
-            - name: weaviate-api-key
-              secret:
-                secretName: {{ $cognigyWeaviateApiKey }}
-                items:
-                  - key: AUTHENTICATION_APIKEY_ALLOWED_KEYS
-                    path: weaviateApiKey
-            {{- end }}
             {{- if $.Values.qdrant.enabled }}
             - name: qdrant-api-key
               secret:
