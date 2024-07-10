@@ -2,7 +2,7 @@
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $azureDocumentIntelligence_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.knowledgeSearch.gloabalAzureDocumentIntelligenceConfig.existingSecret "defaultSecret" "cognigy-azure-ai-document-intelligence-credentials") }}
+{{- $azureDocumentIntelligence_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.knowledgeSearch.globalAzureDocumentIntelligenceConfig.existingSecret "defaultSecret" "cognigy-azure-ai-document-intelligence-credentials") }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -65,7 +65,7 @@ data:
                   value: {{ $.Values.tracing.environment | quote }}
                 - name: COGNIGY_AI_RELEASE_VERSION
                   value: {{ $.Chart.AppVersion | quote }}
-                {{- if $.Values.knowledgeSearch.gloabalAzureDocumentIntelligenceConfig.enabled }}
+                {{- if $.Values.knowledgeSearch.globalAzureDocumentIntelligenceConfig.enabled }}
                 - name: AZURE_DOCUMENT_INTELLIGENCE_APIKEY
                   valueFrom:
                     secretKeyRef:

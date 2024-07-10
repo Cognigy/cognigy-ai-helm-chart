@@ -645,7 +645,7 @@ knowledgeSearch:
   enabled: false
 
   # System-wide Azure AI Document Intelligence configuration
-  gloabalAzureDocumentIntelligenceConfig:
+  globalAzureDocumentIntelligenceConfig:
     # Enabling this will only take effect when the parent
     # 'knowledgeSearch'feature is enabled.
     enabled: false
@@ -657,8 +657,8 @@ knowledgeSearch:
     ##   "azureDocIntel-api-key": The API key for Azure AI Document Intelligence
     ##   "azureDocIntel-endpoint-url": The endpoint URL for Azure AI Document Intelligence
     ##
-    ## NOTE: When gloabalAzureDocumentIntelligenceConfig.existingSecret is set, clear text credentials passed in the previous parameters
-    ## "gloabalAzureDocumentIntelligenceConfig.api-key" and "gloabalAzureDocumentIntelligenceConfig.endpoint-url" are ignored.
+    ## NOTE: When globalAzureDocumentIntelligenceConfig.existingSecret is set, clear text credentials passed in the previous parameters
+    ## "globalAzureDocumentIntelligenceConfig.api-key" and "globalAzureDocumentIntelligenceConfig.endpoint-url" are ignored.
     existingSecret: ""
 
 ## Traefik TLS certificate for the hostname defined at ingress.<service_name>.host

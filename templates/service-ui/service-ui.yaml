@@ -2,7 +2,7 @@
 {{- $cognigyVoicegatewayClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyVoicegatewayClientSecret.existingSecret "defaultSecret" "cognigy-voicegateway-client-secret") }}
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $cognigyServiceEndpointApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceEndpointApiAccessToken.existingSecret "defaultSecret" "cognigy-service-endpoint-api-access-token") }}
-{{- $globalAzureDocumentIntelligenceEnabled := and $.Values.knowledgeSearch.enabled $.Values.knowledgeSearch.gloabalAzureDocumentIntelligenceConfig.enabled | default "false" | quote }}
+{{- $globalAzureDocumentIntelligenceEnabled := and $.Values.knowledgeSearch.enabled $.Values.knowledgeSearch.globalAzureDocumentIntelligenceConfig.enabled | default "false" | quote }}
 {{- with .Values.serviceUi }}
 ---
 apiVersion: apps/v1
