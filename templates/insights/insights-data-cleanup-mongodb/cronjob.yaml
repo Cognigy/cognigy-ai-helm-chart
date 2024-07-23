@@ -1,0 +1,71 @@
+{{- if .Values.insightsDataCleanupJob.enabled }}
+{{- $dataCleanup_dbCollectorSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }} 
+{{- $dataCleanup_dbConversationsSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsConversations.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsConversations.serviceName)) }} 
+{{- with .Values.insightsDataCleanupJob }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: insights-data-cleanup-mongodb
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: {{ .concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      parallelism: {{ .parallelism }}
+      backoffLimit: {{ .backoffLimit }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          restartPolicy: {{ .restartPolicy }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: insights-data-cleanup-mongodb
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+              resources: {{- toYaml .resources | nindent 16 }}
+              command: ["/bin/sh"]
+              args: 
+              - -c
+              - |
+                mongosh $INSIGHTS_COLLECTOR_CONNECTION_STRING \
+                --eval 'const deleteAnalyticsRecords = db.insightsdeleterequests.find({requestedAt: {$lte: new Date(Date.now() - 10*60*1000)}}, {projectId: 1, organisation: 1, contactIds: 1, requestedAt:1, _id: 0}).toArray()'  \
+                --eval 'const deleteQueriesAnalytics = deleteAnalyticsRecords.map(doc => {doc.timestamp = {$lte: doc.requestedAt}; delete doc.requestedAt; doc.contactId = {$in: doc.contactIds}; delete doc.contactIds; return doc; })' \
+                --eval 'if (deleteQueriesAnalytics.length) { printjson(db.analytics.deleteMany({$or: deleteQueriesAnalytics})) }' \
+                --eval 'printjson(db.insightsdeleterequests.deleteMany({requestedAt: {$lte: new Date(Date.now() - 24*60*60*1000)}}))'
+                
+                mongosh $INSIGHTS_CONVERSATIONS_CONNECTION_STRING \
+                --eval 'const deleteConversationRecords = db.insightsdeleterequests.find({requestedAt: {$lte: new Date(Date.now() - 10*60*1000)}}, {projectIds: 1, organisation: 1, contactIds: 1, requestedAt: 1, _id: 0}).toArray()' \
+                --eval 'const deleteQueriesConversations = deleteConversationRecords.map(doc => {doc.timestamp = {$lte: doc.requestedAt}; delete doc.requestedAt; doc.contactId = {$in: doc.contactIds}; delete doc.contactIds; doc.projectId = {$in: doc.projectIds}; delete doc.projectIds; return doc; })' \
+                --eval 'if (deleteQueriesConversations.length) { printjson(db.conversations.deleteMany({$or: deleteQueriesConversations})) }' \
+                --eval 'printjson(db.insightsdeleterequests.deleteMany({requestedAt: {$lte: new Date(Date.now() - 24*60*60*1000)}}))'
+              env:
+                - name: INSIGHTS_COLLECTOR_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $dataCleanup_dbCollectorSecret }}
+                      key: connection-string
+                - name: INSIGHTS_CONVERSATIONS_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $dataCleanup_dbConversationsSecret }}
+                      key: connection-string
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+{{- end }}
+{{- end }}

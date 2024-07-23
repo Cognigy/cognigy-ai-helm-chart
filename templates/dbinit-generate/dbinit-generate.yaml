@@ -141,12 +141,7 @@ spec:
               name: cognigy-service-handover-inactivity
               items:
               - key: connection-string
-                path: cognigy-service-handover-inactivity				
-          - secret:
-              name: cognigy-service-journeys
-              items:
-              - key: connection-string
-                path: cognigy-service-journeys
+                path: cognigy-service-handover-inactivity		
           - secret:
               name: cognigy-service-logs
               items:

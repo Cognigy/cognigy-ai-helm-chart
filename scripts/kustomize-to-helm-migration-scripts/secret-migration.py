@@ -36,7 +36,6 @@ secrets_list_helm_pre_installation = [
     "cognigy-service-custom-modules",
     "cognigy-service-function-scheduler",
     "cognigy-service-handover",
-    "cognigy-service-journeys",
     "cognigy-service-logs",
     "cognigy-service-nlp",
     "cognigy-service-profiles",

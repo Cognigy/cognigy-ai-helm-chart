@@ -146,7 +146,6 @@
 		"serviceHandover",
 		"serviceHandoverInactivity",
 		"serviceHttp",
-		"serviceJourneys",
 		"serviceLogs",
 		"serviceNlpMatcher",
 		"serviceNlpNer",

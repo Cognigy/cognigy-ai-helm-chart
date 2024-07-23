@@ -1,0 +1,72 @@
+{{- if and (.Values.cubejs.enabled) (.Values.pgoperator.enabled)}}
+{{- if .Values.cubejs.dataCleanup.enabled }}
+{{- $dataCleanup_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
+{{- with .Values.cubejs.dataCleanup }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: insights-data-cleanup-postgres
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: {{ .concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      parallelism: {{ .parallelism }}
+      backoffLimit: {{ .backoffLimit }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          restartPolicy: {{ .restartPolicy }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: insights-data-cleanup-postgres
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.cubejs.postgresql.image) }}
+              resources: {{- toYaml .resources | nindent 16 }}
+              command: ["/bin/sh"]
+              args: 
+              - -c
+              - |
+                psql 'postgresql://'$INSIGHTS_POSTGRES_USER':'$INSIGHTS_POSTGRES_PASSWORD'@'$INSIGHTS_POSTGRES_HOST':'$INSIGHTS_POSTGRES_PORT'/'$INSIGHTS_POSTGRES_DB'?sslmode='$INSIGHTS_POSTGRES_SSL -c "
+                  SET timezone = 'UTC';
+                  DELETE FROM PUBLIC.\"analytics\" A WHERE EXISTS (SELECT 1 FROM PUBLIC.\"insightsdeleterequests\" B WHERE A.\"organisation\" = B.\"organisation\" AND A.\"projectId\" = ANY (B.\"projectIds\") AND A.\"contactId\" = ANY (B.\"contactIds\") AND A.\"timestamp\" <= B.\"requestedAt\" AND B.\"entityName\" = 'analytics' AND B.\"requestedAt\" <= NOW() - INTERVAL '10 minutes');
+                  DELETE FROM PUBLIC.\"conversations\" A WHERE EXISTS (SELECT 1 FROM PUBLIC.\"insightsdeleterequests\" B WHERE A.\"organisation\" = B.\"organisation\" AND A.\"projectId\" = ANY (B.\"projectIds\") AND A.\"contactId\" = ANY (B.\"contactIds\") AND A.\"timestamp\" <= B.\"requestedAt\" AND B.\"entityName\" = 'conversations' AND B.\"requestedAt\" <= NOW() - INTERVAL '10 minutes');
+                  DELETE FROM public.\"insightsdeleterequests\" A WHERE A.\"requestedAt\" <= NOW() - INTERVAL '1 days';
+                "
+              env:
+              - name: INSIGHTS_POSTGRES_HOST
+                value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
+              - name: INSIGHTS_POSTGRES_DB
+                value: {{ $.Values.cubejs.postgresql.database | quote }}
+              - name: INSIGHTS_POSTGRES_SSL
+                value: {{ $.Values.cubejs.postgresql.sslmode | quote }}
+              - name: INSIGHTS_POSTGRES_PORT
+                value: {{ $.Values.cubejs.postgresql.port | quote }}
+              - name: INSIGHTS_POSTGRES_USER
+                value: {{ $.Values.cubejs.postgresql.username | quote }}
+              - name: INSIGHTS_POSTGRES_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ $dataCleanup_dbSecret }}
+                    key: password
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+{{- end }}
+{{- end }}
+{{- end }}

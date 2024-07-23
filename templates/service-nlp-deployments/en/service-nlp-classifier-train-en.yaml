@@ -73,10 +73,10 @@ spec:
             httpGet:
               path: /health/liveness
               port: 8001
-            failureThreshold: 1
-            initialDelaySeconds: 120
-            periodSeconds: 60
-            timeoutSeconds: 60
+            failureThreshold: {{ .livenessProbe.failureThreshold | default 1 }}
+            initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds | default 120 }}
+            periodSeconds: {{ .livenessProbe.periodSeconds | default 60 }}
+            timeoutSeconds: {{ .livenessProbe.timeoutSeconds | default 60 }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
