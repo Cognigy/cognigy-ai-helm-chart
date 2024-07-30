@@ -2895,7 +2895,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-788bb41255-1721734123
+  image: cognigy.azurecr.io/service-ui:release-f843a50f4a-1722350251
   replicaCount: 3
   resources:
     requests:
