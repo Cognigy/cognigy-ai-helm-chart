@@ -2173,7 +2173,7 @@ statefulRabbitMq:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-e8fcc2177e-1722526581
+  image: cognigy.azurecr.io/service-ai:release-33f34cd689-1723107468
   replicaCount: 3
   resources:
     requests:
@@ -2350,7 +2350,7 @@ serviceAnalyticsReporter:
   tolerations: []
   priorityClassName: ""
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-e8fcc2177e-1722526581
+  image: cognigy.azurecr.io/service-api:release-33f34cd689-1723107468
   replicaCount: 3
   resources:
     requests:
@@ -2785,7 +2785,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-e8fcc2177e-1722526581
+  image: cognigy.azurecr.io/service-resources:release-33f34cd689-1723107468
   replicaCount: 3
   resources:
     requests:
@@ -2923,7 +2923,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-b9eb2c514f-1722605608
+  image: cognigy.azurecr.io/service-ui:release-4cadcfc6e9-1723103042
   replicaCount: 3
   resources:
     requests:
@@ -3438,7 +3438,7 @@ taskIngestKnowledgeChunks:
   priorityClassName: ""
 
 taskCreatePackageNfs:
-  image: cognigy.azurecr.io/service-resources:release-e8fcc2177e-1722526581
+  image: cognigy.azurecr.io/service-resources:release-33f34cd689-1723107468
   replicaCount: 3
   resources:
     requests:
