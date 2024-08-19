@@ -1,0 +1,20 @@
+{{- if and (.Values.serviceInsightsForwarder.enabled) (.Values.podMonitors.enabled) }}
+{{- with .Values.podMonitors }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: prom-cognigy-monitor-cognigy-ai-service-insights-forwarder
+  namespace: {{ .namespace }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+  podMetricsEndpoints:
+    - path: /metrics
+      port: metrics
+  selector:
+    matchLabels:
+      app: service-insights-forwarder
+{{- end }}
+{{- end }}
