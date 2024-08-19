@@ -18,7 +18,6 @@ spec:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/knowledge-tasks: {{ include (print $.Template.BasePath "/service-task-manager/knowledge-tasks.yaml") $ | sha256sum }}
-        checksum/service-resources-tasks: {{ include (print $.Template.BasePath "/service-task-manager/service-resources-tasks.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceTaskManager_dbSecret) }}{{ $serviceTaskManager_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceTaskManager_dbSecret).data | sha256sum }}{{ end }}
@@ -86,11 +85,9 @@ spec:
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
             {{- if $.Values.knowledgeSearch.enabled }}
-            - name: task-jobs-knowledge-config
-              mountPath: /var/run/config/task-jobs/knowledge-tasks
+            - name: task-jobs-config
+              mountPath: /var/run/config/task-jobs
             {{- end }}
-            - name: task-jobs-service-resources-config
-              mountPath: /var/run/config/task-jobs/service-resources-tasks
           startupProbe:
             httpGet:
               path: /health/startup
@@ -120,13 +117,10 @@ spec:
           secret:
             secretName: {{ $redisHa_secret }}
         {{- if $.Values.knowledgeSearch.enabled }}
-        - name: task-jobs-knowledge-config
+        - name: task-jobs-config
           configMap:
             name: knowledge-tasks-config
         {{- end }}
-        - name: task-jobs-service-resources-config
-          configMap:
-            name: service-resources-tasks-config
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
