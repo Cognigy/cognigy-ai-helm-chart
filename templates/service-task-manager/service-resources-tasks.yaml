@@ -62,6 +62,10 @@ data:
                   value: {{ $.Values.tracing.environment | quote }}
                 - name: COGNIGY_AI_RELEASE_VERSION
                   value: {{ $.Chart.AppVersion | quote }}
+                - name: FEATURE_USE_NEW_NFS
+                  value: {{ $.Values.migrateFS.enabled | quote }}
+                - name: FEATURE_DEPRECATE_OLD_NFS
+                  value: {{ $.Values.migrateFS.finished | quote }}
                 {{- if .extraEnvVars }}
                 {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
                 {{- end }}
@@ -75,8 +79,18 @@ data:
                 - name: redis-password
                   mountPath: /var/run/secrets/redis-password.conf
                   subPath: redis-password.conf
+                {{- if not $.Values.migrateFS.finished }}
                 - name: functions
-                  mountPath: /app/functions
+                  mountPath: /app/oldFunctions
+                {{- end }}
+                {{- if $.Values.migrateFS.enabled }}
+                - name: ide
+                  mountPath: /app/packages
+                  subPath: packages
+                - name: ide
+                  mountPath: /app/snapshots
+                  subPath: snapshots
+                {{- end }}
                 {{- if .extraVolumeMounts }}
                 {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
                 {{- end }}
@@ -96,9 +110,16 @@ data:
             - name: redis-password
               secret:
                 secretName: {{ $redisHa_secret }}
+            {{- if not $.Values.migrateFS.finished }}
             - name: functions
               persistentVolumeClaim:
                 claimName: functions
+            {{- end }}
+            {{- if $.Values.migrateFS.enabled }}
+            - name: ide
+              persistentVolumeClaim:
+                claimName: ide
+            {{- end }}
             {{- if .extraVolumes }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
             {{- end }}

@@ -69,7 +69,11 @@ spec:
             - name: ENVIRONMENT
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
-              value: {{ $.Chart.AppVersion | quote }}			  
+              value: {{ $.Chart.AppVersion | quote }}
+            - name: FEATURE_USE_NEW_NFS
+              value: {{ $.Values.migrateFS.enabled | quote }}
+            - name: FEATURE_DEPRECATE_OLD_NFS
+              value: {{ $.Values.migrateFS.finished | quote }}		  
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -77,10 +81,17 @@ spec:
             - name: metrics
               containerPort: 8002
           volumeMounts:
-            - name: flow-modules
-              mountPath: /app/flowModules
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets
+            {{- if not $.Values.migrateFS.finished }}
+            - name: flow-modules
+              mountPath: /app/flowModules
+            {{- end }}
+            {{- if $.Values.migrateFS.enabled }}
+            - name: runtime
+              mountPath: /app/extensions
+              subPath: extensions
+            {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -94,9 +105,16 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
+        {{- if not $.Values.migrateFS.finished }}
         - name: flow-modules
           persistentVolumeClaim:
             claimName: flow-modules
+        {{- end }}
+        {{- if $.Values.migrateFS.enabled }}
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: runtime
+        {{- end }}
         - name: rabbitmq-connection-string
           secret:
             secretName: {{ $statefulRabbitMq_secret }}

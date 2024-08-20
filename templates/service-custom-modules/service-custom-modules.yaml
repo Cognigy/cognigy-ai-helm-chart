@@ -65,13 +65,15 @@ spec:
             - name: ENVIRONMENT
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
-              value: {{ $.Chart.AppVersion | quote }}			  
+              value: {{ $.Chart.AppVersion | quote }}		
+            - name: FEATURE_USE_NEW_NFS
+              value: {{ $.Values.migrateFS.enabled | quote }}
+            - name: FEATURE_DEPRECATE_OLD_NFS
+              value: {{ $.Values.migrateFS.finished | quote }}	  
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           volumeMounts:
-            - name: flow-modules
-              mountPath: /app/flowModules
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
               subPath: rabbitmqConnectionString
@@ -81,6 +83,15 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            {{- if not $.Values.migrateFS.finished }}
+            - name: flow-modules
+              mountPath: /app/flowModules
+            {{- end }}
+            {{- if $.Values.migrateFS.enabled }}
+            - name: runtime
+              mountPath: /app/extensions
+              subPath: extensions
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
@@ -97,9 +108,6 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
-        - name: flow-modules
-          persistentVolumeClaim:
-            claimName: flow-modules
         - name: rabbitmq-connection-string
           secret:
             secretName: {{ $statefulRabbitMq_secret }}
@@ -115,6 +123,16 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        {{- if not $.Values.migrateFS.finished }}
+        - name: flow-modules
+          persistentVolumeClaim:
+            claimName: flow-modules
+        {{- end }}
+        {{- if $.Values.migrateFS.enabled }}
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: runtime
+        {{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

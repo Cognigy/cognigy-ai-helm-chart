@@ -151,6 +151,10 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
+            - name: FEATURE_USE_NEW_NFS
+              value: {{ $.Values.migrateFS.enabled | quote }}
+            - name: FEATURE_DEPRECATE_OLD_NFS
+              value: {{ $.Values.migrateFS.finished | quote }}
             {{- if $.Values.knowledgeSearch.enabled }}
             - name: SEARCH_ORCHESTRATOR_API_KEY
               valueFrom:
@@ -177,8 +181,21 @@ spec:
             - name: management-ui-creds
               mountPath: /var/run/secrets/management-ui-creds.json
               subPath: management-ui-creds.json
+            {{- if not $.Values.migrateFS.finished }}
             - name: functions
-              mountPath: /app/functions
+              mountPath: /app/oldFunctions
+            {{- end }}
+            {{- if $.Values.migrateFS.enabled }}
+            - name: ide
+              mountPath: /app/packages
+              subPath: packages
+            - name: ide
+              mountPath: /app/snapshots
+              subPath: snapshots
+            - name: ide
+              mountPath: /app/resumableUploads
+              subPath: resumableUploads
+            {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -219,9 +236,16 @@ spec:
         - name: vg-webapp-login-creds
           secret:
             secretName: {{ $vgWebappDefaultLoginCredentials_secret }}
+        {{- if not $.Values.migrateFS.finished }}
         - name: functions
           persistentVolumeClaim:
             claimName: functions
+        {{- end }}
+        {{- if $.Values.migrateFS.enabled }}
+        - name: ide
+          persistentVolumeClaim:
+            claimName: ide
+        {{- end }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

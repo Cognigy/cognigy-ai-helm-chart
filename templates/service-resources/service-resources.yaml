@@ -81,6 +81,10 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
+            - name: FEATURE_USE_NEW_NFS
+              value: {{ $.Values.migrateFS.enabled | quote }}
+            - name: FEATURE_DEPRECATE_OLD_NFS
+              value: {{ $.Values.migrateFS.finished | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -113,10 +117,26 @@ spec:
             - name: redis-persistent-password
               mountPath: /var/run/secrets/redis-persistent-password.conf
               subPath: redis-persistent-password.conf
+            {{- if not $.Values.migrateFS.finished }}
             - name: flow-modules
               mountPath: /app/flowModules
             - name: functions
+              mountPath: /app/oldFunctions
+            {{- end }}
+            {{- if $.Values.migrateFS.enabled }}
+            - name: runtime
+              mountPath: /app/extensions
+              subPath: extensions
+            - name: runtime
               mountPath: /app/functions
+              subPath: functions
+            - name: ide
+              mountPath: /app/packages
+              subPath: packages
+            - name: ide
+              mountPath: /app/snapshots
+              subPath: snapshots
+            {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -157,12 +177,22 @@ spec:
         - name: redis-persistent-password
           secret:
             secretName: {{ $redisPersistentHa_secret }}
+        {{- if not $.Values.migrateFS.finished }}
         - name: flow-modules
           persistentVolumeClaim:
             claimName: flow-modules
         - name: functions
           persistentVolumeClaim:
             claimName: functions
+        {{- end }}
+        {{- if $.Values.migrateFS.enabled }}
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: runtime
+        - name: ide
+          persistentVolumeClaim:
+            claimName: ide
+        {{- end }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

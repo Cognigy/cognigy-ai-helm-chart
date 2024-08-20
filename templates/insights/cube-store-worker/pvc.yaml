@@ -1,6 +1,6 @@
 {{- if .Values.cubejs.enabled }}
   {{- if .Values.cubejs.persistence.enabled }}
-    {{- if (has .Values.cloud.provider (list "aws" "azure" "microk8s" "local-rancher")) }} 
+    {{- if (has .Values.cloud.provider (list "aws" "azure" "local-microk8s" "local-rancher")) }} 
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

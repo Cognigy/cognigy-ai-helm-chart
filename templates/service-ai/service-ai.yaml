@@ -97,6 +97,10 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
+            - name: FEATURE_USE_NEW_NFS
+              value: {{ $.Values.migrateFS.enabled | quote }}
+            - name: FEATURE_DEPRECATE_OLD_NFS
+              value: {{ $.Values.migrateFS.finished | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -187,8 +191,15 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            {{- if not $.Values.migrateFS.finished }}
             - name: flow-modules
               mountPath: /app/flowModules
+            {{- end }}
+            {{- if $.Values.migrateFS.enabled }}
+            - name: runtime
+              mountPath: /app/extensions
+              subPath: extensions
+            {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -229,9 +240,16 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        {{- if not $.Values.migrateFS.finished }}
         - name: flow-modules
           persistentVolumeClaim:
             claimName: flow-modules
+        {{- end }}
+        {{- if $.Values.migrateFS.enabled }}
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: runtime
+        {{- end }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}
