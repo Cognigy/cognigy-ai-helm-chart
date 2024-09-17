@@ -199,6 +199,9 @@ spec:
             - name: runtime
               mountPath: /app/extensions
               subPath: extensions
+            - name: runtime
+              mountPath: /app/transcripts
+              subPath: transcripts
             {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}

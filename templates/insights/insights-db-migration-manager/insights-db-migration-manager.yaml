@@ -44,9 +44,13 @@ spec:
               value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: POSTGRES_DB
               value: {{ $.Values.cubejs.postgresql.database | quote }}
-            {{- if .migration.name }}
-            - name: INSIGHTS_MIGRATION_NAME
-              value: {{ .migration.name | quote }}
+            {{- if .migration.include }}
+            - name: INSIGHTS_INCLUDE_MIGRATION_NAME
+              value: {{ .migration.include | quote }}
+            {{- end }}
+            {{- if .migration.exclude }}
+            - name: INSIGHTS_EXCLUDE_MIGRATION_NAME
+              value: {{ .migration.exclude | quote }}
             {{- end }}
             - name: POSTGRES_USER
               value: {{ $.Values.cubejs.postgresql.username | quote }}
