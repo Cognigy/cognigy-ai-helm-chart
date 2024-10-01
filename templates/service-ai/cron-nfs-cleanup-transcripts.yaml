@@ -1,0 +1,65 @@
+{{- if and (.Values.featureTranscripts.enabled) ($.Values.migrateFS.enabled) }}
+{{- with .Values.cronNfsCleanupTranscripts }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-nfs-cleanup-transcripts
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  suspend: {{ ternary false true $.Values.featureTranscripts.enabled}}
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: {{ .concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .backoffLimit }}
+      parallelism: {{ .parallelism }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          restartPolicy: {{ .restartPolicy }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: cron-nfs-cleanup-transcripts
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+              resources: {{- toYaml .resources | nindent 16 }}
+              env:
+                {{- if .extraEnvVars }}
+                {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
+                {{- end }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              volumeMounts:
+                - name: runtime
+                  mountPath: /app/transcripts
+                  subPath: transcripts
+                {{- if .extraVolumeMounts }}
+                {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
+                {{- end }}
+          volumes: 
+            - name: runtime
+              persistentVolumeClaim:
+                claimName: runtime
+            {{- if .extraVolumes }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
+            {{- end }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}  
+{{- end }}
+{{- end }}

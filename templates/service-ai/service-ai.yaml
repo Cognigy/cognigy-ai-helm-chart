@@ -171,7 +171,9 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ $cognigyInsightsCollectorApiKey_secret }}
-                  key: secret          
+                  key: secret
+            - name: FEATURE_ENABLE_TRANSCRIPT_MANAGER
+              value: {{ and ($.Values.featureTranscripts.enabled) ($.Values.migrateFS.enabled) | quote }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
