@@ -78,6 +78,13 @@ spec:
                   key: api-access-token
             - name: KNOWLEDGE_AI__AZURE_DOCUMENT_INTELLIGENCE_IS_CONFIGURED_SYSTEM_WIDE
               value: {{ $globalAzureDocumentIntelligenceEnabled }}
+            {{- if and ($.Values.cubejs.enabled) ($.Values.serviceInsightsResources.enabled) }}
+            - name: FEATURE_USE_GOALS
+              value: {{ $.Values.cognigyEnv.FEATURE_USE_GOALS | quote }}
+            {{- else }}
+            - name: FEATURE_USE_GOALS
+              value: "false"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

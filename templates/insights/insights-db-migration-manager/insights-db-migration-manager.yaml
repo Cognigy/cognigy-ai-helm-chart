@@ -1,4 +1,4 @@
-{{- if and (.Values.cubejs.enabled) (.Values.pgoperator.enabled)}}
+{{- if $.Values.pgoperator.enabled }}
 {{- if $.Values.cubejs.dbMigration.enabled }}
 {{- $dbMigration_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
 {{- with .Values.cubejs.dbMigration }}
