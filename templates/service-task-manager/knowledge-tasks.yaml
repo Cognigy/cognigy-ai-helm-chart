@@ -77,6 +77,10 @@ data:
                       name: {{ $azureDocumentIntelligence_secret }}
                       key: azureDocumentIntelligence-endpoint-url
                 {{- end }}
+                {{- if .nodeOptions }}
+                - name: NODE_OPTIONS
+                  value: {{ .nodeOptions | quote }}
+                {{- end }}
                 {{- if .extraEnvVars }}
                 {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
                 {{- end }}

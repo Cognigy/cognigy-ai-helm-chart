@@ -8,6 +8,6 @@ metadata:
   name: ipwhitelistmanagementui
   namespace: {{ $.Release.Namespace | quote }}
 spec:
-  ipWhiteList: {{- toYaml .ipWhiteList | nindent 4 }}
+  ipAllowList: {{- toYaml .ipWhiteList | nindent 4 }}
 {{- end }}
 {{- end }}

@@ -11,7 +11,7 @@ metadata:
   name: {{ printf "ipwhitelist%s" (lower $ingress_key)}}
   namespace: {{ $.Release.Namespace | quote }}
 spec:
-  ipWhiteList: {{- toYaml $ingress_val.ipWhiteListMiddleware.ipWhiteList | nindent 4 }}
+  ipAllowList: {{- toYaml $ingress_val.ipWhiteListMiddleware.ipWhiteList | nindent 4 }}
         {{- end }}
       {{- end }}
     {{- end }}
