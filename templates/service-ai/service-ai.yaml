@@ -180,7 +180,7 @@ spec:
                   name: {{ $cognigyInsightsCollectorApiKey_secret }}
                   key: secret
             - name: FEATURE_ENABLE_TRANSCRIPT_MANAGER
-              value: {{ and ($.Values.featureTranscripts.enabled) ($.Values.migrateFS.enabled) | quote }}
+              value: {{ $.Values.featureTranscripts.enabled | quote }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
@@ -208,6 +208,8 @@ spec:
             - name: runtime
               mountPath: /app/extensions
               subPath: extensions
+            {{- end }}
+            {{- if $.Values.featureTranscripts.enabled }}
             - name: runtime
               mountPath: /app/transcripts
               subPath: transcripts
@@ -257,7 +259,7 @@ spec:
           persistentVolumeClaim:
             claimName: flow-modules
         {{- end }}
-        {{- if $.Values.migrateFS.enabled }}
+        {{- if or ($.Values.migrateFS.enabled) ($.Values.featureTranscripts.enabled) }}
         - name: runtime
           persistentVolumeClaim:
             claimName: runtime

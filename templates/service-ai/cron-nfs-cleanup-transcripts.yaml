@@ -1,4 +1,4 @@
-{{- if and (.Values.featureTranscripts.enabled) ($.Values.migrateFS.enabled) }}
+{{- if .Values.featureTranscripts.enabled }}
 {{- with .Values.cronNfsCleanupTranscripts }}
 ---
 apiVersion: batch/v1
@@ -7,7 +7,6 @@ metadata:
   name: cron-nfs-cleanup-transcripts
   namespace: {{ $.Release.Namespace | quote }}
 spec:
-  suspend: {{ ternary false true $.Values.featureTranscripts.enabled}}
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: {{ .concurrencyPolicy }}
   successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit }}
