@@ -4057,6 +4057,28 @@ storageClass:
         reclaimPolicy: Retain
         allowVolumeExpansion: true
         volumeBindingMode: Immediate
+      ide:
+        enabled: false
+        storageClassName: "ide"
+        fileSystemId: ""
+        directoryPerms: "777"
+        gid: "1000"
+        uid: "1000"
+        provisioner: efs.csi.aws.com
+        reclaimPolicy: Retain
+        allowVolumeExpansion: true
+        volumeBindingMode: Immediate
+      runtime:
+        enabled: false
+        storageClassName: "runtime"
+        fileSystemId: ""
+        directoryPerms: "777"
+        gid: "1000"
+        uid: "1000"
+        provisioner: efs.csi.aws.com
+        reclaimPolicy: Retain
+        allowVolumeExpansion: true
+        volumeBindingMode: Immediate
 
   ## StorageClass(es) parameters for Azure
   ##
@@ -4123,25 +4145,48 @@ storageClass:
         gid: "1000"
         uid: "1000"
         lfs: true
+      runtime:
+        enabled: false
+        storageClassName: "runtime"
+        provisioner: file.csi.azure.com
+        skuName: Standard_GZRS
+        reclaimPolicy: Retain
+        allowVolumeExpansion: true
+        volumeBindingMode: Immediate
+        gid: "1000"
+        uid: "1000"
+        lfs: true
+      ide:
+        enabled: false
+        storageClassName: "ide"
+        provisioner: file.csi.azure.com
+        skuName: Standard_GZRS
+        reclaimPolicy: Retain
+        allowVolumeExpansion: true
+        volumeBindingMode: Immediate
+        gid: "1000"
+        uid: "1000"
+        lfs: true
 
 ## Create custom PVC(s) for stateful services
 ##
 persistentVolumeClaim:
   enabled: false
-  ##Example PVC(s)
   runtime:
     enabled: false
     pvcName: runtime
     accessModes: ReadWriteMany
     storageClassName: runtime
-    storage: 1Mi
+    storage: 1Mi # for azure use 1000Gi
   ide:
     enabled: false
     pvcName: ide
     accessModes: ReadWriteMany
     storageClassName: ide
-    storage: 1Mi
-# Antivirus assets scanning
+    storage: 1Mi # for azure use 1000Gi
+
+## Antivirus assets scanning
+##
 clamd:
   # streamMaxLength: 4000M is the maximum value
   streamMaxLength: 4000M
