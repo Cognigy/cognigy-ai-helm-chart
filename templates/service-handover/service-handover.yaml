@@ -93,6 +93,8 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigyRceCredentials_secret }}
                   key: rce-verify-token
+            - name: FEATURE_ENABLE_TRANSCRIPT_MANAGER
+              value: {{ and ($.Values.featureTranscripts.enabled) ($.Values.migrateFS.enabled) | quote }}
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
