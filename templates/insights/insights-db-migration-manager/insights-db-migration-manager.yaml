@@ -39,7 +39,11 @@ spec:
             - name: INSIGHTS_POSTGRES_DATA_MIGRATION_MODE
               value: {{ .migration.mode | quote }}
             - name: POSTGRES_HOST
-              value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
+            {{- if $.Values.cubejs.postgresql.readReplica.useReadReplica }}
+            - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.readReplica.host "context" $) | quote }}
+            {{- end }}
             - name: POSTGRES_PORT
               value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: POSTGRES_DB

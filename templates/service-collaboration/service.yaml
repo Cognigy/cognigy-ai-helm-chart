@@ -1,0 +1,24 @@
+{{- if .Values.serviceCollaboration.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-collaboration
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-collaboration
+  annotations:
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: "none"
+    {{- if .Values.service.serviceCollaboration.annotations }}
+      {{- toYaml .Values.service.serviceCollaboration.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: service-collaboration
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-collaboration
+{{- end }}

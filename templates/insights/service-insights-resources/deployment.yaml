@@ -57,7 +57,11 @@ spec:
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
+              {{- if $.Values.cubejs.postgresql.readReplica.useReadReplica }}
+            - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.readReplica.host "context" $) | quote }}
+              {{- end }}
             - name: INSIGHTS_POSTGRES_DB_PORT
               value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: INSIGHTS_POSTGRES_DB_USERNAME
