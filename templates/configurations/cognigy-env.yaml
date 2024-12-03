@@ -20,6 +20,10 @@ data:
   STATIC_FILES_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceStaticFiles.host | quote}}
   ODATA_HOSTNAME: {{ .Values.ingress.serviceAnalyticsOdata.host | quote }}
   ODATA_PROTOCOL: "https"
+  {{- if and ($.Values.goals.enabled) ($.Values.cubejs.enabled) ($.Values.serviceInsightsResources.enabled) }}
+  FEATURE_INSIGHTS_USE_GOALS_DASHBOARD: "true"
+  FEATURE_USE_GOALS: "true"
+  {{- end }}
 {{- range $key, $value := .Values.cognigyEnv }}
   {{ $key }}: {{ $value | quote }}
 {{- end }}

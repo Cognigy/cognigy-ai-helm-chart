@@ -49,7 +49,7 @@ spec:
             - name: CUBEJS_DB_SSL
               value: {{ $.Values.cubejs.postgresql.ssl | quote }}
             - name: CUBEJS_DB_HOST
-              value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
+              value: {{ include "cognigy-ai.cubejs.postgresql.host" $ | quote }}
             - name: CUBEJS_DB_PORT
               value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: CUBEJS_DB_NAME

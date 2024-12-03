@@ -15,9 +15,21 @@ allowVolumeExpansion: true
 volumeBindingMode: {{ $storage_class_val.volumeBindingMode}}
 reclaimPolicy: {{ $storage_class_val.reclaimPolicy}}
 parameters:
-  cachingmode: ReadOnly
   kind: Managed
-  storageaccounttype: {{ $storage_class_val.azureStorageAccountType }}
+  {{- if eq $storage_class_val.azureStorageAccountType "PremiumV2_LRS" }}
+  skuName: {{ $storage_class_val.azureStorageAccountType | quote }}
+  {{- else }}
+  storageaccounttype: {{ $storage_class_val.azureStorageAccountType | quote }}
+  {{- end }}
+  {{- if $storage_class_val.cachingMode }}
+  cachingmode: {{ $storage_class_val.cachingMode | quote }}
+  {{- end }}
+  {{- if $storage_class_val.diskIops }}
+  DiskIOPSReadWrite: {{ $storage_class_val.diskIops | quote }}
+  {{- end }}
+  {{- if $storage_class_val.diskThroughput }}
+  DiskMBpsReadWrite: {{ $storage_class_val.diskThroughput | quote }}
+  {{- end }}
       {{- end -}}
     {{- end -}}
   {{- end -}}
