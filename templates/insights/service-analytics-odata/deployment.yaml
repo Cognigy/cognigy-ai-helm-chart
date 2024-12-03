@@ -65,7 +65,7 @@ spec:
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "cognigy-ai.cubejs.postgresql.host" $ | quote }}
+              value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
             - name: INSIGHTS_POSTGRES_DB_PORT
               value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: INSIGHTS_POSTGRES_DB_USERNAME
@@ -82,6 +82,13 @@ spec:
               value: service-security
             - name: CONVERSATION_COLLECTOR_DB_NAME
               value: service-analytics-conversation
+            {{- if and ($.Values.cubejs.enabled) ($.Values.serviceInsightsResources.enabled) }}
+            - name: FEATURE_USE_GOALS
+              value: {{ $.Values.cognigyEnv.FEATURE_USE_GOALS | quote }}
+            {{- else }}
+            - name: FEATURE_USE_GOALS
+              value: "false"
+            {{- end }}
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.insights.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL

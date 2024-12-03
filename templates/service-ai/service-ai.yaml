@@ -101,6 +101,13 @@ spec:
               value: {{ $.Values.migrateFS.enabled | quote }}
             - name: FEATURE_DEPRECATE_OLD_NFS
               value: {{ $.Values.migrateFS.finished | quote }}
+            {{- if and ($.Values.cubejs.enabled) ($.Values.serviceInsightsResources.enabled) }}
+            - name: FEATURE_USE_GOALS
+              value: {{ $.Values.cognigyEnv.FEATURE_USE_GOALS | quote }}
+            {{- else }}
+            - name: FEATURE_USE_GOALS
+              value: "false"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

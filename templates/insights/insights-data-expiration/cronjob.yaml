@@ -30,14 +30,10 @@ spec:
           containers:
             - name: insights-data-expiration
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.cubejs.postgresql.image) }}
-              command: ["sh", "-c", "psql 'postgresql://'${INSIGHTS_POSTGRES_USER}':'${INSIGHTS_POSTGRES_PASSWORD}'@'${INSIGHTS_POSTGRES_DB_HOST}':'${INSIGHTS_POSTGRES_PORT}'/'${INSIGHTS_POSTGRES_DB}'' -c 'SET timezone = '\''UTC'\''; DELETE FROM public.conversations WHERE \"expiresAt\" < NOW(); DELETE FROM public.sessions WHERE \"expiresAt\" < NOW(); DELETE FROM public.analytics WHERE \"expiresAt\" < NOW(); DELETE FROM public.liveagentescalations WHERE \"expiresAt\" < NOW(); DELETE FROM public.voicegatewayevents WHERE \"expiresAt\" < NOW(); DELETE FROM public.stepevents WHERE \"expiresAt\" < NOW(); '"]
+              command: ["sh", "-c", "psql 'postgresql://'${INSIGHTS_POSTGRES_USER}':'${INSIGHTS_POSTGRES_PASSWORD}'@'${INSIGHTS_POSTGRES_HOST}':'${INSIGHTS_POSTGRES_PORT}'/'${INSIGHTS_POSTGRES_DB}'' -c 'SET timezone = '\''UTC'\''; DELETE FROM public.conversations WHERE \"expiresAt\" < NOW(); DELETE FROM public.sessions WHERE \"expiresAt\" < NOW(); DELETE FROM public.analytics WHERE \"expiresAt\" < NOW(); DELETE FROM public.liveagentescalations WHERE \"expiresAt\" < NOW(); DELETE FROM public.voicegatewayevents WHERE \"expiresAt\" < NOW(); DELETE FROM public.stepevents WHERE \"expiresAt\" < NOW(); '"]
               env:
-              - name: INSIGHTS_POSTGRES_DB_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
-              {{- if $.Values.cubejs.postgresql.readReplica.useReadReplica }}
-              - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.readReplica.host "context" $) | quote }}
-              {{- end }}
+              - name: INSIGHTS_POSTGRES_HOST
+                value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
               - name: INSIGHTS_POSTGRES_DB
                 value: {{ $.Values.cubejs.postgresql.database | quote }}
               - name: INSIGHTS_POSTGRES_PORT

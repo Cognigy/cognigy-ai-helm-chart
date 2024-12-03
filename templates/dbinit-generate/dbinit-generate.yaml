@@ -127,13 +127,6 @@ spec:
               items:
               - key: connection-string
                 path: cognigy-service-custom-modules
-{{- if .Values.serviceCollaboration.enabled }}
-          - secret:
-              name: cognigy-service-collaboration
-              items:
-              - key: connection-string
-                path: cognigy-service-collaboration
-{{- end }}
           - secret:
               name: cognigy-service-function-scheduler
               items:

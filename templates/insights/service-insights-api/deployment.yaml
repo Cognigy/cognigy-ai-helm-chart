@@ -56,7 +56,7 @@ spec:
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "cognigy-ai.cubejs.postgresql.host" $ | quote }}
+              value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
             - name: INSIGHTS_POSTGRES_DB_PORT
               value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: INSIGHTS_POSTGRES_DB_USERNAME

@@ -52,6 +52,13 @@ spec:
               value: {{ $.Values.tracing.sentry.insights.eventsSampleRate | quote }}
             - name: TRACING_SAMPLE_RATE
               value: {{ $.Values.tracing.sentry.insights.sampleRate | quote }}
+            {{- if and ($.Values.cubejs.enabled) ($.Values.serviceInsightsResources.enabled) }}
+            - name: FEATURE_INSIGHTS_USE_GOALS_DASHBOARD
+              value: {{ $.Values.cognigyEnv.FEATURE_INSIGHTS_USE_GOALS_DASHBOARD | quote }}
+            {{- else }}
+            - name: FEATURE_INSIGHTS_USE_GOALS_DASHBOARD
+              value: "false"
+            {{- end }}
             - name: ENVIRONMENT
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION

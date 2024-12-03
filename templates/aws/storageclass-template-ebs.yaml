@@ -15,12 +15,6 @@ parameters:
   type: {{ $storage_class_val.awsEBSVolumeType | quote }}
   fsType: ext4
   encrypted: "true"
-  {{- if $storage_class_val.diskIops }}
-  iops: {{ $storage_class_val.diskIops | quote }}
-  {{- end }}
-  {{- if $storage_class_val.diskThroughput }}
-  throughput: {{ $storage_class_val.diskThroughput | quote }}
-  {{- end }}
       {{- end -}}
     {{- end -}}
   {{- end -}}

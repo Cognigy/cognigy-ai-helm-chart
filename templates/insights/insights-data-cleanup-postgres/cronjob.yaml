@@ -44,19 +44,16 @@ spec:
               args: 
               - -c
               - |
-                psql 'postgresql://'$INSIGHTS_POSTGRES_USER':'$INSIGHTS_POSTGRES_PASSWORD'@'$INSIGHTS_POSTGRES_DB_HOST':'$INSIGHTS_POSTGRES_PORT'/'$INSIGHTS_POSTGRES_DB'?sslmode='$INSIGHTS_POSTGRES_SSL -c "
+                psql 'postgresql://'$INSIGHTS_POSTGRES_USER':'$INSIGHTS_POSTGRES_PASSWORD'@'$INSIGHTS_POSTGRES_HOST':'$INSIGHTS_POSTGRES_PORT'/'$INSIGHTS_POSTGRES_DB'?sslmode='$INSIGHTS_POSTGRES_SSL -c "
                   SET timezone = 'UTC';
                   DELETE FROM PUBLIC.\"analytics\" A WHERE EXISTS (SELECT 1 FROM PUBLIC.\"insightsdeleterequests\" B WHERE A.\"organisation\" = B.\"organisation\" AND A.\"projectId\" = ANY (B.\"projectIds\") AND (A.\"contactId\" = ANY (B.\"contactIds\") OR B.\"contactIds\" IS NULL) AND A.\"timestamp\" <= B.\"requestedAt\" AND B.\"entityName\" = 'analytics' AND B.\"requestedAt\" <= NOW() - INTERVAL '10 minutes');
                   DELETE FROM PUBLIC.\"sessions\" A WHERE EXISTS (SELECT 1 FROM PUBLIC.\"insightsdeleterequests\" B WHERE A.\"organisationId\" = B.\"organisation\" AND A.\"projectId\" = ANY (B.\"projectIds\") AND (A.\"userId\" = ANY (B.\"contactIds\") OR B.\"contactIds\" IS NULL) AND A.\"startedAt\" <= B.\"requestedAt\" AND B.\"entityName\" = 'analytics' AND B.\"requestedAt\" <= NOW() - INTERVAL '10 minutes');
                   DELETE FROM PUBLIC.\"conversations\" A WHERE EXISTS (SELECT 1 FROM PUBLIC.\"insightsdeleterequests\" B WHERE A.\"organisation\" = B.\"organisation\" AND A.\"projectId\" = ANY (B.\"projectIds\") AND (A.\"contactId\" = ANY (B.\"contactIds\") OR B.\"contactIds\" IS NULL) AND A.\"timestamp\" <= B.\"requestedAt\" AND B.\"entityName\" = 'conversations' AND B.\"requestedAt\" <= NOW() - INTERVAL '10 minutes');
+                  DELETE FROM public.\"insightsdeleterequests\" A WHERE A.\"requestedAt\" <= NOW() - INTERVAL '1 days';
                 "
               env:
-              - name: INSIGHTS_POSTGRES_DB_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
-              {{- if $.Values.cubejs.postgresql.readReplica.useReadReplica }}
-              - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.readReplica.host "context" $) | quote }}
-              {{- end }}
+              - name: INSIGHTS_POSTGRES_HOST
+                value: {{ printf "%s-%s" $.Values.cubejs.postgresql.cluster $.Values.cubejs.postgresql.poolerServiceSuffix | quote }}
               - name: INSIGHTS_POSTGRES_DB
                 value: {{ $.Values.cubejs.postgresql.database | quote }}
               - name: INSIGHTS_POSTGRES_SSL
