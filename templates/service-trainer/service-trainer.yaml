@@ -52,6 +52,8 @@ spec:
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
+            - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
+              value: "true"
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
