@@ -1,6 +1,5 @@
 {{- if .Values.serviceCollaboration.enabled }}
 {{- $serviceCollaboration_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceCustomModules.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceCollaboration.serviceName)) }}
-{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- with .Values.serviceCollaboration }}
 ---
 apiVersion: apps/v1
@@ -45,19 +44,8 @@ spec:
                 secretKeyRef:
                   name: {{ $serviceCollaboration_dbSecret }}
                   key: connection-string
-            - name: REDIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $redisHa_secret }}
-                  key: REDIS_PASSWORD
             - name: HTTP_PORT
               value: "8000"
-            - name: REDIS_SENTINEL_MASTER_NAME
-              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_MASTER_NAME }}
-            - name: REDIS_SENTINEL_HOST
-              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_HOST }}
-            - name: REDIS_SENTINEL_PORT
-              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_PORT | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             {{- if .extraEnvVars }}
