@@ -95,8 +95,6 @@ spec:
                     name: {{ $cognigySearchOrchestratorApiKey }}
                     key: api-key
             {{- end }}
-            - name: FEATURE_ENABLE_TRANSCRIPT_MANAGER
-              value: {{ $.Values.featureTranscripts.enabled | quote }}
           ports:
             - name: metrics
               containerPort: 8002

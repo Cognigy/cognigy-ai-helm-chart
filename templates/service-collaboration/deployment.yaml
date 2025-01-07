@@ -1,5 +1,7 @@
 {{- if .Values.serviceCollaboration.enabled }}
+{{- $cognigyCollaborationJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyCollaborationJwt.existingSecret "defaultSecret" "cognigy-collaboration-jwt") }}
 {{- $serviceCollaboration_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceCustomModules.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceCollaboration.serviceName)) }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- with .Values.serviceCollaboration }}
 ---
 apiVersion: apps/v1
@@ -18,6 +20,7 @@ spec:
         app: service-collaboration
       annotations:
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCollaboration_dbSecret) }}{{ $serviceCollaboration_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCollaboration_dbSecret).data | sha256sum }}{{ end }}
+        checksum/cognigy-collaboration-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret) }}{{ $cognigyCollaborationJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -39,13 +42,29 @@ spec:
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
+            - name: COLLABORATION_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyCollaborationJwt_secret }}
+                  key: secret
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
                   name: {{ $serviceCollaboration_dbSecret }}
                   key: connection-string
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $redisHa_secret }}
+                  key: REDIS_PASSWORD
             - name: HTTP_PORT
               value: "8000"
+            - name: REDIS_SENTINEL_MASTER_NAME
+              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_MASTER_NAME }}
+            - name: REDIS_SENTINEL_HOST
+              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_HOST }}
+            - name: REDIS_SENTINEL_PORT
+              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_PORT | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             {{- if .extraEnvVars }}

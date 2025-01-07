@@ -172,8 +172,6 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigyInsightsCollectorApiKey_secret }}
                   key: secret
-            - name: FEATURE_ENABLE_TRANSCRIPT_MANAGER
-              value: {{ $.Values.featureTranscripts.enabled | quote }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
@@ -202,11 +200,9 @@ spec:
               mountPath: /app/extensions
               subPath: extensions
             {{- end }}
-            {{- if $.Values.featureTranscripts.enabled }}
             - name: runtime
               mountPath: /app/transcripts
               subPath: transcripts
-            {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -252,11 +248,9 @@ spec:
           persistentVolumeClaim:
             claimName: flow-modules
         {{- end }}
-        {{- if or ($.Values.migrateFS.enabled) ($.Values.featureTranscripts.enabled) }}
         - name: runtime
           persistentVolumeClaim:
             claimName: runtime
-        {{- end }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}
