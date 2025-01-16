@@ -2825,7 +2825,7 @@ servicePlaybookExecution:
   tolerations: []
   priorityClassName: ""
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:release-7902dcb8f3-1736420880
+  image: cognigy.azurecr.io/service-profiles:release-f140c8917c-1737023742
   replicaCount: 3
   resources:
     requests:
