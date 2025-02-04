@@ -6,22 +6,17 @@
 This chart installs a Cognigy.AI deployment on a [Kubernetes](https://kubernetes.io/) cluster using the [Helm](https://helm.sh/) package manager.
 
 ## Prerequisites
-- Kubernetes v1.19-1.27 running on either:
-  - AWS EKS
-  - Azure AKS
-  - "generic" on-premises or GKE kubernetes platform. Running Cognigy.AI on-premises will require additional manual steps, we recommend to use public clouds (AWS or Azure) instead.
-- kubectl utility connected to the kubernetes cluster
-- Helm v3.9.0 - v3.12.3
-- Persistent Volume provisioner in the underlying infrastructure for Cognigy.AI stateful services (for AWS/Azure no further configuration is required):
-  - Block storage (disks) for Redis Persistent PVC
-  - File storage (NFS) shares for `flow-modules` and `functions` PVCs
+1. A kubernetes cluster configured according to [Prerequisites](https://docs.cognigy.com/ai/installation/prerequisites/).
+2. Kubernetes, kubectl and Helm versions are compatible with Cognigy.AI as specified in [Version Compatibility Matrix](https://docs.cognigy.com/ai/installation/version-compatibility-matrix/).
+3. `kubectl` and `helm` utilities connected to the Kubernetes cluster in administrative mode.
+
 
 ## Dependencies
 1. Create a MongoDB deployment with Cognigy's MongoDB Helm Chart:
    1. MongoDB Deployment must be created in `mongodb` namespace
    2. Deployment must have 3 replicas
    3. Note down `rootUser` and `rootPassword` from the MongoDB Helm release, you will need to set them later in Cognigy.AI configuration.
-2. For AWS only: Create two [EFS volumes](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/efs-volumes.html) for `functions` and `flow-modules` PVCs. Note down their `File system ID` values. **IMPORTANT:** EFS volumes must be reachable from a VPC in which your EKS cluster is running!
+2. _(AWS only)_: Create two [EFS volumes](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/efs-volumes.html) for `functions` and `flow-modules` PVCs. Note down their `File system ID` values. **IMPORTANT:** EFS volumes must be reachable from a VPC in which your EKS cluster is running!
 3. For generic (GKE on GCP or on-premises) cloud providers you need to prepare following objects for stateful services manually:
    1. `flow-modules` and `functions` file storage PVCs in `cognigy-ai` namespace (the same namespace where Cognigy.AI will be deployed) with:
       - `accessModes`: `ReadWriteMany`

@@ -1,0 +1,16 @@
+{{- if (not .Values.commonSecrets.cognigyNiceCXOneAAHApiKey.existingSecret) }}
+  {{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-nice-cxone-aah-api-key") }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-nice-cxone-aah-api-key
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  # use 16 bytes of random value, hex
+  api-key: "{{ .Values.commonSecrets.cognigyNiceCXOneAAHApiKey.token  | default (printf "%x" (randAlphaNum 16)) | b64enc }}"
+  {{- end }}
+{{- end }}
