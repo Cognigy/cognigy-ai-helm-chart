@@ -1,0 +1,36 @@
+{{- if .Values.serviceSentinel.enabled }}
+#
+# Role so we can control to which type of API objects we actually
+# have access.
+#
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: service-sentinel-prometheus-admin
+  namespace: {{ $.Release.Namespace | quote }}
+rules:
+- apiGroups: ["monitoring.coreos.com"]
+  resources: ["prometheusrules"]
+  verbs: ["get", "create", "update", "delete", "patch"]
+
+#
+# RoleBinding so service-sentinel service account has access to the Role above
+# in order to programmatically create PrometheusRules.
+#
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: service-sentinel-prometheus-admin
+  namespace: {{ $.Release.Namespace | quote }}
+subjects:
+- kind: ServiceAccount
+  name: service-sentinel
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: service-sentinel-prometheus-admin
+  apiGroup: rbac.authorization.k8s.io
+
+{{- end }}

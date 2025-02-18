@@ -134,6 +134,13 @@ spec:
               - key: connection-string
                 path: cognigy-service-collaboration
 {{- end }}
+{{- if .Values.serviceSentinel.enabled }}
+          - secret:
+              name: cognigy-service-sentinel
+              items:
+              - key: connection-string
+                path: cognigy-service-sentinel
+{{- end }}
           - secret:
               name: cognigy-service-function-scheduler
               items:

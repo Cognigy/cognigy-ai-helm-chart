@@ -16,17 +16,17 @@ This chart installs a Cognigy.AI deployment on a [Kubernetes](https://kubernetes
    1. MongoDB Deployment must be created in `mongodb` namespace
    2. Deployment must have 3 replicas
    3. Note down `rootUser` and `rootPassword` from the MongoDB Helm release, you will need to set them later in Cognigy.AI configuration.
-2. _(AWS only)_: Create two [EFS volumes](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/efs-volumes.html) for `functions` and `flow-modules` PVCs. Note down their `File system ID` values. **IMPORTANT:** EFS volumes must be reachable from a VPC in which your EKS cluster is running!
+2. _(AWS only)_: Create four [EFS volumes](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/efs-volumes.html) for `flow-modules`, `functions`,`ide` and `runtime` PVCs. Note down their `File system ID` values. **IMPORTANT:** EFS volumes must be reachable from a VPC in which your EKS cluster is running!
 3. For generic (GKE on GCP or on-premises) cloud providers you need to prepare following objects for stateful services manually:
-   1. `flow-modules` and `functions` file storage PVCs in `cognigy-ai` namespace (the same namespace where Cognigy.AI will be deployed) with:
+   1. `flow-modules`, `functions`,`ide` and `runtime` file storage PVCs in `cognigy-ai` namespace (the same namespace where Cognigy.AI will be deployed) with:
       - `accessModes`: `ReadWriteMany`
       - `requests.storage: 100Gi`
    Provisioning of such PVCs depends on [Storage Class Provisioners](https://kubernetes.io/docs/concepts/storage/storage-classes/#provisioner) with `ReadWriteMany` access mode supported by your underlying infrastructure (typically NFS). Please, contact official documentation of your cloud provider for that.
    2. `redis-persistent-ha` `StorageClass` for `redis-persistent-ha` PVCs. See [values.yaml](values.yaml) as a reference for AWS or Azure. The storage class must support equal performance parameters in terms of IOPS and bandwidth.
 
 ## Configuration
-To deploy a new Cognigy.AI setup you need to create a separate file with Helm release values. You can use `values_prod.yaml` as a baseline, we recommend to start with it:
-1. Make a copy of `values_prod.yaml` into a new file and name it accordingly, we refer to it as `YOUR_VALUES_FILE.yaml` later in this document. 
+To deploy a new Cognigy.AI setup, you need to create a separate file with Helm release values. We provided three `values_prod_<cloud>.yaml` options which are applicable for `AWS`, `Azure` and `Generic`. You can use those as a baseline, we recommend to start with it:
+1. Copy the relevant `values_prod_<cloud>.yaml` file, rename it appropriately, and use it as your custom configuration. We will refer to this file as `YOUR_VALUES_FILE.yaml` throughout this document. 
 2. **Do not make** a copy of default `values.yaml` file as it contains hardcoded docker images references for all microservices, and in this case you will need to change all of them manually during upgrades. However, you can add some variables from default `values.yaml` file into your customized `YOUR_VALUES_FILE.yaml` later on, e.g. for tweaking CPU/RAM resources of Cognigy.AI microservices. We describe this process later in the document.
 
 ### Setting Essential Parameters
@@ -34,7 +34,7 @@ You need to set at least following parameters in `YOUR_VALUES_FILE.yaml`:
 1. Cognigy.AI Image repository credentials: set `imageCredentials.username` and `imageCredentials.password` accordingly.
 2. Cloud Provider and Region: set `cloud.provider` and `cloud.region` variables accordingly. You do not need to set `cloud.region` for `generic` cloud provider.
 3. MongoDB root credentials: set `mongodb.auth` `username` and `password` to `rootUser` and `rootPassword` values of MongoDB helm release created before.
-4. **AWS only**: EFS system IDs: set `flowModules.id` and `functions.id` in `efs` section according to `File system ID` values created previously.
+4. **AWS only**: EFS system IDs: set `flowModules.persistence.aws.efs.id`, `functions.persistence.aws.efs.id`, `storageClass.aws.efs.ide.fileSystemId` and `storageClass.aws.efs.runtime.fileSystemId` according to `File system ID` values created previously.
 5. Management UI: if you are going to use Management UI component:
    1. create `username` and `password` for Management UI interface in `managementUiCredentials` variable.
    2. follow the section [Install Management-UI](#install-management-ui) below
@@ -61,6 +61,10 @@ ingress:
     host: "yourdomain.com"
   serviceWebchat:
     host: "webchat-yourdomain.com"
+  serviceAppSessionManager:
+    host: "apps-yourdomain.com"
+  serviceCollector:
+    host: "insights-collector-yourdomain.com"
 ```
 Cognigy.AI relies on SSL-encrypted connection between the client and the services You need to provide an SSL certificate for the domain in which DNS records for Cognigy.AI will be created, for this put the SSL certificate under `tls.crt` and its private key under `tls.key`. If you have a certificate chain, make sure you provide the whole certificate chain under `tls.crt` in [.pem format](https://www.digicert.com/kb/ssl-support/pem-ssl-creation.htm). 
 

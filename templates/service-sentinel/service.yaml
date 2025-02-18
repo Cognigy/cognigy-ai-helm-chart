@@ -1,0 +1,21 @@
+{{- if .Values.serviceSentinel.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-sentinel
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-sentinel
+  annotations:
+    {{- if .Values.service.serviceSentinel.annotations }}
+      {{- toYaml .Values.service.serviceSentinel.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: service-sentinel
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-sentinel
+{{- end }}

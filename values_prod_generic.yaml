@@ -15,32 +15,7 @@ imageCredentials:
 # - azure
 # - generic for on-premises installation e.g. with OpenShift
 cloud:
-  provider: aws
-  ## For AWS cloud provider only
-  ## specify region for EKS cluster and EFS volumes
-  region: ""
-
-## For AWS cloud provider only:
-## Cognigy Flow Modules
-##
-flowModules:
-  persistence:
-    ## For AWS cloud provider only
-    ##
-    aws:
-      efs:
-        id: ""
-
-## For AWS cloud provider only:
-## Cognigy Functions
-##
-functions:
-  persistence:
-    ## For AWS cloud provider only
-    ##
-    aws:
-      efs:
-        id: ""
+  provider: generic
 
 cognigyLiveAgent:
   platformToken: ""
@@ -91,9 +66,9 @@ ingress:
     host: ""
   serviceWebchat:
     host: ""
-  agentAssistBackend:
+  serviceAppSessionManager:
     host: ""
-  agentAssistFrontend:
+  serviceCollector:
     host: ""
 
 amazonCredentials:
@@ -123,11 +98,3 @@ serviceNlpClassifierScoreEn:
 
 serviceNlpClassifierTrainEn:
   enabled: true
-## You can use the x-forwarded-for header to collect the source IP on EKS cluster configured
-# with classic load balancer following the below code. For other system this part needs to be
-# configured with proper annotation specified with the Load balancer you are using.
-
-# traefik:
-#   service:
-#     annotations:
-#       "service.beta.kubernetes.io/aws-load-balancer-proxy-protocol" : "*"

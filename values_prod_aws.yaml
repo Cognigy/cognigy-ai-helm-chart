@@ -1,0 +1,154 @@
+mongodb:
+  auth:
+    rootUser: root
+    rootPassword: ""
+  # Connection string for MongoDB replica set deployed with Cognigy MongoDB Helm Chart into 3 availability zones:
+  hosts: mongodb-0.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-1.mongodb-headless.mongodb.svc.cluster.local:27017,mongodb-2.mongodb-headless.mongodb.svc.cluster.local:27017
+
+imageCredentials:
+  registry: "cognigy.azurecr.io"
+  username: ""
+  password: ""
+
+# Cognigy supports 3 cloud providers:
+# - aws
+# - azure
+# - generic for on-premises installation e.g. with OpenShift
+cloud:
+  provider: aws
+  ## For AWS cloud provider only
+  ## specify region for EKS cluster and EFS volumes
+  region: ""
+
+## For AWS cloud provider only:
+## Cognigy Flow Modules
+##
+flowModules:
+  persistence:
+    ## For AWS cloud provider only
+    ##
+    aws:
+      efs:
+        efs_csi:
+          enabled: true
+        id: ""
+
+## For AWS cloud provider only:
+## Cognigy Functions
+##
+functions:
+  persistence:
+    ## For AWS cloud provider only
+    ##
+    aws:
+      efs:
+        efs_csi:
+          enabled: true
+        id: ""
+
+storageClass:
+  aws:
+    efs:
+      ide:
+        fileSystemId: ""
+      runtime:
+        fileSystemId: ""
+
+cognigyLiveAgent:
+  platformToken: ""
+
+cognigyAgentAssist:
+  enabled: false
+  enableGenesysNotificationsForwarder: false
+  accessToken: ""
+
+# Install Management UI on the cluster.
+# It is not required, since if not installed and the API endpoint is accessible from the Internet,
+# you can still use the provided Management UI at https://management-ui-v4.cognigy.ai/
+managementUi:
+  enabled: false
+  ingress:
+    enabled: true
+    host: ""
+
+# managementUiCredentials: '[{"username": "example_username", "password": "example_password"}]'
+managementUiCredentials: "[]"
+
+smtpPassword: ""
+
+tls:
+  # Careful with the indentation
+  # For more information, see https://helm.sh/docs/chart_template_guide/yaml_techniques/#strings-in-yaml
+  crt: |
+    -----BEGIN CERTIFICATE-----
+    -----END CERTIFICATE-----
+  key: |
+    -----BEGIN PRIVATE KEY-----
+    -----END PRIVATE KEY-----
+
+ingress:
+  serviceAnalyticsOdata:
+    host: ""
+  serviceApi:
+    host: ""
+  serviceEndpoint:
+    host: ""
+  serviceInsightsApi:
+    host: ""
+  serviceRuntimeFileManager:
+    host: ""
+  serviceStaticFiles:
+    host: ""
+  serviceUi:
+    host: ""
+  serviceWebchat:
+    host: ""
+  serviceAppSessionManager:
+    host: ""
+  serviceCollector:
+    host: ""
+
+amazonCredentials:
+  clientId: ""
+  clientSecret: ""
+
+## Configure Container or Pod Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+
+# serviceAi:
+#   securityContext: {}
+
+## Enable NLPv2 Stack
+## For more details on language packs see: https://docs.cognigy.com/ai/installation/migration/from-nlu-v1-to-v2-migration/#install-the-nlp-v2-stack
+cognigyEnv:
+  FEATURE_USE_SERVICE_NLP_V2: "true"
+  FEATURE_MIGRATE_SNAPSHOTS_TO_NLP_V2: "true"
+
+serviceNlpOrchestrator:
+  enabled: true
+
+serviceNlpEmbeddingEn:
+  enabled: true
+
+serviceNlpClassifierScoreEn:
+  enabled: true
+
+serviceNlpClassifierTrainEn:
+  enabled: true
+
+## Create custom PVC(s) for stateful services
+##
+persistentVolumeClaim:
+  enabled: true
+  runtime:
+    storage: 1Mi
+  ide:
+    storage: 1Mi
+## You can use the x-forwarded-for header to collect the source IP on EKS cluster configured
+# with classic load balancer following the below code. For other system this part needs to be
+# configured with proper annotation specified with the Load balancer you are using.
+
+# traefik:
+#   service:
+#     annotations:
+#       "service.beta.kubernetes.io/aws-load-balancer-proxy-protocol" : "*"
