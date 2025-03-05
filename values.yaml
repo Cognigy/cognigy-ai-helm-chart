@@ -2927,7 +2927,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-b3834c9a1d-1740741476
+  image: cognigy.azurecr.io/service-resources:release-8f5af395fb-1741187869
   replicaCount: 3
   resources:
     requests:
@@ -3609,7 +3609,7 @@ taskIngestKnowledgeChunks:
   priorityClassName: ""
 
 taskCreatePackageNfs:
-  image: cognigy.azurecr.io/service-resources:release-b3834c9a1d-1740741476
+  image: cognigy.azurecr.io/service-resources:release-8f5af395fb-1741187869
   resources:
     requests:
       cpu: "1"
