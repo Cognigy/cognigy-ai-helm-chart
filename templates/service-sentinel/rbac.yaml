@@ -11,7 +11,7 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
 rules:
 - apiGroups: ["monitoring.coreos.com"]
-  resources: ["prometheusrules"]
+  resources: ["prometheusrules", "alertmanagerconfigs"]
   verbs: ["get", "create", "update", "delete", "patch"]
 
 #

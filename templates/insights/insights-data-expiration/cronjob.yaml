@@ -19,13 +19,16 @@ spec:
             {{- toYaml .Values.cubejs.dataExpiration.securityContext | nindent 12 }}
           restartPolicy: OnFailure
           {{- if .Values.cubejs.dataExpiration.affinity }}
-          affinity: {{- include "common.tplvalues.render" (dict "value" .Values.cubejs.dataExpiration.affinity "context" $) | nindent 8 }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .Values.cubejs.dataExpiration.affinity "context" $) | nindent 12 }}
           {{- end }}
           {{- if .Values.cubejs.dataExpiration.nodeSelector }}
-          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.cubejs.dataExpiration.nodeSelector "context" $) | nindent 8 }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.cubejs.dataExpiration.nodeSelector "context" $) | nindent 12 }}
           {{- end }}
           {{- if .Values.cubejs.dataExpiration.tolerations }}
-          tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.cubejs.dataExpiration.tolerations "context" $) | nindent 8 }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.cubejs.dataExpiration.tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.cubejs.dataExpiration.priorityClassName }}
+          priorityClassName: {{ .Values.cubejs.dataExpiration.priorityClassName }}
           {{- end }}
           containers:
             - name: insights-data-expiration

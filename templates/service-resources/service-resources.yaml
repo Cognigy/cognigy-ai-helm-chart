@@ -3,6 +3,7 @@
 {{- $redisPersistentHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisPersistentHa.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
+{{- $platformProvidedLLM_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.platformProvidedLLM.azure.credentials.existingSecret "defaultSecret" "cognigy-platform-provided-llm-credentials") }}
 {{- with .Values.serviceResources }}
 ---
 apiVersion: apps/v1
@@ -27,6 +28,12 @@ spec:
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceResources_dbSecret) }}{{ $serviceResources_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceResources_dbSecret).data | sha256sum }}{{ end }}
         {{- if $.Values.knowledgeSearch.enabled }}
         checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
+        {{- end }}
+        {{- if and $.Values.platformProvidedLLM.whitelist (eq $.Values.platformProvidedLLM.provider "azureOpenAI") }}
+        checksum/platform-provided-llm-azure-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $platformProvidedLLM_secret) }}{{ $platformProvidedLLM_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $platformProvidedLLM_secret).data | sha256sum }}{{ end }}
+        {{- end }}
+        {{- if $.Values.platformProvidedLLM.whitelist }}
+        checksum/cognigy-platform-provided-llm-config: {{ include (print $.Template.BasePath "/configurations/cognigy-platform-provided-llm-config.yaml") $ | sha256sum }}
         {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
@@ -85,6 +92,13 @@ spec:
               value: {{ $.Values.migrateFS.enabled | quote }}
             - name: FEATURE_DEPRECATE_OLD_NFS
               value: {{ $.Values.migrateFS.finished | quote }}
+            {{- if and $.Values.platformProvidedLLM.whitelist (eq $.Values.platformProvidedLLM.provider "azureOpenAI") }}
+            - name: FEATURE_PLATFORM_PROVIDED_LLM_AZURE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $platformProvidedLLM_secret }}
+                  key: platform-provided-llm-azure-api-key
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -101,6 +115,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: cognigy-env
+            {{- if $.Values.platformProvidedLLM.whitelist }}
+            - configMapRef:
+                name: cognigy-platform-provided-llm-config
+            {{- end }}
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString

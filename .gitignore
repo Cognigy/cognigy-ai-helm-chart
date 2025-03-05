@@ -36,3 +36,5 @@ ui.test/
 minica-key.pem
 minica.pem
 _local_dev/
+
+.cursor

@@ -1,0 +1,17 @@
+{{- if .Values.platformProvidedLLM.whitelist }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cognigy-platform-provided-llm-config
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  FEATURE_PLATFORM_PROVIDED_LLM_WHITELIST: {{ join "," .Values.platformProvidedLLM.whitelist | quote }}
+  FEATURE_PLATFORM_PROVIDED_LLM_PROVIDER: {{ .Values.platformProvidedLLM.provider | quote }}
+  FEATURE_PLATFORM_PROVIDED_LLM_MODEL: {{ .Values.platformProvidedLLM.model | quote }}
+
+  {{- if eq .Values.platformProvidedLLM.provider "azureOpenAI" }}
+  FEATURE_PLATFORM_PROVIDED_LLM_AZURE_RESOURCE_NAME: {{ .Values.platformProvidedLLM.azure.resourceName | quote }}
+  FEATURE_PLATFORM_PROVIDED_LLM_AZURE_DEPLOYMENT_NAME: {{ .Values.platformProvidedLLM.azure.deploymentName | quote }}
+  FEATURE_PLATFORM_PROVIDED_LLM_AZURE_API_VERSION: {{ .Values.platformProvidedLLM.azure.apiVersion | quote }}
+  {{- end }}
+{{- end }} 

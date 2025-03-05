@@ -30,6 +30,9 @@ spec:
       {{- if .Values.mongodb.dbinit.tolerations }}
       tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.mongodb.dbinit.tolerations "context" $) | nindent 8 }}
       {{- end }}
+      {{- if .Values.mongodb.dbinit.priorityClassName }}
+      priorityClassName: {{ .Values.mongodb.dbinit.priorityClassName }}
+      {{- end }}
       containers:
       - name: cognigy-ai-db-init
         image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.mongodb.dbinit.image) }}

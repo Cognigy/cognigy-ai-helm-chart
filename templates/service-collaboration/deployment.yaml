@@ -20,6 +20,7 @@ spec:
       labels:
         app: service-collaboration
       annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCollaboration_dbSecret) }}{{ $serviceCollaboration_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCollaboration_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-collaboration-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret) }}{{ $cognigyCollaborationJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
@@ -43,6 +44,9 @@ spec:
         - name: service-collaboration
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
           env:
             - name: COLLABORATION_JWT_SECRET
               valueFrom:
@@ -66,12 +70,18 @@ spec:
                   key: connection-string
             - name: HTTP_PORT
               value: "8000"
-            - name: REDIS_SENTINEL_MASTER_NAME
-              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_MASTER_NAME }}
-            - name: REDIS_SENTINEL_HOST
-              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_HOST }}
-            - name: REDIS_SENTINEL_PORT
-              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_PORT | quote }}
+            - name: TRACING_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
+            - name: TRACING_BASE_URL_WITH_PROTOCOL
+              value: {{ $.Values.tracing.sentry.runtime.baseUrl | quote }}      
+            - name: TRACING_ERRORS_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.errorsEnabled | quote }}
+            - name: TRACING_EVENTS_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.eventsSampleRate | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.sampleRate | quote }}
+            - name: ENVIRONMENT
+              value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             {{- if .extraEnvVars }}

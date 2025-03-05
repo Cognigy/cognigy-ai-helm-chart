@@ -23,6 +23,9 @@ spec:
         checksum/cognigy-voicegateway-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret) }}{{ $cognigyVoicegatewayClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-live-agent-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret) }}{{ $cognigyLiveAgentCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret) }}{{ $cognigyServiceEndpointApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.platformProvidedLLM.whitelist }}
+        checksum/platform-provided-llm-whitelist: "{{ toJson $.Values.platformProvidedLLM.whitelist | sha256sum }}"
+        {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -78,6 +81,10 @@ spec:
                   key: api-access-token
             - name: KNOWLEDGE_AI__AZURE_DOCUMENT_INTELLIGENCE_IS_CONFIGURED_SYSTEM_WIDE
               value: {{ $globalAzureDocumentIntelligenceEnabled }}
+            {{- if $.Values.platformProvidedLLM.whitelist }}
+            - name: FEATURE_PLATFORM_PROVIDED_LLM_WHITELIST
+              value: {{ join "," $.Values.platformProvidedLLM.whitelist | quote }}
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
