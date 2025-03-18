@@ -9,6 +9,8 @@ kind: Deployment
 metadata:
   name: agent-assist-genesys-notifications-forwarder
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: iron
 spec:
   selector:
     matchLabels:

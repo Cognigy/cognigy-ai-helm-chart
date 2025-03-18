@@ -1,0 +1,193 @@
+{{- if .Values.serviceSentinel.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-ops-center-metrics-config
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  metricsConfig.json: |
+    {
+      "meta": {},
+      "config": {
+        "voice-gateway": [
+          {
+            "type": "bar-chart",
+            "title": "Voice Gateway Usage",
+            "description": "Shows voice gateway usage over time",
+            "queryConfig": {
+              "metric": "sum(increase(vg_feature_server_call_session_count[1m]))",
+              "isPositiveTrend": true
+            },
+            "showCounts": true,
+            "chartConfig": {
+              "color": "#4287f5",
+              "height": 200
+            },
+            "meta": {
+              "xs": 12,
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "xl": 4
+            }
+          }
+        ],
+        "endpoints": [
+          {
+            "type": "line-chart",
+            "title": "Endpoint Traffic",
+            "description": "Shows endpoint request volume",
+            "queryConfig": {
+              "metric": "sum(increase(cognigy_endpoint_raw_messages_count[1m]))",
+              "isPositiveTrend": true
+            },
+            "showCounts": true,
+            "chartConfig": {
+              "color": "#42f5a1",
+              "height": 200
+            },
+            "meta": {
+              "xs": 12,
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "xl": 4
+            }
+          },
+          {
+            "type": "heat-map",
+            "title": "Transformer Processing Time",
+            "description": "The time it took to process the Transformers.",
+            "queryConfig": {
+              "metric": "sum by (le)(increase(cognigy_endpoint_transformer_execution_time_bucket[1m]))",
+              "isPositiveTrend": true
+            },
+            "showCounts": false,
+            "chartConfig": {
+              "color": "#42f5a1",
+              "height": 230
+            },
+            "meta": {
+              "xs": 12,
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "xl": 4
+            }
+          },
+          {
+            "type": "heat-map",
+            "title": "Message Processing Time",
+            "description": "The time it took to process a single message",
+            "queryConfig": {
+              "metric": "sum by(le) (increase(cognigy_endpoint_raw_messages_response_time_bucket[1m]))",
+              "isPositiveTrend": true
+            },
+            "showCounts": false,
+            "chartConfig": {
+              "color": "#42f5a1",
+              "height": 230
+            },
+            "meta": {
+              "xs": 12,
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "xl": 4
+            }
+          },
+          {
+            "type": "line-chart",
+            "title": "Transformer Errors",
+            "description": "Total number of errors in Endpoint Transformers",
+            "queryConfig": {
+              "metric": "sum(increase(cognigy_endpoint_transformer_error_count[1m]))",
+              "isPositiveTrend": true
+            },
+            "showCounts": true,
+            "chartConfig": {
+              "color": "#42f5a1",
+              "height": 200
+            },
+            "meta": {
+              "xs": 12,
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "xl": 4
+            }
+          }
+        ],
+        "flows": [
+          {
+            "type": "heat-map",
+            "title": "Flow Usage",
+            "description": "Shows most used flows",
+            "queryConfig": {
+              "metric": "dummy_flow_query",
+              "isPositiveTrend": true
+            },
+            "showCounts": false,
+            "chartConfig": {
+              "color": "#f54242",
+              "height": 200
+            },
+            "meta": {
+              "xs": 12,
+              "sm": 12,
+              "md": 12,
+              "lg": 12,
+              "xl": 8
+            }
+          }
+        ],
+        "overview": [
+          {
+            "type": "line-chart",
+            "title": "System Overview",
+            "description": "High level system metrics",
+            "queryConfig": {
+              "metric": "dummy_overview_query",
+              "isPositiveTrend": true
+            },
+            "showCounts": true,
+            "chartConfig": {
+              "color": "#f5d442",
+              "height": 200
+            },
+            "meta": {
+              "xs": 12,
+              "sm": 12,
+              "md": 12,
+              "lg": 12,
+              "xl": 12
+            }
+          }
+        ],
+        "handover-provider": [
+          {
+            "type": "bar-chart",
+            "title": "Handover Metrics",
+            "description": "Shows handover provider usage",
+            "queryConfig": {
+              "metric": "dummy_handover_query",
+              "isPositiveTrend": true
+            },
+            "showCounts": true,
+            "chartConfig": {
+              "color": "#9442f5",
+              "height": 200
+            },
+            "meta": {
+              "xs": 12,
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "xl": 4
+            }
+          }
+        ]
+      }
+    }
+
+{{- end}}

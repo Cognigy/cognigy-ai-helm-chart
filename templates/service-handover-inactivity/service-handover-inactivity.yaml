@@ -8,6 +8,8 @@ kind: Deployment
 metadata:
   name: service-handover-inactivity
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: iron
 spec:
   selector:
     matchLabels:

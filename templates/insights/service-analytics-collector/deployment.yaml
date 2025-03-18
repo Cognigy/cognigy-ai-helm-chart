@@ -8,6 +8,8 @@ kind: Deployment
 metadata:
   name: service-analytics-collector
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
 spec:
   selector:
     matchLabels:

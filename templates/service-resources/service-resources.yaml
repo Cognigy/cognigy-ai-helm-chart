@@ -11,6 +11,8 @@ kind: Deployment
 metadata:
   name: service-resources
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
 spec:
   selector:
     matchLabels:

@@ -6,6 +6,7 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: cube-api-server
+    owner-team: gold
   annotations:
     {{- if .Values.service.cubeApiServer.annotations }}
       {{- toYaml .Values.service.cubeApiServer.annotations | nindent 4 }}

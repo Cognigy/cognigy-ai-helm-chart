@@ -5,6 +5,7 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: service-insights-ui
+    owner-team: gold
   annotations:
   {{- if .Values.service.serviceInsightsUi.annotations }}
     {{- toYaml .Values.service.serviceInsightsUi.annotations | nindent 4 }}

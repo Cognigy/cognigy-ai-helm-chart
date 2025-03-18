@@ -8,6 +8,8 @@ kind: Deployment
 metadata:
   name: service-task-manager
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
 spec:
   selector:
     matchLabels:

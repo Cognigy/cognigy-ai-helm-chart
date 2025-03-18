@@ -6,6 +6,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: cubejs-cubestore-pvc
   namespace: {{ .Release.Namespace }}
+  labels:
+    owner-team: gold
 spec:
   accessModes:
     - ReadWriteMany
