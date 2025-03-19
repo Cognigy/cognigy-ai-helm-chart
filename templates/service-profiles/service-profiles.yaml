@@ -8,8 +8,6 @@ kind: Deployment
 metadata:
   name: service-profiles
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
 spec:
   selector:
     matchLabels:

@@ -1,4 +1,3 @@
-{{- if (not .Values.migrateFS.finished) }}
 {{- if eq .Values.cloud.provider "azure" }}
 ---
 apiVersion: v1
@@ -14,5 +13,4 @@ spec:
     requests:
       storage: {{ .Values.functions.persistence.size | default "100Gi" }}
 
-{{ end }}
 {{ end }}

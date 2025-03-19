@@ -7,8 +7,6 @@ kind: Secret
 metadata:
   name: cognigy-service-analytics-odata-tls
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
 type: kubernetes.io/tls
 data:
   # your base64 encoded tls certificate

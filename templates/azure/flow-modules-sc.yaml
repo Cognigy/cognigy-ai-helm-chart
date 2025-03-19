@@ -1,4 +1,3 @@
-{{- if (not .Values.migrateFS.finished) }}
 {{- if and (eq .Values.cloud.provider "azure") (not (.Values.flowModules.persistence.storageClass)) }}
 ---
 kind: StorageClass
@@ -17,5 +16,4 @@ mountOptions:
 parameters:
   skuName: Premium_LRS
 
-{{ end }}
 {{ end }}

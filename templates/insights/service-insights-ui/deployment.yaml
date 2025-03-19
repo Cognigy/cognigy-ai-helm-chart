@@ -6,8 +6,6 @@ kind: Deployment
 metadata:
   name: service-insights-ui
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
 spec:
   selector:
     matchLabels:

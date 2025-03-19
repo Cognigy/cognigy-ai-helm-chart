@@ -5,8 +5,6 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: service-profiles
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
 spec:
   scaleTargetRef:
     kind: Deployment

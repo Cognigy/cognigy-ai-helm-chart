@@ -9,8 +9,6 @@ kind: Deployment
 metadata:
   name: service-collector
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
 spec:
   selector:
     matchLabels:

@@ -1,4 +1,3 @@
-{{- if (not .Values.migrateFS.finished) }}
 {{- if and (eq .Values.cloud.provider "aws") (.Values.functions.persistence.aws.efs.enabled) }}
 {{- if (not (.Values.functions.persistence.aws.efs.efs_csi.enabled)) }}
 ---
@@ -92,6 +91,5 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
-{{ end }}
 {{ end }}
 {{ end }}

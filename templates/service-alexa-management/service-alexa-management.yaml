@@ -8,8 +8,6 @@ kind: Deployment
 metadata:
   name: service-alexa-management
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: boron
 spec:
   selector:
     matchLabels:

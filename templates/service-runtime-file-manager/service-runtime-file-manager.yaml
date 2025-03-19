@@ -9,8 +9,6 @@ kind: Deployment
 metadata:
   name: service-runtime-file-manager
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: boron
 spec:
   selector:
     matchLabels:

@@ -7,8 +7,6 @@ kind: Deployment
 metadata:
   name: service-playbook-execution
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
 spec:
   selector:
     matchLabels:

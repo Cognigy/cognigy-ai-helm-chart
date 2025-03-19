@@ -6,8 +6,6 @@ kind: StatefulSet
 metadata:
   name: cube-store-router
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
 spec:
   replicas: {{ .replicaCount }}
   serviceName: cube-store-router

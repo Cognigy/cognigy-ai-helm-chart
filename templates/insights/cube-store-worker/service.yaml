@@ -8,7 +8,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: cube-store-worker
-    owner-team: gold
   annotations:
     {{- if .Values.service.cubeStoreWorker.annotations }}
       {{- toYaml .Values.service.cubeStoreWorker.annotations | nindent 4 }}

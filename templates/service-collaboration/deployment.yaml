@@ -1,6 +1,6 @@
 {{- if .Values.serviceCollaboration.enabled }}
 {{- $cognigyCollaborationJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyCollaborationJwt.existingSecret "defaultSecret" "cognigy-collaboration-jwt") }}
-{{- $serviceCollaboration_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceCollaboration.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceCollaboration.serviceName)) }}
+{{- $serviceCollaboration_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceCustomModules.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceCollaboration.serviceName)) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- with .Values.serviceCollaboration }}
@@ -44,9 +44,6 @@ spec:
         - name: service-collaboration
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
-          ports:
-            - name: metrics
-              containerPort: 8002
           envFrom:
             - configMapRef:
                 name: cognigy-env
@@ -90,18 +87,6 @@ spec:
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
-          startupProbe:
-            httpGet:
-              path: /health/startup
-              port: 8001
-          livenessProbe:
-            httpGet:
-              path: /health/liveness
-              port: 8001
-            failureThreshold: 3
-            initialDelaySeconds: 90
-            periodSeconds: 60
-            timeoutSeconds: 10
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

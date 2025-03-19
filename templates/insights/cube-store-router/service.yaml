@@ -8,7 +8,6 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: cube-store-router
-    owner-team: gold
   annotations:
     {{- if .Values.service.cubeStoreRouter.annotations }}
       {{- toYaml .Values.service.cubeStoreRouter.annotations | nindent 4 }}

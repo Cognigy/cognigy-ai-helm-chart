@@ -8,8 +8,6 @@ kind: Deployment
 metadata:
   name: service-insights-forwarder
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
 spec:
   selector:
     matchLabels:
