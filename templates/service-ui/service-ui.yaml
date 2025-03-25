@@ -10,6 +10,8 @@ kind: Deployment
 metadata:
   name: service-ui
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
 spec:
   selector:
     matchLabels:

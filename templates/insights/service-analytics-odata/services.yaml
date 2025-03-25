@@ -5,6 +5,7 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: service-analytics-odata
+    owner-team: gold
   annotations:
   {{- if .Values.service.serviceAnalyticsOdata.annotations }}
     {{- toYaml .Values.service.serviceAnalyticsOdata.annotations | nindent 4 }}

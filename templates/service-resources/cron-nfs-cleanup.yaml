@@ -5,6 +5,8 @@ kind: CronJob
 metadata:
   name: cron-nfs-cleanup
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: {{ .concurrencyPolicy }}

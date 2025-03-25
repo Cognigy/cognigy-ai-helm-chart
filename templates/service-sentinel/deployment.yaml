@@ -8,6 +8,8 @@ kind: Deployment
 metadata:
   name: service-sentinel
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
 spec:
   selector:
     matchLabels:
@@ -78,6 +80,18 @@ spec:
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
+          volumeMounts:
+            #
+            # This configuration will get reloaded on a regular basis
+            # (default is 1 minute). So we don't need to compute a checksum
+            # and restart the container when the config changes!
+            #
+            - name: ai-ops-center-metrics-config-volume
+              mountPath: /etc/config
+      volumes:
+        - name: ai-ops-center-metrics-config-volume
+          configMap:
+            name: {{ default "ai-ops-center-metrics-config" .alternateMetricsConfigmap }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

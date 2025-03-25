@@ -9,6 +9,8 @@ kind: Deployment
 metadata:
   name: service-app-session-manager
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: iron
 spec:
   selector:
     matchLabels:

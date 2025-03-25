@@ -12,6 +12,8 @@ kind: Deployment
 metadata:
   name: service-handover
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: iron
 spec:
   selector:
     matchLabels:
@@ -111,10 +113,9 @@ spec:
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           livenessProbe:
-            exec:
-              command:
-                - node
-                - /opt/healthcheck.js
+            httpGet:
+              path: /
+              port: 8001
             failureThreshold: 3
             initialDelaySeconds: 90
             periodSeconds: 60

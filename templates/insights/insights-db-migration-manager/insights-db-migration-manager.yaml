@@ -12,6 +12,8 @@ metadata:
     "helm.sh/hook": {{ .helmHook.hook | quote }}
     "helm.sh/hook-weight": {{ .helmHook.hookWeight | quote }}
     "helm.sh/hook-delete-policy": {{ .helmHook.deletePolicy | quote }}
+  labels:
+    owner-team: gold
 spec:
   template:
     metadata:

@@ -7,6 +7,8 @@ kind: Deployment
 metadata:
   name: service-webchat
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
 spec:
   selector:
     matchLabels:

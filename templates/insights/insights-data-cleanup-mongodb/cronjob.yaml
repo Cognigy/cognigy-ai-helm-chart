@@ -8,6 +8,8 @@ kind: CronJob
 metadata:
   name: insights-data-cleanup-mongodb
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: {{ .concurrencyPolicy }}

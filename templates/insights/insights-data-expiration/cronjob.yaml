@@ -6,6 +6,8 @@ kind: CronJob
 metadata:
   name: insights-data-expiration
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
 spec:
   schedule: "*/15 * * * *"
   concurrencyPolicy: Forbid

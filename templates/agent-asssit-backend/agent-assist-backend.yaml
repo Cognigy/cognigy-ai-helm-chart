@@ -12,6 +12,8 @@ kind: Deployment
 metadata:
   name: agent-assist-backend
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: iron
 spec:
   selector:
     matchLabels:
