@@ -22,6 +22,7 @@ data:
 
 ---
 {{- if .Values.ingress.enabled }}
+  {{- $ingressData := dict "name" "servicewebchat" "ingress" $.Values.ingress.serviceWebchat "release" $.Release }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -33,9 +34,7 @@ metadata:
     {{- else }}
     traefik.ingress.kubernetes.io/router.entrypoints: web
     {{- end }}
-    {{- if .Values.ingress.serviceWebchat.ipWhiteListMiddleware.enabled }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistservicewebchat@kubernetescrd
-    {{- end }}
+    {{- include "IngressMiddlewares" $ingressData | nindent 4 }}
 spec:
   ingressClassName: traefik
   {{- if (.Values.ingress.serviceWebchat.tls.enabled) }}

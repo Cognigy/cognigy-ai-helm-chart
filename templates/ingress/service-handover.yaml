@@ -2,6 +2,7 @@
 # as both service-handover and service-endpoint both share the same host and
 # uses the path based routing.
 {{- if .Values.ingress.enabled }}
+  {{- $ingressData := dict "name" "serviceendpoint" "ingress" $.Values.ingress.serviceEndpoint "release" $.Release }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -13,9 +14,7 @@ metadata:
     {{- else }}
     traefik.ingress.kubernetes.io/router.entrypoints: web
     {{- end }}
-    {{- if .Values.ingress.serviceEndpoint.ipWhiteListMiddleware.enabled }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistserviceendpoint@kubernetescrd
-    {{- end }}
+    {{- include "IngressMiddlewares" $ingressData | nindent 4 }}
 spec:
   ingressClassName: traefik
   {{- if (.Values.ingress.serviceEndpoint.tls.enabled) }}
