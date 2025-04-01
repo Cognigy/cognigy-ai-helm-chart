@@ -21,6 +21,7 @@ data:
 {{- end }}
 
 {{- if and (.Values.managementUi.enabled) (.Values.managementUi.ingress.enabled) }}
+  {{- $ingressData := dict "name" "managementui" "ingress" $.Values.managementUi.ingress "release" $.Release }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -33,9 +34,7 @@ metadata:
     {{- else }}
     traefik.ingress.kubernetes.io/router.entrypoints: web
     {{- end }}
-    {{- if .Values.managementUi.ingress.ipWhiteListMiddleware.enabled }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistmanagementui@kubernetescrd
-    {{- end }}
+    {{- include "IngressMiddlewares" $ingressData | nindent 4 }}
 spec:
   ingressClassName: traefik
   {{- if (.Values.managementUi.ingress.tls.enabled) }}
