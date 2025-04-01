@@ -380,6 +380,11 @@ managementUi:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   image: cognigy.azurecr.io/management-ui:release-48a4b4f4ba-1742558574
   replicaCount: 1
   resources:
@@ -779,6 +784,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   serviceApi:
     host: ""
     tls:
@@ -793,6 +803,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   serviceAppSessionManager:
     host: ""
     tls:
@@ -807,6 +822,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   serviceCollector:
     host: ""
     tls:
@@ -821,6 +841,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   serviceEndpoint:
     host: ""
     tls:
@@ -835,6 +860,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   serviceInsightsApi:
     host: ""
     tls:
@@ -849,6 +879,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   serviceRuntimeFileManager:
     host: ""
     tls:
@@ -863,6 +898,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   serviceUi:
     host: ""
     tls:
@@ -877,6 +917,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   serviceStaticFiles:
     host: ""
     tls:
@@ -891,6 +936,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   serviceWebchat:
     host: ""
     tls:
@@ -905,6 +955,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   agentAssistBackend:
     host: ""
     legacyHost: ""
@@ -920,6 +975,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
   agentAssistFrontend:
     host: ""
     legacyHost: ""
@@ -935,6 +995,11 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
+    headersMiddleware:
+      enabled: false
+      # headers:
+      #   frameDeny: true
+      #   browserXssFilter: true
 
 ## Kubernetes service type
 ##
