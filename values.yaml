@@ -1075,6 +1075,9 @@ cognigyEnv:
   FEATURE_INSIGHTS_USE_CUBE_JS_MESSAGES_PREAGGREGATIONS: "false"
   FEATURE_INSIGHTS_USE_CONVERSATIONS_DELETION: "true"
 
+  # Disable index creation for insights db in the DB_INIT migration script
+  INSIGHTS_DBINIT_INDEX_CREATION_DISABLE: "true"
+
   # A link to an online instance of the adaptive cards designer
   # ADAPTIVE_CARDS_DESIGNER_URL:
 
@@ -3481,7 +3484,7 @@ agentAssistBackend:
   tolerations: []
   priorityClassName: ""
 agentAssistFrontend:
-  image: cognigy.azurecr.io/agent-assist-frontend:release-a0d631d-1741363799
+  image: cognigy.azurecr.io/agent-assist-frontend:release-f38f0f5-1743498205
   replicaCount: 3
   resources:
     limits:
