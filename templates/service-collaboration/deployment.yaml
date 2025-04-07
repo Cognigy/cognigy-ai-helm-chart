@@ -10,8 +10,6 @@ kind: Deployment
 metadata:
   name: service-collaboration
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: aluminium
 spec:
   selector:
     matchLabels:

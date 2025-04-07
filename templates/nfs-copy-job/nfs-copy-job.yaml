@@ -6,8 +6,6 @@ kind: Job
 metadata:
   name: job-copy-nfs
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: aluminium
 spec:
   template:
     metadata:

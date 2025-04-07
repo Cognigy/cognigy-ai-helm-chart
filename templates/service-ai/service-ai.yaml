@@ -16,8 +16,6 @@ kind: Deployment
 metadata:
   name: service-ai
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: aluminium
 spec:
   selector:
     matchLabels:

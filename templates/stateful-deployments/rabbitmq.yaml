@@ -6,8 +6,6 @@ kind: Deployment
 metadata:
   name: rabbitmq
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: aluminium
 spec:
   selector:
     matchLabels:

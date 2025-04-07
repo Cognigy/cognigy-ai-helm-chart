@@ -7,8 +7,6 @@ kind: Deployment
 metadata:
   name: service-function-execution
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: aluminium
 spec:
   selector:
     matchLabels:
