@@ -1,0 +1,58 @@
+{{- if .Values.serviceProfiles.mergedDuplicatedProfilesMigration.enabled }}
+{{- $serviceProfiles_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceProfiles.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceProfiles.serviceName)) }}
+{{- with .Values.serviceProfiles.mergedDuplicatedProfilesMigration }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migration-merge-profile-duplication
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      name: migration-merge-profile-duplication
+    spec:
+      restartPolicy: Never
+      {{- if .securityContext }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+      {{- end }}
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
+      volumes:
+        - name: mongodb-connection-string
+          secret:
+            secretName: {{ $serviceProfiles_dbSecret }}
+            items:
+              - key: connection-string
+                path: mongodbConnectionString
+      imagePullSecrets:
+        - name: cognigy-registry-token
+      containers:
+        - name: migration-merge-profile-duplication
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: SERVICE_PROFILES_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceProfiles_dbSecret }}
+                  key: connection-string                 
+          args:
+            - -g
+{{- end }}
+{{- end }}
