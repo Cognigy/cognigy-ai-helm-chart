@@ -2267,7 +2267,7 @@ statefulRabbitMq:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-bfcc652906-1742991638
+  image: cognigy.azurecr.io/service-ai:release-9cb50fa3bd-1744288846
   replicaCount: 3
   resources:
     requests:
@@ -4751,8 +4751,9 @@ cubejs:
       mode: "up"
       include: ""
       exclude: "20240819121540-add-constraints-session-hash-id.js"
+      disableSchemaCriticalError: true
   apiServer:
-    image: "cognigy.azurecr.io/insights-cube:release-b5e46b7-1741703786"
+    image: "cognigy.azurecr.io/insights-cube:release-934b019-1744292176"
     replicaCount: 1
     env:
       NODE_OPTIONS: "--max-old-space-size=2048"
@@ -4770,7 +4771,7 @@ cubejs:
     tolerations: []
     priorityClassName: ""
   refreshWorker:
-    image: "cognigy.azurecr.io/insights-cube:release-b5e46b7-1741703786"
+    image: "cognigy.azurecr.io/insights-cube:release-934b019-1744292176"
     replicaCount: 1 # Don't increase the replica count, refresh worker can't be scaled independently and a whole cluster has to be replicated
     resources:
       requests:
