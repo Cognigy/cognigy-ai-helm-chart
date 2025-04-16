@@ -6,7 +6,6 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: service-collaboration
-    owner-team: aluminium
   annotations:
     traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
     traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "true"

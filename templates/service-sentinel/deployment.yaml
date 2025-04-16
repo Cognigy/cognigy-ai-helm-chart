@@ -1,6 +1,4 @@
 {{- if .Values.serviceSentinel.enabled }}
-{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
 {{- $serviceSentinel_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSentinel.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSentinel.serviceName)) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- with .Values.serviceSentinel }}
@@ -23,8 +21,6 @@ spec:
         app: service-sentinel
       annotations:
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSentinel_dbSecret) }}{{ $serviceSentinel_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSentinel_dbSecret).data | sha256sum }}{{ end }}
-        checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
-        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
@@ -50,8 +46,6 @@ spec:
           ports:
             - name: health
               containerPort: 8001
-            - name: metrics
-              containerPort: 8002
           startupProbe:
             httpGet:
               path: /health/startup
@@ -65,8 +59,6 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
           env:
-            - name: NODE_ENV
-              value: "{{ $.Values.cognigyEnv.NODE_ENV }}"
             - name: DATABASE_SERVER_CONNECTION_STRING
               valueFrom:
                 secretKeyRef:
@@ -77,26 +69,6 @@ spec:
                 secretKeyRef:
                   name: {{ $statefulRabbitMq_secret }}
                   key: connection-string
-            - name: AUTH_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigyAuthJwt_secret }}
-                  key: secret
-            - name: REDIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $redisHa_secret }}
-                  key: REDIS_PASSWORD
-            - name: REDIS_SENTINEL_HOST
-              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_HOST }}
-            - name: REDIS_SENTINEL_PORT
-              value: "{{ $.Values.cognigyEnv.REDIS_SENTINEL_PORT }}"
-            - name: REDIS_SENTINEL_MASTER_NAME
-              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_MASTER_NAME }}
-            - name: FEATURE_REDIS_SENTINEL_MODE_ENABLED
-              value: "{{ $.Values.cognigyEnv.FEATURE_REDIS_SENTINEL_MODE_ENABLED }}"
-            - name: FEATURE_ENABLE_OPS_CENTER_WHITELIST
-              value: {{ join "," $.Values.productFeature.opsCenter.orgWhiteList | quote }}
             - name: APPLICATION_PORT
               value: "8000"
             - name: METRICS_SERVER_PORT
@@ -105,24 +77,6 @@ spec:
               value: {{ $.Values.cognigyEnv.METRICS_SERVER_HOST }}
             - name: HEALTH_CHECK_PORT
               value: "8001"
-            - name: METRICS_PORT
-              value: "8002"
-            - name: REDIS_DEFAULT_TTL
-              value: {{ $.Values.cognigyEnv.REDIS_DEFAULT_TTL }}
-            - name: REDIS_ENABLE_RECONNECT
-              value: "true"
-            - name: RABBITMQ_ENABLE_RECONNECT
-              value: "true"
-            - name: REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS
-              value: "{{ $.Values.cognigyEnv.REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS }}"
-            - name: FRONTEND_URL
-              value: {{ if $.Values.ingress.serviceUi.host }}{{ printf "https://%s" $.Values.ingress.serviceUi.host | quote }}{{ else }}{{ $.Values.cognigyEnv.FRONTEND_BASE_URL_WITH_PROTOCOL | quote }}{{ end }}
-            - name: METRICS_CONFIG_FETCH_INTERVAL_SECONDS
-              value: "60"
-            - name: MAX_NOTIFICATION_EMAIL_COUNT
-              value: "5"
-            - name: ERROR_STORAGE_TTL_IN_SECONDS
-              value: "604800" # 7 days in seconds
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

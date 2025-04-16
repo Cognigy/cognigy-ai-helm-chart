@@ -1,4 +1,3 @@
-{{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
 {{- $cognigyCollaborationJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyCollaborationJwt.existingSecret "defaultSecret" "cognigy-collaboration-jwt") }}
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
 {{- $cognigyJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyJwt.existingSecret "defaultSecret" "cognigy-jwt") }}
@@ -42,7 +41,6 @@ spec:
         {{- end }}
         checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-collaboration-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret) }}{{ $cognigyCollaborationJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret).data | sha256sum }}{{ end }}
-        checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-oauth-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret) }}{{ $cognigyOauthClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-voicegateway-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret) }}{{ $cognigyVoicegatewayClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-vg-webapp-default-login-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret) }}{{ $vgWebappDefaultLoginCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret).data | sha256sum }}{{ end }}
@@ -83,11 +81,6 @@ spec:
               value: 'true'
             - name: HOST_VALIDATION_WHITELIST
               value: {{ $.Values.ingress.serviceApi.host  | quote }}
-            - name: AUTH_JWT_SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigyAuthJwt_secret }}
-                  key: secret
             - name: COLLABORATION_JWT_SECRET
               valueFrom:
                 secretKeyRef:
