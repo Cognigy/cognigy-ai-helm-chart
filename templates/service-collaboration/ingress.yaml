@@ -11,6 +11,8 @@ kind: Middleware
 metadata:
   name: path-rewrite-collaboration
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: aluminium
 spec:
   replacePathRegex:
     regex: ^/collaboration/(.*)
