@@ -87,6 +87,10 @@ spec:
             - name: FEATURE_PLATFORM_PROVIDED_LLM_WHITELIST
               value: {{ join "," $.Values.platformProvidedLLM.whitelist | quote }}
             {{- end }}
+            {{- if $.Values.serviceSentinel.enabled }}
+            - name: FEATURE_ENABLE_OPS_CENTER_WHITELIST
+              value: {{ join "," $.Values.productFeature.opsCenter.orgWhiteList | quote }}
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

@@ -1,0 +1,20 @@
+{{- if and (eq .Values.podMonitors.enabled true) (eq .Values.serviceSentinel.enabled true) }}
+{{- with .Values.podMonitors }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: prom-cognigy-monitor-cognigy-ai-service-sentinel
+  namespace: {{ .namespace }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+  podMetricsEndpoints:
+    - path: /metrics
+      port: metrics
+  selector:
+    matchLabels:
+      app: service-sentinel
+{{- end }}
+{{- end }}

@@ -57,8 +57,8 @@ spec:
             - '--load-model=labse'
             - '--strict-readiness=true'
             - '--response-cache-byte-size=0'
-            - '--log-verbose=1'
-            - '--log-info=true'
+            - '--log-verbose=0'
+            - '--log-info=false'
             - '--log-warning=true'
             - '--log-error=true'
           resources: {{- toYaml .resources | nindent 12 }}

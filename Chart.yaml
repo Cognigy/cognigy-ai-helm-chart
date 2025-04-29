@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 4.98.5
-appVersion: "4.98.5"
+version: 4.100.0
+appVersion: "4.100.0"
 kubeVersion: ">=v1.19.0-0,<v1.33.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
@@ -37,3 +37,7 @@ dependencies:
     repository: "https://opensource.zalando.com/postgres-operator/charts/postgres-operator"
     condition: pgoperator.enabled
     alias: pgoperator
+  - name: keda
+    version: "2.16.1"
+    repository: "https://kedacore.github.io/charts"
+    condition: keda.enabled
