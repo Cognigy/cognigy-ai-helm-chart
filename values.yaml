@@ -2450,7 +2450,7 @@ serviceAnalyticsOdata:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsReporter:
-  image: cognigy.azurecr.io/service-analytics-reporter:release-5b3e938-1744877454
+  image: cognigy.azurecr.io/service-analytics-reporter:release-d1eaebb-1746708681
   replicaCount: 3
   resources:
     requests:
@@ -2675,7 +2675,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-0d1c52e23d-1745821717
+  image: cognigy.azurecr.io/service-handover:release-e06631e435-1746622613
   replicaCount: 3
   resources:
     requests:
@@ -2748,7 +2748,7 @@ serviceHttp:
             averageUtilization: 70
     behavior: {}
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-b464ef8-1744196675
+  image: cognigy.azurecr.io/service-insights-api:release-c4ebaed-1746708697
   replicaCount: 3
   resources:
     requests:
@@ -2822,7 +2822,7 @@ serviceCollector:
   tolerations: []
   priorityClassName: ""
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-64f71429-1744880405
+  image: cognigy.azurecr.io/service-insights-ui:release-55df33b6-1747128445
   replicaCount: 3
   resources:
     requests:
