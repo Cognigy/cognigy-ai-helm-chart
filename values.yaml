@@ -2665,7 +2665,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-5d0f35cdcd-1747322415
+  image: cognigy.azurecr.io/service-handover:release-82bd729949-1746622613
   replicaCount: 3
   resources:
     requests:
