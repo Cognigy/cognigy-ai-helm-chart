@@ -61,8 +61,6 @@ spec:
             - name: INSIGHTS_EXCLUDE_MIGRATION_NAME
               value: {{ .migration.exclude | quote }}
             {{- end }}
-            - name: INSIGHTS_SCHEMA_CRITICAL_ERROR_DISABLE
-              value: {{ .migration.disableSchemaCriticalError | quote }}
             - name: POSTGRES_USER
               value: {{ $.Values.cubejs.postgresql.username | quote }}
             - name: POSTGRES_PASSWORD
