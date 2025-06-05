@@ -2794,7 +2794,7 @@ serviceInsightsForwarder:
   tolerations: []
   priorityClassName: ""
 serviceCollector:
-  image: cognigy.azurecr.io/service-collector:release-43e8175-1747741795
+  image: cognigy.azurecr.io/service-collector:release-ac9a852-1749049996
   replicaCount: 3
   resources:
     requests:
