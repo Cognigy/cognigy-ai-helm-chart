@@ -1,0 +1,22 @@
+{{- if .Values.serviceTesting.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-testing
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-testing
+    owner-team: gold
+  annotations:
+    {{- if .Values.service.serviceTesting.annotations }}
+      {{- toYaml .Values.service.serviceTesting.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: service-testing
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-testing
+{{- end }}

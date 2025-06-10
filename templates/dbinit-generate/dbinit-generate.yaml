@@ -144,6 +144,13 @@ spec:
               - key: connection-string
                 path: cognigy-service-sentinel
 {{- end }}
+{{- if .Values.serviceTesting.enabled }}
+          - secret:
+              name: cognigy-service-testing
+              items:
+              - key: connection-string
+                path: cognigy-service-testing
+{{- end }}
           - secret:
               name: cognigy-service-function-scheduler
               items:
