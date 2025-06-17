@@ -13,10 +13,7 @@ rules:
 - apiGroups: ["monitoring.coreos.com"]
   resources: ["prometheusrules", "alertmanagerconfigs"]
   verbs: ["get", "create", "update", "delete", "patch"]
-- apiGroups: [""]
-  resources: ["secrets"]
-  resourceNames: ["ai-ops-center-webhook-secret"]
-  verbs: ["get", "update", "patch"]
+
 #
 # RoleBinding so service-sentinel service account has access to the Role above
 # in order to programmatically create PrometheusRules.
