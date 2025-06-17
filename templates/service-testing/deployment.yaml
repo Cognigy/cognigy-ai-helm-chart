@@ -1,0 +1,124 @@
+{{- if .Values.serviceTesting.enabled }}
+{{- $cognigyTestingJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyTestingJwt.existingSecret "defaultSecret" "cognigy-testing-jwt") }}
+{{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
+{{- $serviceTesting_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceTesting.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceTesting.serviceName)) }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- with .Values.serviceTesting }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-testing
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+spec:
+  selector:
+    matchLabels:
+      app: service-testing
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-testing
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceTesting_dbSecret) }}{{ $serviceTesting_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceTesting_dbSecret).data | sha256sum }}{{ end }}
+        checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-testing-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret) }}{{ $cognigyTestingJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret).data | sha256sum }}{{ end }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.cognigyCommonPodAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
+      containers:
+        - name: service-testing
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: health
+              containerPort: 8001
+            - name: metrics
+              containerPort: 8002
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8001
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: NODE_ENV
+              value: "{{ $.Values.cognigyEnv.NODE_ENV }}"
+            - name: TESTING_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyTestingJwt_secret }}
+                  key: secret
+            - name: AUTH_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyAuthJwt_secret }}
+                  key: secret
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceTesting_dbSecret }}
+                  key: connection-string
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $redisHa_secret }}
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $statefulRabbitMq_secret }}
+                  key: connection-string
+            - name: HTTP_PORT
+              value: "8000"
+            - name: TRACING_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
+            - name: TRACING_BASE_URL_WITH_PROTOCOL
+              value: {{ $.Values.tracing.sentry.runtime.baseUrl | quote }}      
+            - name: TRACING_ERRORS_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.errorsEnabled | quote }}
+            - name: TRACING_EVENTS_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.eventsSampleRate | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.sampleRate | quote }}
+            - name: ENVIRONMENT
+              value: {{ $.Values.tracing.environment | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
+            - name: SIMULATOR_ENABLED_ORG_WHITELIST
+              value: {{ join "," $.Values.productFeature.simulator.orgWhiteList | quote }}
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
+{{- end }}
