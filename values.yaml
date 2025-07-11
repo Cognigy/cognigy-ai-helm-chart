@@ -2298,7 +2298,7 @@ statefulRabbitMq:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-5b7e21e04f-1751633731
+  image: cognigy.azurecr.io/service-ai:release-acb410ec5b-1752233510
   replicaCount: 3
   resources:
     requests:
@@ -2707,7 +2707,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-d4ea3651f9-1751644675
+  image: cognigy.azurecr.io/service-handover:release-1c88f19a5e-1752132339
   replicaCount: 3
   resources:
     requests:
