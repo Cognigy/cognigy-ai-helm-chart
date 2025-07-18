@@ -3152,7 +3152,7 @@ serviceSessionStateManager:
             averageUtilization: 70
     behavior: {}
 serviceStaticFiles:
-  image: cognigy.azurecr.io/service-static-files:release-2decd8dfe0-1750952118
+  image: cognigy.azurecr.io/service-static-files:release-8ce752f43f-1752678570
   replicaCount: 3
   resources:
     requests:
