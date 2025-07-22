@@ -1,0 +1,9 @@
+{{- if and (.Values.ingress.enabled) (.Values.traefik.enabled) (.Values.serviceSentinel.enabled) (.Values.serviceSentinel.internalApiIngress.ipWhiteListMiddleware.enabled)}}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ipwhitelistinternalapiservicesentinel
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  ipAllowList: {{- toYaml .Values.serviceSentinel.internalApiIngress.ipWhiteListMiddleware.ipWhiteList | nindent 4 }}
+{{- end }}

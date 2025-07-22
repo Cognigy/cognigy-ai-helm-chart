@@ -47,8 +47,9 @@ spec:
               - -c
               - |
                 mongosh $INSIGHTS_COLLECTOR_CONNECTION_STRING \
+                --eval 'function hashMd5(str) { return require("crypto").createHash("md5").update(str).digest("hex"); }' \
                 --eval 'const deleteAnalyticsRecords = db.insightsdeleterequests.find({requestedAt: {$gte: new Date(Date.now() - 6*60*60*1000)}}, {projectId: 1, organisation: 1, contactIds: 1, requestedAt:1, _id: 0}).toArray()'  \
-                --eval 'const deleteQueriesAnalytics = deleteAnalyticsRecords.map(doc => {doc.timestamp = {$lte: doc.requestedAt}; delete doc.requestedAt; if (doc.contactIds) {doc.contactId = {$in: doc.contactIds}; delete doc.contactIds;}; return doc; })' \
+                --eval 'const deleteQueriesAnalytics = deleteAnalyticsRecords.map(doc => {doc.timestamp = {$lte: doc.requestedAt}; delete doc.requestedAt; if (doc.contactIds) {const hashedIds = doc.contactIds.map(id => hashMd5(id)); doc.contactId = {$in: [...doc.contactIds, ...hashedIds]}; delete doc.contactIds;}; return doc; })' \
                 --eval 'if (deleteQueriesAnalytics.length) { print("Deleting analytics data"); printjson(db.analytics.deleteMany({$or: deleteQueriesAnalytics})); }' \
                 --eval 'const deleteQueriesSessions = deleteQueriesAnalytics.map(doc => {doc.startedAt = doc.timestamp; delete doc.timestamp; if (doc.contactId) {doc.userId = doc.contactId; delete doc.contactId;}; doc.organisationId = new ObjectId(doc.organisation); delete doc.organisation; doc.projectId = new ObjectId(doc.projectId); return doc; })' \
                 --eval 'if (deleteQueriesSessions.length) { print("Deleting sessions data"); printjson(db.sessions.deleteMany({$or: deleteQueriesSessions})); }' \
@@ -60,8 +61,9 @@ spec:
                 --eval 'if (deleteQueriesStepEvents.length) { print("Deleting stepevents data"); printjson(db.stepevents.deleteMany({$or: deleteQueriesStepEvents})); }'
                 
                 mongosh $INSIGHTS_CONVERSATIONS_CONNECTION_STRING \
+                --eval 'function hashMd5(str) { return require("crypto").createHash("md5").update(str).digest("hex"); }' \
                 --eval 'const deleteConversationRecords = db.insightsdeleterequests.find({requestedAt: {$gte: new Date(Date.now() - 6*60*60*1000)}}, {projectIds: 1, organisation: 1, contactIds: 1, requestedAt: 1, _id: 0}).toArray()' \
-                --eval 'const deleteQueriesConversations = deleteConversationRecords.map(doc => {doc.timestamp = {$lte: doc.requestedAt}; delete doc.requestedAt; if (doc.contactIds) {doc.contactId = {$in: doc.contactIds}; delete doc.contactIds;}; if (doc.projectIds) {doc.projectId = Array.isArray(doc.projectIds) ? {$in: doc.projectIds} : doc.projectIds; delete doc.projectIds;}; return doc; })' \
+                --eval 'const deleteQueriesConversations = deleteConversationRecords.map(doc => {doc.timestamp = {$lte: doc.requestedAt}; delete doc.requestedAt; if (doc.contactIds) {const hashedIds = doc.contactIds.map(id => hashMd5(id)); doc.contactId = {$in: [...doc.contactIds, ...hashedIds]}; delete doc.contactIds;}; if (doc.projectIds) {doc.projectId = Array.isArray(doc.projectIds) ? {$in: doc.projectIds} : doc.projectIds; delete doc.projectIds;}; return doc; })' \
                 --eval 'if (deleteQueriesConversations.length) { print("Deleting conversations data"); printjson(db.conversations.deleteMany({$or: deleteQueriesConversations})); }'
               env:
                 - name: INSIGHTS_COLLECTOR_CONNECTION_STRING

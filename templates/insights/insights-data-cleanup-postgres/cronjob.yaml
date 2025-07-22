@@ -56,7 +56,10 @@ spec:
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE A."organisation" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
-                  AND (A."contactId" = ANY (B."contactIds") OR B."contactIds" IS NULL) 
+                  AND (A."contactId" = ANY (B."contactIds") OR A."contactId" = ANY (
+                      SELECT md5(id)::character varying 
+                      FROM unnest(B."contactIds") AS id
+                  ) OR B."contactIds" IS NULL) 
                   AND A."timestamp" <= B."requestedAt" 
                   AND B."entityName" = 'analytics' 
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
@@ -66,7 +69,10 @@ spec:
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE A."organisationId" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
-                  AND (A."userId" = ANY (B."contactIds") OR B."contactIds" IS NULL) 
+                  AND (A."userId" = ANY (B."contactIds") OR A."userId" = ANY (
+                      SELECT md5(id)::character varying 
+                      FROM unnest(B."contactIds") AS id
+                  ) OR B."contactIds" IS NULL) 
                   AND A."startedAt" <= B."requestedAt" 
                   AND B."entityName" = 'analytics' 
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
@@ -76,7 +82,10 @@ spec:
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE A."organisation" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
-                  AND (A."contactId" = ANY (B."contactIds") OR B."contactIds" IS NULL) 
+                  AND (A."contactId" = ANY (B."contactIds") OR A."contactId" = ANY (
+                      SELECT md5(id)::character varying 
+                      FROM unnest(B."contactIds") AS id
+                  ) OR B."contactIds" IS NULL) 
                   AND A."timestamp" <= B."requestedAt" 
                   AND B."entityName" = 'conversations' 
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
@@ -88,7 +97,10 @@ spec:
                                 WHERE table_schema = 'public' AND table_name = 'conversations_v2')
                   AND A."organisation" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
-                  AND (A."contactId" = ANY (B."contactIds") OR B."contactIds" IS NULL) 
+                  AND (A."contactId" = ANY (B."contactIds") OR A."contactId" = ANY (
+                      SELECT md5(id)::character varying 
+                      FROM unnest(B."contactIds") AS id
+                  ) OR B."contactIds" IS NULL) 
                   AND A."timestamp" <= B."requestedAt" 
                   AND B."entityName" = 'conversations' 
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
@@ -100,7 +112,10 @@ spec:
                                 WHERE table_schema = 'public' AND table_name = 'liveagentescalations')
                   AND A."organisationId" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
-                  AND (A."contactId" = ANY (B."contactIds") OR B."contactIds" IS NULL) 
+                  AND (A."contactId" = ANY (B."contactIds") OR A."contactId" = ANY (
+                      SELECT md5(id)::character varying 
+                      FROM unnest(B."contactIds") AS id
+                  ) OR B."contactIds" IS NULL) 
                   AND A."timestamp" <= B."requestedAt" 
                   AND B."entityName" = 'analytics' 
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
@@ -112,7 +127,25 @@ spec:
                                 WHERE table_schema = 'public' AND table_name = 'voicegatewayevents')
                   AND A."organisationId" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
-                  AND (A."userId" = ANY (B."contactIds") OR B."contactIds" IS NULL) 
+                  AND (A."userId" = ANY (B."contactIds") OR A."userId" = ANY (
+                      SELECT md5(id)::character varying 
+                      FROM unnest(B."contactIds") AS id
+                  ) OR B."contactIds" IS NULL) 
+                  AND A."timestamp" <= B."requestedAt" 
+                  AND B."entityName" = 'analytics' 
+                  AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
+                  
+                  \echo 'Checking for table: goal_v2_events'
+                  DELETE FROM PUBLIC."goal_v2_events" A 
+                  USING PUBLIC."insightsdeleterequests" B 
+                  WHERE EXISTS (SELECT 1 FROM information_schema.tables 
+                                WHERE table_schema = 'public' AND table_name = 'goal_v2_events')
+                  AND A."organisationId" = B."organisation" 
+                  AND A."projectId" = ANY (B."projectIds") 
+                  AND (A."contactId" = ANY (B."contactIds") OR A."contactId" = ANY (
+                      SELECT md5(id)::character varying 
+                      FROM unnest(B."contactIds") AS id
+                  ) OR B."contactIds" IS NULL) 
                   AND A."timestamp" <= B."requestedAt" 
                   AND B."entityName" = 'analytics' 
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
@@ -122,7 +155,10 @@ spec:
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE A."organisationId" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
-                  AND (A."userId" = ANY (B."contactIds") OR B."contactIds" IS NULL) 
+                  AND (A."userId" = ANY (B."contactIds") OR A."userId" = ANY (
+                      SELECT md5(id)::character varying 
+                      FROM unnest(B."contactIds") AS id
+                  ) OR B."contactIds" IS NULL) 
                   AND A."timestamp" <= B."requestedAt" 
                   AND B."entityName" = 'analytics' 
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';

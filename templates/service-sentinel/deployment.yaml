@@ -1,6 +1,7 @@
 {{- if .Values.serviceSentinel.enabled }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
+{{- $opsCenterInternalApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.opsCenterInternalApiSecret.existingSecret "defaultSecret" "ops-center-internal-api-secret") }}
 {{- $serviceSentinel_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSentinel.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSentinel.serviceName)) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- with .Values.serviceSentinel }}
@@ -24,6 +25,7 @@ spec:
       annotations:
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSentinel_dbSecret) }}{{ $serviceSentinel_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSentinel_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
+        checksum/ops-center-internal-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $opsCenterInternalApiSecret_secret) }}{{ $opsCenterInternalApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $opsCenterInternalApiSecret_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
@@ -81,6 +83,11 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ $cognigyAuthJwt_secret }}
+                  key: secret
+            - name: INTERNAL_API_SHARED_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $opsCenterInternalApiSecret_secret }}
                   key: secret
             - name: REDIS_PASSWORD
               valueFrom:
