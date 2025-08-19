@@ -12,6 +12,7 @@
 {{- $cognigyOauthClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyOauthClientSecret.existingSecret "defaultSecret" "cognigy-oauth-client-secret") }}
 {{- $cognigyVoicegatewayClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyVoicegatewayClientSecret.existingSecret "defaultSecret" "cognigy-voicegateway-client-secret") }}
 {{- $vgWebappDefaultLoginCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret "defaultSecret" "cognigy-vg-webapp-default-login-creds") }}
+{{- $cognigyAutoDialerClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyADClientSecret.existingSecret "defaultSecret" "cognigy-auto-dialer-client-secret") }}
 {{- with .Values.serviceApi }}
 ---
 apiVersion: apps/v1
@@ -48,6 +49,9 @@ spec:
         checksum/cognigy-oauth-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret) }}{{ $cognigyOauthClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyOauthClient_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-voicegateway-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret) }}{{ $cognigyVoicegatewayClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyVoicegatewayClient_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-vg-webapp-default-login-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret) }}{{ $vgWebappDefaultLoginCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.cognigyAD.enabled }}
+        checksum/cognigy-auto-dialer-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAutoDialerClient_secret) }}{{ $cognigyAutoDialerClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAutoDialerClient_secret).data | sha256sum }}{{ end }}
+        {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -163,6 +167,13 @@ spec:
                 secretKeyRef:
                   name: {{ $vgWebappDefaultLoginCredentials_secret }}
                   key: vg-webapp-login-creds
+            {{- if $.Values.cognigyAD.enabled }}
+            - name: CLIENT_SECRET_COGNIGY_AUTO_DIALER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyAutoDialerClient_secret }}
+                  key: secret
+            {{- end }}
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
