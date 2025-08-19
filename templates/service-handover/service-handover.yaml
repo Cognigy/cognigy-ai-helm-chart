@@ -18,7 +18,9 @@ spec:
   selector:
     matchLabels:
       app: service-handover
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceHandover.enabled)) }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       labels:
@@ -41,11 +43,23 @@ spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
-      {{- if .nodeSelector }}
-      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceHandover.enabled))}}
+      nodeSelector:
+        {{- if .nodeSelector }}
+          {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceHandover.enabled) }}
+          {{- include "common.tplvalues.render" (dict "value" $.Values.hpa.hpaNodeSelector "context" $) | nindent 8 }}
+        {{- end }}
       {{- end }}
-      {{- if .tolerations }}
-      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- if or (.tolerations) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations) ($.Values.hpa.services.serviceHandover.enabled))}}
+      tolerations: 
+        {{- if or (.tolerations) }}
+          {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations) ($.Values.hpa.services.serviceHandover.enabled) }}
+          {{- include "common.tplvalues.render" (dict "value" $.Values.hpa.hpaTolerations "context" $) | nindent 8 }}
+        {{- end }}
       {{- end }}
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}

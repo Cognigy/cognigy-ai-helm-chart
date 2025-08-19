@@ -96,6 +96,8 @@ spec:
             httpGet:
               path: /health/startup
               port: 8001
+            failureThreshold: 3
+            periodSeconds: 20
           livenessProbe:
             httpGet:
               path: /health/liveness

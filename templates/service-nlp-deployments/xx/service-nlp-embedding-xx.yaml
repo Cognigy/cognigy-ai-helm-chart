@@ -56,7 +56,6 @@ spec:
             - '--model-control-mode=explicit'
             - '--load-model=usev3'
             - '--strict-readiness=true'
-            - '--response-cache-byte-size=0'
             - '--log-verbose=0'
             - '--log-info=false'
             - '--log-warning=true'

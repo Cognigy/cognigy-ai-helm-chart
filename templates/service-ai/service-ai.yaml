@@ -9,6 +9,7 @@
 {{- $cognigyInsightsCollectorApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsCollectorApiKey.existingSecret "defaultSecret" "cognigy-insights-collector-api-key") }}
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
+{{- $cognigyNatsInternal_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.natsInternal.natsInternalCredentials.existingSecret "defaultSecret" "cognigy-nats-internal") }}
 {{- with .Values.serviceAi }}
 ---
 apiVersion: apps/v1
@@ -47,6 +48,9 @@ spec:
         {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if $.Values.natsInternal.enabled }}
+        checksum/cognigy-nats-internal: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyNatsInternal_secret) }}{{ $cognigyNatsInternal_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyNatsInternal_secret).data | sha256sum }}{{ end }}
         {{- end }}
     spec:
       {{- if .serviceAccountName }}
@@ -196,6 +200,14 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            {{- if $.Values.natsInternal.enabled }}
+            - name: nats-internal-user
+              mountPath: /var/run/secrets/natsInternalUser
+              subPath: natsInternalUser
+            - name: nats-internal-password
+              mountPath: /var/run/secrets/natsInternalPassword
+              subPath: natsInternalPassword
+            {{- end }}
             {{- if not $.Values.migrateFS.finished }}
             - name: flow-modules
               mountPath: /app/flowModules
@@ -248,6 +260,20 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        {{- if $.Values.natsInternal.enabled }}
+        - name: nats-internal-user
+          secret:
+            secretName: {{ $cognigyNatsInternal_secret }}
+            items:
+              - key: user
+                path: natsInternalUser
+        - name: nats-internal-password
+          secret:
+            secretName: {{ $cognigyNatsInternal_secret }}
+            items:
+              - key: password
+                path: natsInternalPassword
+        {{- end }}
         {{- if not $.Values.migrateFS.finished }}
         - name: flow-modules
           persistentVolumeClaim:
