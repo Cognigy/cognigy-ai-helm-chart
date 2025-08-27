@@ -7,187 +7,557 @@ metadata:
 data:
   metricsConfig.json: |
     {
-      "meta": {},
-      "config": {
-        "voice-gateway": [
-          {
-            "type": "bar-chart",
-            "title": "Voice Gateway Usage",
-            "description": "Shows voice gateway usage over time",
-            "queryConfig": {
-              "metric": "sum(increase(vg_feature_server_call_session_count[1m]))",
-              "isPositiveTrend": true
-            },
-            "showCounts": true,
-            "chartConfig": {
-              "color": "#4287f5",
-              "height": 200
-            },
-            "meta": {
-              "xs": 12,
-              "sm": 12,
-              "md": 6,
-              "lg": 6,
-              "xl": 4
-            }
-          }
-        ],
-        "endpoints": [
-          {
-            "type": "line-chart",
-            "title": "Endpoint Traffic",
-            "description": "Shows endpoint request volume",
-            "queryConfig": {
-              "metric": "sum(increase(cognigy_endpoint_raw_messages_count[1m]))",
-              "isPositiveTrend": true
-            },
-            "showCounts": true,
-            "chartConfig": {
-              "color": "#42f5a1",
-              "height": 200
-            },
-            "meta": {
-              "xs": 12,
-              "sm": 12,
-              "md": 6,
-              "lg": 6,
-              "xl": 4
-            }
-          },
-          {
-            "type": "heat-map",
-            "title": "Transformer Processing Time",
-            "description": "The time it took to process the Transformers.",
-            "queryConfig": {
-              "metric": "sum by (le)(increase(cognigy_endpoint_transformer_execution_time_bucket[1m]))",
-              "isPositiveTrend": true
-            },
-            "showCounts": false,
-            "chartConfig": {
-              "color": "#42f5a1",
-              "height": 230
-            },
-            "meta": {
-              "xs": 12,
-              "sm": 12,
-              "md": 6,
-              "lg": 6,
-              "xl": 4
-            }
-          },
-          {
-            "type": "heat-map",
-            "title": "Message Processing Time",
-            "description": "The time it took to process a single message",
-            "queryConfig": {
-              "metric": "sum by(le) (increase(cognigy_endpoint_raw_messages_response_time_bucket[1m]))",
-              "isPositiveTrend": true
-            },
-            "showCounts": false,
-            "chartConfig": {
-              "color": "#42f5a1",
-              "height": 230
-            },
-            "meta": {
-              "xs": 12,
-              "sm": 12,
-              "md": 6,
-              "lg": 6,
-              "xl": 4
-            }
-          },
-          {
-            "type": "line-chart",
-            "title": "Transformer Errors",
-            "description": "Total number of errors in Endpoint Transformers",
-            "queryConfig": {
-              "metric": "sum(increase(cognigy_endpoint_transformer_error_count[1m]))",
-              "isPositiveTrend": true
-            },
-            "showCounts": true,
-            "chartConfig": {
-              "color": "#42f5a1",
-              "height": 200
-            },
-            "meta": {
-              "xs": 12,
-              "sm": 12,
-              "md": 6,
-              "lg": 6,
-              "xl": 4
-            }
-          }
-        ],
-        "flows": [
-          {
-            "type": "heat-map",
-            "title": "Flow Usage",
-            "description": "Shows most used flows",
-            "queryConfig": {
-              "metric": "dummy_flow_query",
-              "isPositiveTrend": true
-            },
-            "showCounts": false,
-            "chartConfig": {
-              "color": "#f54242",
-              "height": 200
-            },
-            "meta": {
-              "xs": 12,
-              "sm": 12,
-              "md": 12,
-              "lg": 12,
-              "xl": 8
-            }
-          }
-        ],
-        "overview": [
-          {
-            "type": "line-chart",
-            "title": "System Overview",
-            "description": "High level system metrics",
-            "queryConfig": {
-              "metric": "dummy_overview_query",
-              "isPositiveTrend": true
-            },
-            "showCounts": true,
-            "chartConfig": {
-              "color": "#f5d442",
-              "height": 200
-            },
-            "meta": {
-              "xs": 12,
-              "sm": 12,
-              "md": 12,
-              "lg": 12,
-              "xl": 12
-            }
-          }
-        ],
-        "handover-provider": [
-          {
-            "type": "bar-chart",
-            "title": "Handover Metrics",
-            "description": "Shows handover provider usage",
-            "queryConfig": {
-              "metric": "dummy_handover_query",
-              "isPositiveTrend": true
-            },
-            "showCounts": true,
-            "chartConfig": {
-              "color": "#9442f5",
-              "height": 200
-            },
-            "meta": {
-              "xs": 12,
-              "sm": 12,
-              "md": 6,
-              "lg": 6,
-              "xl": 4
-            }
-          }
-        ]
-      }
+        "meta": {},
+        "config": {
+            "overview": [
+                {
+                    "type": "alerts-errors",
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 3,
+                        "lg": 3,
+                        "xl": 3
+                    }
+                },
+                {
+                    "type": "line-chart",
+                    "title": "Messages",
+                    "description": "The total number of processed messages per minute.",
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 9,
+                        "lg": 9,
+                        "xl": 9
+                    },
+                    "queryConfig": {
+                        "identifier": "cognigy_endpoint_raw_messages_count",
+                        "queryTemplate": "sum(increase(cognigy_endpoint_raw_messages_count${filters}[1m]))",
+                        "metric": "sum(increase(cognigy_endpoint_raw_messages_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                        "isPositiveTrend": true
+                    },
+                    "showCounts": true,
+                    "chartConfig": {
+                        "color": "default",
+                        "height": 240
+                    }
+                },
+                {
+                    "type": "health-status-monitor",
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 12,
+                        "lg": 12,
+                        "xl": 12
+                    }
+                }
+            ],
+            "voice-gateway": [
+                {
+                    "type": "line-chart",
+                    "title": "Voice Gateway incoming messages",
+                    "description": "Shows the number of processed incoming transcribed messages from Voice Gateway.",
+                    "queryConfig": {
+                        "identifier": "cognigy_endpoint_raw_vg2_messages_count",
+                        "queryTemplate": "sum(increase(cognigy_endpoint_raw_vg2_messages_count${filters}[1m]))",
+                        "metric": "sum(increase(cognigy_endpoint_raw_vg2_messages_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                        "isPositiveTrend": true
+                    },
+                    "showCounts": true,
+                    "chartConfig": {
+                        "color": "default",
+                        "height": 240
+                    },
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 12,
+                        "lg": 12,
+                        "xl": 12
+                    }
+                }
+            ],
+            "endpoints": [
+                {
+                    "type": "line-chart",
+                    "title": "Endpoint Traffic",
+                    "description": "Shows endpoint request volume",
+                    "queryConfig": {
+                        "identifier": "cognigy_endpoint_raw_messages_count",
+                        "queryTemplate": "sum(increase(cognigy_endpoint_raw_messages_count${filters}[1m]))",
+                        "metric": "sum(increase(cognigy_endpoint_raw_messages_count[1m]))",
+                        "isPositiveTrend": true
+                    },
+                    "showCounts": true,
+                    "chartConfig": {
+                        "color": "default",
+                        "height": 240
+                    },
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 6,
+                        "lg": 6,
+                        "xl": 6
+                    }
+                },
+                {
+                    "type": "heat-map",
+                    "title": "Message Processing Time",
+                    "description": "The time it took to process a single message",
+                    "queryConfig": {
+                        "identifier": "cognigy_endpoint_raw_messages_response_time_bucket",
+                        "queryTemplate": "sum by (le)(increase(cognigy_endpoint_raw_messages_response_time_bucket${filters}[1m]))",
+                        "metric": "sum by(le) (increase(cognigy_endpoint_raw_messages_response_time_bucket[1m]))",
+                        "isPositiveTrend": true
+                    },
+                    "showCounts": false,
+                    "chartConfig": {
+                        "color": "default",
+                        "height": 270
+                    },
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 6,
+                        "lg": 6,
+                        "xl": 6
+                    }
+                },
+                {
+                    "type": "section",
+                    "title": "Transformers",
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 12,
+                        "lg": 12,
+                        "xl": 12
+                    },
+                    "anchor": "transformers",
+                    "items": [
+                        {
+                            "type": "heat-map",
+                            "title": "Transformer Processing Time",
+                            "description": "The time it took to process Endpoint Transformers.",
+                            "queryConfig": {
+                                "identifier": "cognigy_endpoint_transformer_execution_time_bucket",
+                                "queryTemplate": "sum by (le)(increase(cognigy_endpoint_transformer_execution_time_bucket${filters}[1m]))",
+                                "metric": "sum by (le)(increase(cognigy_endpoint_transformer_execution_time_bucket[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": false,
+                            "chartConfig": {
+                                "color": "default",
+                                "height": 270
+                            },
+                            "meta": {
+                                "xs": 12,
+                                "sm": 12,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        },
+                        {
+                            "type": "bar-chart",
+                            "title": "Transformer Error Count",
+                            "description": "How many errors happen during Endpoint Transformer execution.",
+                            "queryConfig": {
+                                "identifier": "transformer_error_count",
+                                "queryTemplate": "sum(increase(cognigy_endpoint_transformer_error_count${filters}[1m]))",
+                                "metric": "sum(increase(cognigy_endpoint_transformer_error_count[1m]))",
+                                "isPositiveTrend": false
+                            },
+                            "showCounts": false,
+                            "chartConfig": {
+                                "color": "red",
+                                "height": 270
+                            },
+                            "meta": {
+                                "xs": 12,
+                                "sm": 12,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        }
+                    ]
+                }
+            ],
+            "flows": [
+                {
+                    "type": "line-chart",
+                    "title": "Flow Execution Time (90th percentile)",
+                    "description": "Shows the 90th percentile of flow execution times in milliseconds.",
+                    "queryConfig": {
+                        "identifier": "flow_execution_time_90th_percentile",
+                        "queryTemplate": "histogram_quantile(0.90, sum(increase(cognigy_ai_message_processing_time_bucket${filters}[1m])) by (le))",
+                        "metric": "histogram_quantile(0.90, sum(increase(cognigy_ai_message_processing_time_bucket{organisationId='63babf6e92add771923e87b7'}[1m])) by (le))",
+                        "isPositiveTrend": false
+                    },
+                    "showCounts": true,
+                    "chartConfig": {
+                        "color": "default",
+                        "height": 240
+                    },
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 12,
+                        "lg": 12,
+                        "xl": 12
+                    }
+                },
+                {
+                    "type": "section",
+                    "title": "Outbound HTTP Requests (Flow Node)",
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 12,
+                        "lg": 12,
+                        "xl": 12
+                    },
+                    "anchor": "http-requests",
+                    "items": [
+                        {
+                            "type": "line-chart",
+                            "title": "Outbound HTTP Requests",
+                            "description": "Shows the time for external API calls performed using the HTTP Request Flow Node.",
+                            "queryConfig": {
+                                "identifier": "outbound_http_requests",
+                                "queryTemplate": "sum(increase(cognigy_http_requests_count${filters}[1m]))",
+                                "metric": "sum(increase(cognigy_http_requests_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": true,
+                            "chartConfig": {
+                                "color": "default",
+                                "height": 240
+                            },
+                            "meta": {
+                                "xs": 12,
+                                "sm": 12,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        },
+                        {
+                            "type": "heat-map",
+                            "title": "Outbound HTTP Request latency",
+                            "description": "The time it takes to perform outbound HTTP Requests using the HTTP Request Flow Node.",
+                            "queryConfig": {
+                                "identifier": "outbound_http_request_latency",
+                                "queryTemplate": "sum by(le) (increase(cognigy_http_requests_latency_bucket${filters}[1m]))",
+                                "metric": "sum by(le) (increase(cognigy_http_requests_latency_bucket[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": false,
+                            "chartConfig": {
+                                "color": "default",
+                                "height": 270
+                            },
+                            "meta": {
+                                "xs": 12,
+                                "sm": 12,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "section",
+                    "title": "Natural Language Understanding",
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 12,
+                        "lg": 12,
+                        "xl": 12
+                    },
+                    "anchor": "nlu",
+                    "items": [
+                        {
+                            "type": "heat-map",
+                            "title": "NLU Scoring Time",
+                            "description": "The time it took to run inference (scoring) of a message using Cognigy NLU.",
+                            "queryConfig": {
+                                "identifier": "nlu_scoring_time",
+                                "queryTemplate": "sum by (le)(increase(cognigy_nlp_classifier_score_rpc_latency_histogram_milliseconds_bucket${filters}[1m]))",
+                                "metric": "sum by (le)(increase(cognigy_nlp_classifier_score_rpc_latency_histogram_milliseconds_bucket{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": true,
+                            "chartConfig": {
+                                "color": "default",
+                                "height": 270
+                            },
+                            "meta": {
+                                "xs": 12,
+                                "sm": 12,
+                                "md": 12,
+                                "lg": 12,
+                                "xl": 12
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "section",
+                    "title": "Large Language Models",
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 12,
+                        "lg": 12,
+                        "xl": 12
+                    },
+                    "anchor": "llms",
+                    "items": [
+                        {
+                            "type": "bar-chart",
+                            "title": "LLM Fallbacks triggered",
+                            "description": "Shows how often an LLM fallback was triggered as the primary LLM did not work.",
+                            "queryConfig": {
+                                "identifier": "llm_fallbacks_triggered",
+                                "queryTemplate": "sum(increase(cognigy_ai_llm_fallback_triggered${filters}[1m]))",
+                                "metric": "sum(increase(cognigy_ai_llm_fallback_triggered{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": true,
+                            "chartConfig": {
+                                "color": "red",
+                                "height": 240
+                            },
+                            "meta": {
+                                "xs": 12,
+                                "sm": 12,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        },
+                        {
+                            "type": "bar-chart",
+                            "title": "LLM Retries triggered",
+                            "description": "Shows how often API calls to LLMs were re-tried due to issues.",
+                            "queryConfig": {
+                                "identifier": "llm_retries_triggered",
+                                "queryTemplate": "sum(increase(cognigy_ai_llm_fallback_primary_retries${filters}[1m]))",
+                                "metric": "sum(increase(cognigy_ai_llm_fallback_primary_retries{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": false,
+                            "chartConfig": {
+                                "color": "red",
+                                "height": 270
+                            },
+                            "meta": {
+                                "xs": 12,
+                                "sm": 12,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "section",
+                    "title": "Knowledge AI",
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 12,
+                        "lg": 12,
+                        "xl": 12
+                    },
+                    "anchor": "knowledge-ai",
+                    "items": [
+                        {
+                            "type": "line-chart",
+                            "title": "Knowledge AI queries",
+                            "description": "Shows the number of successful Knowledge AI queries against our vector database.",
+                            "queryConfig": {
+                                "identifier": "knowledge_ai_queries",
+                                "queryTemplate": "sum(increase(search_orchestrator_successful_search_requests_total${filters}[1m]))",
+                                "metric": "sum(increase(search_orchestrator_successful_search_requests_total{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": true,
+                            "chartConfig": {
+                                "color": "default",
+                                "height": 240
+                            },
+                            "meta": {
+                                "xs": 12,
+                                "sm": 12,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        },
+                        {
+                            "type": "heat-map",
+                            "title": "Knowledge AI query latency",
+                            "description": "The time it takes to query Knowledge AI",
+                            "queryConfig": {
+                                "identifier": "knowledge_ai_query_latency",
+                                "queryTemplate": "sum by(le) (increase(search_orchestrator_search_latency_histogram_seconds_bucket${filters}[1m]))",
+                                "metric": "sum by(le) (increase(search_orchestrator_search_latency_histogram_seconds_bucket[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": false,
+                            "chartConfig": {
+                                "color": "default",
+                                "height": 270
+                            },
+                            "meta": {
+                                "xs": 12,
+                                "sm": 12,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "section",
+                    "title": "Extensions",
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 12,
+                        "lg": 12,
+                        "xl": 12
+                    },
+                    "anchor": "extensions",
+                    "items": [
+                        {
+                            "type": "line-chart",
+                            "title": "Custom Flow Nodes (Extensions) execution",
+                            "description": "Shows the number of custom Flow Nodes (from Extensions) being executed per minute.",
+                            "queryConfig": {
+                                "identifier": "extension_processing_count",
+                                "queryTemplate": "sum(increase(cognigy_execution_extension_processing_time_count${filters}[1m]))",
+                                "metric": "sum(increase(cognigy_execution_extension_processing_time_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": true,
+                            "chartConfig": {
+                                "color": "default",
+                                "height": 240
+                            },
+                            "meta": {
+                                "xs": 6,
+                                "sm": 6,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        },
+                        {
+                            "type": "heat-map",
+                            "title": "Extension Processing Time",
+                            "description": "The time it took to run the code of a custom Flow Node (Extension).",
+                            "queryConfig": {
+                                "identifier": "extension_processing_time",
+                                "queryTemplate": "sum by (le)(increase(cognigy_execution_extension_processing_time_bucket${filters}[1m]))",
+                                "metric": "sum by (le)(increase(cognigy_execution_extension_processing_time_bucket{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                                "isPositiveTrend": true
+                            },
+                            "showCounts": true,
+                            "chartConfig": {
+                                "color": "default",
+                                "height": 270
+                            },
+                            "meta": {
+                                "xs": 6,
+                                "sm": 6,
+                                "md": 6,
+                                "lg": 6,
+                                "xl": 6
+                            }
+                        }
+                    ]
+                }
+            ],
+            "handover-provider": [
+                {
+                    "type": "line-chart",
+                    "title": "Provider Forwarding Errors Count",
+                    "description": "Total number of errors when forwarding messages to providers.",
+                    "queryConfig": {
+                        "identifier": "handover_provider_forwarding_errors",
+                        "queryTemplate": "sum(increase(cognigy_ai_handover_send_message_to_provider_error_count${filters}[1m]))",
+                        "metric": "sum(increase(cognigy_ai_handover_send_message_to_provider_error_count[1m]))",
+                        "isPositiveTrend": true
+                    },
+                    "showCounts": true,
+                    "chartConfig": {
+                        "color": "default",
+                        "height": 240
+                    },
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 6,
+                        "lg": 6,
+                        "xl": 4
+                    }
+                },
+                {
+                    "type": "heat-map",
+                    "title": "API Call Request Duration",
+                    "description": "Duration of http requests in milliseconds",
+                    "queryConfig": {
+                        "identifier": "handover_provider_api_call_duration",
+                        "queryTemplate": "sum by(le) (increase(cognigy_http_request_duration_bucket${filters}[1m]))",
+                        "metric": "sum by(le) (increase(cognigy_http_request_duration_bucket[1m]))",
+                        "isPositiveTrend": true
+                    },
+                    "showCounts": false,
+                    "chartConfig": {
+                        "color": "default",
+                        "height": 270
+                    },
+                    "meta": {
+                        "xs": 12,
+                        "sm": 12,
+                        "md": 6,
+                        "lg": 6,
+                        "xl": 4
+                    }
+                }
+            ]
+        },
+        "colorConfig": {
+            "default": [
+                "#3d9fff"
+            ],
+            "blue": [
+                "#3d9fff"
+            ],
+            "yellow": [
+                "#f7b500"
+            ],
+            "green": [
+                "#86B775"
+            ],
+            "purple": [
+                "#b3a7ea"
+            ],
+            "red": [
+                "#F75858"
+            ]
+        }
     }
 
 {{- end}}

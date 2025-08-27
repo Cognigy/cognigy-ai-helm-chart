@@ -1,7 +1,7 @@
 {{- if .Values.hpa.enabled }}
   {{- range $hpa_key, $hpa_val := .Values.hpa.services }}
     {{- if kindIs "map" $hpa_val }}
-      {{- if $hpa_val.enabled }}
+      {{- if and ($hpa_val.enabled) (not $hpa_val.keda.enabled) }}
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -21,8 +21,22 @@ spec:
   behavior:
     {{- include "common.tplvalues.render" ( dict "value" $hpa_val.behavior "context" $ ) | nindent 4 }}
   {{- end }}
-
       {{- end }}
+{{- if and ($hpa_val.enabled) ($hpa_val.keda.enabled) }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ $hpa_val.name | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  scaleTargetRef:
+    name: {{ $hpa_val.name | quote }}
+  minReplicaCount: {{ $hpa_val.minReplicas }}
+  maxReplicaCount: {{ $hpa_val.maxReplicas }}
+  triggers:
+    {{- include "common.tplvalues.render" ( dict "value" $hpa_val.keda.triggers "context" $ ) | nindent 4 }}
+{{- end }}
     {{- end }}
   {{- end }}
 {{- end }}

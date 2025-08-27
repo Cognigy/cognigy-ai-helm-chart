@@ -52,7 +52,7 @@ spec:
     {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.key }}
     {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.existingSecret }}
   {{- end }}
-  {{- else -}}
+  {{- else }}
   {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
   {{- end }}
   rules:

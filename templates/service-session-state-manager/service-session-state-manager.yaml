@@ -8,6 +8,8 @@ kind: Deployment
 metadata:
   name: service-session-state-manager
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: aluminium
 spec:
   selector:
     matchLabels:

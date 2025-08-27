@@ -1,30 +1,32 @@
-{{- if .Values.serviceCollaboration.enabled }}
-{{- $cognigyCollaborationJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyCollaborationJwt.existingSecret "defaultSecret" "cognigy-collaboration-jwt") }}
-{{- $serviceCollaboration_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceCollaboration.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceCollaboration.serviceName)) }}
+{{- if .Values.serviceTesting.enabled }}
+{{- $cognigyTestingJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyTestingJwt.existingSecret "defaultSecret" "cognigy-testing-jwt") }}
+{{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
+{{- $serviceTesting_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceTesting.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceTesting.serviceName)) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- with .Values.serviceCollaboration }}
+{{- with .Values.serviceTesting }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-collaboration
+  name: service-testing
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: aluminium
+    owner-team: gold
 spec:
   selector:
     matchLabels:
-      app: service-collaboration
+      app: service-testing
   replicas: {{ .replicaCount }}
   template:
     metadata:
       labels:
-        app: service-collaboration
+        app: service-testing
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
-        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCollaboration_dbSecret) }}{{ $serviceCollaboration_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCollaboration_dbSecret).data | sha256sum }}{{ end }}
-        checksum/cognigy-collaboration-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret) }}{{ $cognigyCollaborationJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret).data | sha256sum }}{{ end }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceTesting_dbSecret) }}{{ $serviceTesting_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceTesting_dbSecret).data | sha256sum }}{{ end }}
+        checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-testing-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret) }}{{ $cognigyTestingJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
@@ -43,25 +45,46 @@ spec:
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-collaboration
+        - name: service-testing
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
+            - name: health
+              containerPort: 8001
             - name: metrics
               containerPort: 8002
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8001
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
           envFrom:
             - configMapRef:
                 name: cognigy-env
           env:
-            - name: COLLABORATION_JWT_SECRET
+            - name: NODE_ENV
+              value: "{{ $.Values.cognigyEnv.NODE_ENV }}"
+            - name: TESTING_JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ $cognigyCollaborationJwt_secret }}
+                  name: {{ $cognigyTestingJwt_secret }}
+                  key: secret
+            - name: AUTH_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyAuthJwt_secret }}
                   key: secret
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
-                  name: {{ $serviceCollaboration_dbSecret }}
+                  name: {{ $serviceTesting_dbSecret }}
                   key: connection-string
             - name: REDIS_PASSWORD
               valueFrom:
@@ -89,23 +112,11 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
+            - name: SIMULATOR_ENABLED_ORG_WHITELIST
+              value: {{ join "," $.Values.productFeature.simulator.orgWhiteList | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
-          startupProbe:
-            httpGet:
-              path: /health/startup
-              port: 8001
-            failureThreshold: 3
-            periodSeconds: 20
-          livenessProbe:
-            httpGet:
-              path: /health/liveness
-              port: 8001
-            failureThreshold: 3
-            initialDelaySeconds: 90
-            periodSeconds: 60
-            timeoutSeconds: 10
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

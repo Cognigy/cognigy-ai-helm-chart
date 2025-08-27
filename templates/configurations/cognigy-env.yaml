@@ -24,6 +24,9 @@ data:
   FEATURE_INSIGHTS_USE_GOALS_DASHBOARD: "true"
   FEATURE_USE_GOALS: "true"
   {{- end }}
+  {{- if and ($.Values.cubejs.enabled) ($.Values.pgoperator.enabled) }}
+  FEATURE_INSIGHTS_BUSINESS_DASHBOARD_DIRECT_POSTGRESQL: "true"
+  {{- end }}
 {{- range $key, $value := .Values.cognigyEnv }}
   {{ $key }}: {{ $value | quote }}
 {{- end }}

@@ -1,27 +1,11 @@
 # We are using the ingress configuration "serviceApi" from values.yaml
-# as both service-api and service-collaboration both share the same host and
+# as both service-api and service-sentinel both share the same host and
 # use path based routing.
-{{- if and (eq .Values.ingress.enabled true) (eq .Values.serviceCollaboration.enabled true) }}
-
-# Traefik middleware which strips the "/collaboration" prefix
-# Middleware
-# Strip prefix /overview
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: path-rewrite-collaboration
-  namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: aluminium
-spec:
-  replacePathRegex:
-    regex: ^/collaboration/(.*)
-    replacement: /$1
----
+{{- if and (eq .Values.ingress.enabled true) (eq .Values.serviceSentinel.enabled true) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: service-collaboration
+  name: service-sentinel-internal-api
   namespace: {{ $.Release.Namespace | quote }}
   annotations:
     {{- if .Values.tls.enabled }}
@@ -29,11 +13,8 @@ metadata:
     {{- else }}
     traefik.ingress.kubernetes.io/router.entrypoints: web
     {{- end }}
-
-    {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
-    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceapi@kubernetescrd, {{ $.Release.Namespace }}-path-rewrite-collaboration@kubernetescrd"
-    {{- else }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-path-rewrite-collaboration@kubernetescrd
+    {{- if .Values.serviceSentinel.internalApiIngress.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistinternalapiservicesentinel@kubernetescrd"
     {{- end }}
 spec:
   ingressClassName: traefik
@@ -56,11 +37,13 @@ spec:
   - host: {{ .Values.ingress.serviceApi.host }}
     http:
       paths:
-      - backend:
+      {{- range $path := .Values.serviceSentinel.internalApiIngress.paths }}
+      - path: {{ $path }}
+        pathType: Prefix
+        backend:
           service:
-            name: service-collaboration
+            name: service-sentinel
             port:
               number: 8000
-        path: /collaboration
-        pathType: Prefix
+      {{- end }}
 {{- end }}
