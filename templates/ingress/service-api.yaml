@@ -49,7 +49,7 @@ spec:
     {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.key }}
     {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.existingSecret }}
   {{- end }}
-  {{- else -}}
+  {{- else }}
   {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
   {{- end }}
   rules:
