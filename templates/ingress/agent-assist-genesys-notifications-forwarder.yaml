@@ -3,6 +3,7 @@
 # uses the path based routting.
 {{- if and (.Values.cognigyAgentAssist.enabled) (.Values.ingress.enabled) }}
 {{- if .Values.cognigyAgentAssist.enableGenesysNotificationsForwarder }}
+{{- $ingressData := dict "name" "agentassistbackend" "ingress" $.Values.ingress.agentAssistBackend "release" $.Release }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -14,9 +15,7 @@ metadata:
     {{- else }}
     traefik.ingress.kubernetes.io/router.entrypoints: web
     {{- end }}
-    {{- if .Values.ingress.agentAssistBackend.ipWhiteListMiddleware.enabled }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistagentassistbackend@kubernetescrd
-    {{- end }}
+    {{- include "IngressMiddlewares" $ingressData | nindent 4 }}
 spec:
   ingressClassName: traefik
   {{- if (.Values.ingress.agentAssistBackend.tls.enabled) }}

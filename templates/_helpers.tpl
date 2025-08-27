@@ -527,3 +527,18 @@ Usage:
     {{- $bytes | int64 -}}
 {{- end -}}
 
+{{/*
+Define middlewares to include in ingress, order counts!
+*/}}
+{{- define "IngressMiddlewares" -}}
+  {{- $middlewares := list }}
+  {{- if .ingress.ipWhiteListMiddleware.enabled }}
+    {{- $middlewares = append $middlewares (printf "%s-%s%s%s" .release.Namespace "ipwhitelist" .name "@kubernetescrd") }}
+  {{- end }}
+  {{- if .ingress.headersMiddleware.enabled }}
+    {{- $middlewares = append $middlewares (printf "%s-%s%s%s" .release.Namespace "headers" .name "@kubernetescrd") }}
+  {{- end }}
+  {{- if gt (len $middlewares) 0 -}}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ join "," $middlewares }}
+  {{- end }}
+{{- end }}

@@ -23,6 +23,7 @@ data:
 
 ---
 {{- if .Values.ingress.enabled }}
+  {{- $ingressData := dict "name" "agentassistfrontend" "ingress" $.Values.ingress.agentAssistFrontend "release" $.Release }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -34,9 +35,7 @@ metadata:
     {{- else }}
     traefik.ingress.kubernetes.io/router.entrypoints: web
     {{- end }}
-    {{- if .Values.ingress.agentAssistFrontend.ipWhiteListMiddleware.enabled }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistagentassistfrontend@kubernetescrd
-    {{- end }}
+    {{- include "IngressMiddlewares" $ingressData | nindent 4 }}
 spec:
   ingressClassName: traefik
   {{- if (.Values.ingress.agentAssistFrontend.tls.enabled) }}
