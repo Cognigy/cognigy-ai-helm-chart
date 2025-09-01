@@ -2345,7 +2345,7 @@ statefulRabbitMq:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-6040969cd0-1751015269
+  image: cognigy.azurecr.io/service-ai:release-0832eebb9a-1756474445
   replicaCount: 3
   resources:
     requests:
@@ -2791,7 +2791,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-6040969cd0-1751015269
+  image: cognigy.azurecr.io/service-handover:release-0832eebb9a-1756474445
   replicaCount: 3
   resources:
     requests:
@@ -3093,7 +3093,7 @@ serviceResources:
   priorityClassName: ""
   serviceAccountName: ""
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:release-6040969cd0-1751015269
+  image: cognigy.azurecr.io/service-runtime-file-manager:release-08b06ef1a5-1756478498
   replicaCount: 3
   resources:
     requests:
@@ -3376,7 +3376,7 @@ serviceNlpEmbeddingGe:
   priorityClassName: ""
 serviceNlpClassifierScoreEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-en:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier-en:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3393,7 +3393,7 @@ serviceNlpClassifierScoreEn:
   priorityClassName: ""
 serviceNlpClassifierTrainEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-en:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier-en:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3415,7 +3415,7 @@ serviceNlpClassifierTrainEn:
   priorityClassName: ""
 serviceNlpOrchestrator:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-orchestrator:release-675cd930db-1754478665
+  image: cognigy.azurecr.io/service-nlp-orchestrator:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3432,7 +3432,7 @@ serviceNlpOrchestrator:
   priorityClassName: ""
 serviceNlpClassifierScoreGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ge:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier-ge:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3449,7 +3449,7 @@ serviceNlpClassifierScoreGe:
   priorityClassName: ""
 serviceNlpClassifierTrainGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ge:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier-ge:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3471,7 +3471,7 @@ serviceNlpClassifierTrainGe:
   priorityClassName: ""
 serviceNlpClassifierScoreDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3488,7 +3488,7 @@ serviceNlpClassifierScoreDe:
   priorityClassName: ""
 serviceNlpClassifierTrainDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3510,7 +3510,7 @@ serviceNlpClassifierTrainDe:
   priorityClassName: ""
 serviceNlpClassifierScoreJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ja:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier-ja:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3527,7 +3527,7 @@ serviceNlpClassifierScoreJa:
   priorityClassName: ""
 serviceNlpClassifierTrainJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ja:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier-ja:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3549,7 +3549,7 @@ serviceNlpClassifierTrainJa:
   priorityClassName: ""
 serviceNlpClassifierScoreKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ko:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier-ko:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3566,7 +3566,7 @@ serviceNlpClassifierScoreKo:
   priorityClassName: ""
 serviceNlpClassifierTrainKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ko:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier-ko:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3588,7 +3588,7 @@ serviceNlpClassifierTrainKo:
   priorityClassName: ""
 serviceNlpClassifierScoreXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
@@ -3605,7 +3605,7 @@ serviceNlpClassifierScoreXx:
   priorityClassName: ""
 serviceNlpClassifierTrainXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:release-876e016f5d-1754481487
+  image: cognigy.azurecr.io/service-nlp-classifier:release-7f6a031cac-1756287628
   replicaCount: 2
   resources:
     requests:
