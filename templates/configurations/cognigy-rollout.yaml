@@ -1,0 +1,9 @@
+{{- if .Values.commonConfigs.cognigyRollout }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cognigy-rollout
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  {{- toYaml .Values.commonConfigs.cognigyRollout | nindent 2 -}}
+{{- end }}
