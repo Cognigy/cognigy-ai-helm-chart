@@ -64,17 +64,6 @@
 							]
 						}
 					}
-				},
-				{
-					"properties": {
-						"provider": {
-							"description": "Cloud provider",
-							"type": "string",
-							"enum": [
-								"local-kind"
-							]
-						}
-					}
 				}
 			]
 		},

@@ -1,4 +1,4 @@
-{{- if or (.Values.knowledgeSearch.enabled) (.Values.qdrant.enabled) }}
+{{- if and (.Values.knowledgeSearch.enabled) (.Values.qdrant.enabled) }}
 ---
 apiVersion: v1
 kind: ConfigMap

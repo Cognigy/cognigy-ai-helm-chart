@@ -1,7 +1,6 @@
-{{- $rabbitmq_username := .Values.statefulRabbitMq.auth.username | default "cognigy" -}}
-
 {{- if (not .Values.statefulRabbitMq.auth.existingSecret) }}
   {{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-rabbitmq") }}
+    {{- $rabbitmq_username := .Values.statefulRabbitMq.auth.username | default "cognigy" }}
     {{- $rabbitmq_password := .Values.statefulRabbitMq.auth.password | default (printf "%x" (randAlphaNum 64)) }}
 ---
 apiVersion: v1
@@ -23,39 +22,4 @@ data:
   # The connection string to the RabbitMQ API (http(s)://user:password@host:port/api)
   connection-string-api: "{{ printf "http://%s:%s@rabbitmq:15672/api" $rabbitmq_username $rabbitmq_password | b64enc }}"
   {{- end }}
-{{- end }}
-# We need the connection-string-api in a different format (without the /api path). The 'cognigy-rabbitmq' secret is immutable once created, so we can't add the new values to it.
-# Instead create a new secret for keda. It only contains the username and host, the password we load from the existing secret.
-{{- if (and .Values.keda.enabled (.Capabilities.APIVersions.Has "keda.sh/v1alpha1")) }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ $statefulRabbitMq_secret }}-keda
-  namespace: {{ $.Release.Namespace | quote }}
-  annotations:
-    "helm.sh/resource-policy": "keep"
-type: Opaque
-data:
-  # %2F is the default vhost: "/"
-  host: "{{ "http://rabbitmq:15672/%2F" | b64enc }}"
-  username: "{{ $rabbitmq_username | b64enc }}"
----
-apiVersion: keda.sh/v1alpha1
-kind: TriggerAuthentication
-metadata:
-  name: {{ $statefulRabbitMq_secret | quote }}
-  namespace: {{ $.Release.Namespace | quote }}
-spec:
-  secretTargetRef:
-    - parameter: host
-      name: {{ $statefulRabbitMq_secret }}-keda
-      key: host
-    - parameter: username
-      name: {{ $statefulRabbitMq_secret }}-keda
-      key: username
-    - parameter: password
-      name: {{ $statefulRabbitMq_secret }}
-      key: rabbitmq-password
 {{- end }}

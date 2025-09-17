@@ -1,4 +1,4 @@
-{{- if or (or (eq .Values.cloud.provider "local-microk8s") (eq .Values.cloud.provider "local-rancher")) (eq .Values.cloud.provider "local-kind") }}
+{{- if or (eq .Values.cloud.provider "local-microk8s") (eq .Values.cloud.provider "local-rancher") }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

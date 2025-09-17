@@ -50,36 +50,6 @@ spec:
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
-      {{- with $.Values.sidecarVM4 }}
-      {{- if .enabled }}
-      initContainers:
-        - name: vm4-sidecar
-          {{- if typeIs "string" .image }}
-          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
-          {{- else }}
-          image: "{{ .image.registry }}/{{ .image.repository }}:{{ .image.tag }}"
-          {{- end }}
-          restartPolicy: Always
-          env:
-            {{- if .extraEnvVars }}
-            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}
-          resources: {{- toYaml .resources | nindent 12 }}
-          startupProbe:
-            failureThreshold: 30
-            periodSeconds: 1
-            httpGet:
-              path: /health
-              port: 9000
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 9000
-            failureThreshold: 3
-            periodSeconds: 60
-            timeoutSeconds: 10
-      {{- end }}
-      {{- end }}
       containers:
         - name: service-execution
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
@@ -128,10 +98,6 @@ spec:
               mountPath: /app/extensions
               subPath: extensions
             {{- end }}
-            {{- if $.Values.commonConfigs.cognigyRollout }}
-            - name: cognigy-rollout
-              mountPath: /config/rollout
-            {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -161,11 +127,6 @@ spec:
             items:
               - key: connection-string
                 path: rabbitmqConnectionString
-        {{- if $.Values.commonConfigs.cognigyRollout }}
-        - name: cognigy-rollout
-          configMap:
-            name: cognigy-rollout
-        {{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
