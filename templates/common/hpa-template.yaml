@@ -29,6 +29,8 @@ kind: ScaledObject
 metadata:
   name: {{ $hpa_val.name | quote }}
   namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    scaledobject.keda.sh/transfer-hpa-ownership: "true"
 spec:
   scaleTargetRef:
     name: {{ $hpa_val.name | quote }}
@@ -36,6 +38,13 @@ spec:
   maxReplicaCount: {{ $hpa_val.maxReplicas }}
   triggers:
     {{- include "common.tplvalues.render" ( dict "value" $hpa_val.keda.triggers "context" $ ) | nindent 4 }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      name: {{ $hpa_val.name | quote }}
+      {{- if $hpa_val.behavior }}
+      behavior:
+        {{- include "common.tplvalues.render" ( dict "value" $hpa_val.behavior "context" $ ) | nindent 4 }}
+      {{- end }}
 {{- end }}
     {{- end }}
   {{- end }}

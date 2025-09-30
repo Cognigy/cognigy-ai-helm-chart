@@ -1,0 +1,14 @@
+{{- if (not .Values.insights.postgresql.auth.superUser.existingSecret) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-postgres-ha-insights
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  username: {{ .Values.insights.postgresql.auth.superUser.username | b64enc | quote }}
+  password: {{ .Values.insights.postgresql.auth.superUser.password | b64enc | quote }}
+{{- end }}

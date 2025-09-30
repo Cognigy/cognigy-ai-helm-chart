@@ -1,7 +1,7 @@
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $serviceInsightsApi_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
+{{- $serviceInsightsApi_dbSecret :=  ternary (include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights")) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
 {{- with .Values.serviceInsightsApi }}
 ---
 apiVersion: apps/v1
@@ -24,7 +24,7 @@ spec:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
-        {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
+        {{- if and ($.Values.pgoperator.enabled) }}
         checksum/postgres: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceInsightsApi_dbSecret) }}{{ $serviceInsightsApi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceInsightsApi_dbSecret).data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
@@ -54,7 +54,25 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) }}
+            {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) }}
+            - name: INSIGHTS_POSTGRES_DB_NAME
+              value: {{ $.Values.insights.postgresql.database.name | quote }}
+            - name: INSIGHTS_POSTGRES_DB_HOST
+              value: {{ include "cognigy-ai.insights.postgresql.cluster.host" $ | quote }}
+            - name: INSIGHTS_POSTGRES_DB_PORT
+              value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+            - name: INSIGHTS_POSTGRES_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceInsightsApi_dbSecret }}
+                  key: username
+            - name: INSIGHTS_POSTGRES_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceInsightsApi_dbSecret }}
+                  key: password
+            {{- end }}
+            {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) (not $.Values.insights.postgresql.usePartitionedTables) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST

@@ -54,12 +54,10 @@ spec:
       {{- if .enabled }}
       initContainers:
         - name: vm4-sidecar
-          {{- if typeIs "string" .image }}
-          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
-          {{- else }}
-          image: "{{ .image.registry }}/{{ .image.repository }}:{{ .image.tag }}"
-          {{- end }}
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceExecution.image) }}
           restartPolicy: Always
+          command:
+            - {{ .binary }}
           env:
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}

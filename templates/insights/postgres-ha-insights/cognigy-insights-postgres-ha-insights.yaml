@@ -1,0 +1,14 @@
+{{- if (not .Values.insights.postgresql.auth.insightsUser.existingSecret) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-insights-postgres-ha-insights
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  username: {{ .Values.insights.postgresql.auth.insightsUser.username | b64enc | quote }}
+  password: {{ .Values.insights.postgresql.auth.insightsUser.password | b64enc | quote }}
+{{- end }}
