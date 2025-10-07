@@ -2796,7 +2796,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-92a692dae2-1758279661
+  image: cognigy.azurecr.io/service-handover:release-1beeddc4cb-1758636378
   replicaCount: 3
   resources:
     requests:
@@ -5533,6 +5533,9 @@ pgoperator:
             effective_cache_size: '{{ mulf 0.75 (include "cognigy-ai.toBytes"
               .Values.pgoperator.postgresqlClusterInsights.manifest.spec.resources.limits.memory)
               | int64 }}B'
+            random_page_cost: "1.1"
+            effective_io_concurrency: "200"
+            max_parallel_workers: "2"
         # patroni:
         #   maximum_lag_on_failover: "2147483648"
         volume:

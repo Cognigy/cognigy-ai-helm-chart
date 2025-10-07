@@ -1,4 +1,4 @@
-{{- if and ($.Values.cubejs.enabled) ($.Values.serviceInsightsResources.enabled) }}
+{{- if and (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.serviceInsightsResources.enabled) }}
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
