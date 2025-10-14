@@ -83,6 +83,10 @@ spec:
                   key: api-access-token
             - name: KNOWLEDGE_AI__AZURE_DOCUMENT_INTELLIGENCE_IS_CONFIGURED_SYSTEM_WIDE
               value: {{ $globalAzureDocumentIntelligenceEnabled }}
+            {{- if $.Values.serviceTesting.enabled }}
+            - name: FEATURE_ENABLE_SIMULATOR_WHITELIST
+              value: {{ join "," $.Values.productFeature.simulator.orgWhiteList | quote }}
+            {{- end }}
             {{- if $.Values.platformProvidedLLM.whitelist }}
             - name: FEATURE_PLATFORM_PROVIDED_LLM_WHITELIST
               value: {{ join "," $.Values.platformProvidedLLM.whitelist | quote }}

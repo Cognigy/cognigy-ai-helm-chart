@@ -93,6 +93,9 @@ spec:
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: vm4
+              containerPort: 9000
           startupProbe:
             failureThreshold: 30
             periodSeconds: 1
