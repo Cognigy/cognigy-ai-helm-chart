@@ -3093,7 +3093,7 @@ serviceResources:
   priorityClassName: ""
   serviceAccountName: ""
   analyseTransformers:
-    enabled: true
+    enabled: false
     securityContext: {}
     ttlSecondsAfterFinished: 3600
     restartPolicy: Never
