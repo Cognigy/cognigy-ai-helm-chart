@@ -8,8 +8,6 @@ kind: Deployment
 metadata:
   name: service-nlp-matcher
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: carbon
 spec:
   selector:
     matchLabels:

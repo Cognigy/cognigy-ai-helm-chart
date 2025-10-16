@@ -9,8 +9,6 @@ kind: ConfigMap
 metadata:
   name: knowledge-tasks-config
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: carbon
 data:
   processKnowledgeSourceFile.yaml: |
     {{- with .Values.taskProcessKnowledgeSourceFile }}
@@ -20,8 +18,6 @@ data:
     metadata:
       name: _NAME_
       namespace: {{ $.Release.Namespace | quote }}
-      labels:
-        owner-team: carbon
     spec:
       backoffLimit: 0
       activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
@@ -122,8 +118,6 @@ data:
     metadata:
       name: _NAME_
       namespace: {{ $.Release.Namespace | quote }}
-      labels:
-        owner-team: carbon
     spec:
       backoffLimit: 0
       activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
@@ -206,8 +200,6 @@ data:
     metadata:
       name: _NAME_
       namespace: {{ $.Release.Namespace | quote }}
-      labels:
-        owner-team: carbon
     spec:
       backoffLimit: 0
       activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
@@ -303,8 +295,6 @@ data:
     metadata:
       name: _NAME_
       namespace: {{ $.Release.Namespace | quote }}
-      labels:
-        owner-team: carbon
     spec:
       backoffLimit: 0
       activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
@@ -397,8 +387,6 @@ data:
     metadata:
       name: _NAME_
       namespace: {{ $.Release.Namespace | quote }}
-      labels:
-        owner-team: carbon
     spec:
       backoffLimit: 0
       activeDeadlineSeconds: {{ .activeDeadlineSeconds }}

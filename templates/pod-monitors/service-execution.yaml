@@ -13,10 +13,6 @@ spec:
   podMetricsEndpoints:
     - path: /metrics
       port: metrics
-    {{- if $.Values.sidecarVM4.enabled }}
-    - path: /metrics
-      port: vm4
-    {{- end }}
   selector:
     matchLabels:
       app: service-execution

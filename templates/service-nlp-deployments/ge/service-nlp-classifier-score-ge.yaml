@@ -9,8 +9,6 @@ kind: Deployment
 metadata:
   name: service-nlp-classifier-score-ge
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: carbon
 spec:
   selector:
     matchLabels:

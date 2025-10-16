@@ -9,8 +9,6 @@ kind: CronJob
 metadata:
   name: job-sync-knowledge-data
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: carbon
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: {{ .concurrencyPolicy }}
