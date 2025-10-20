@@ -1,12 +1,12 @@
-{{- if .Values.serviceSecurity.jobDailyConversationReporter.enabled }}
+{{- if .Values.serviceSecurity.jobDailyConversationReporterV2.enabled }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
-{{- with .Values.serviceSecurity.jobDailyConversationReporter }}
+{{- with .Values.serviceSecurity.jobDailyConversationReporterV2 }}
 
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: daily-conversation-reporter
+  name: daily-conversation-reporter-v2
   namespace: {{ $.Release.Namespace | quote }}
 spec:
   schedule: {{ .schedule | quote }}
@@ -23,7 +23,7 @@ spec:
         spec:
           securityContext:
             {{- toYaml .securityContext | nindent 12 }}
-          restartPolicy: OnFailure
+          restartPolicy: {{ .restartPolicy }}
           {{- if .affinity }}
           affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
           {{- end }}
@@ -37,11 +37,11 @@ spec:
           priorityClassName: {{ .priorityClassName }}
           {{- end }}
           containers:
-            - name: daily-conversation-reporter
+            - name: daily-conversation-reporter-v2
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceSecurity.image) }}
               resources: {{- toYaml .resources | nindent 16 }}
               command: ["node"]
-              args: ["/app/build/jobs/daily-reporting/index"]
+              args: ["/app/build/jobs/daily-reporting-v2/index"]
               envFrom:
                 - configMapRef:
                     name: cognigy-env

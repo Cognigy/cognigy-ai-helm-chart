@@ -1,4 +1,4 @@
-{{- $serviceCollector_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
+{{- $serviceCollector_dbSecret := ternary (include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights")) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
 {{- $cognigyInsightsCollectorApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsCollectorApiKey.existingSecret "defaultSecret" "cognigy-insights-collector-api-key") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
@@ -55,7 +55,29 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- if $.Values.pgoperator.enabled }}
+            {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) }}
+            - name: INSIGHTS_POSTGRES_DB_NAME
+              value: {{ $.Values.insights.postgresql.database.name | quote }}
+            - name: INSIGHTS_POSTGRES_DB_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+              {{- if $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
+            - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
+              {{- end }}
+            - name: INSIGHTS_POSTGRES_DB_PORT
+              value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+            - name: INSIGHTS_POSTGRES_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceCollector_dbSecret }}
+                  key: username
+            - name: INSIGHTS_POSTGRES_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceCollector_dbSecret }}
+                  key: password
+            {{- end }}
+            {{- if and ($.Values.pgoperator.enabled) (not $.Values.insights.postgresql.usePartitionedTables) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST

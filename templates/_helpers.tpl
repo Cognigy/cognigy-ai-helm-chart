@@ -299,6 +299,8 @@ Usage:
     {{- $storageClass = "microk8s-hostpath" -}}
   {{- else if eq .Values.cloud.provider "local-rancher" -}}
     {{- $storageClass = "local-path" -}}
+  {{- else if eq .Values.cloud.provider "local-kind" -}}
+    {{- $storageClass = "standard" -}}
   {{- end -}}
 
   {{- if (not (empty $storageClass)) -}}
@@ -326,6 +328,8 @@ Usage:
     {{- $storageClass = "microk8s-hostpath" -}}
   {{- else if eq .Values.cloud.provider "local-rancher" -}}
     {{- $storageClass = "local-path" -}}
+  {{- else if eq .Values.cloud.provider "local-kind" -}}
+    {{- $storageClass = "standard" -}}
   {{- end -}}
 
   {{- if (not (empty $storageClass)) -}}
@@ -353,6 +357,8 @@ Usage:
     {{- $storageClass = "microk8s-hostpath" -}}
   {{- else if eq .Values.cloud.provider "local-rancher" -}}
     {{- $storageClass = "local-path" -}}
+  {{- else if eq .Values.cloud.provider "local-kind" -}}
+    {{- $storageClass = "standard" -}}
   {{- end -}}
 
   {{- if (not (empty $storageClass)) -}}
@@ -380,6 +386,8 @@ Usage:
     {{- $storageClass = "microk8s-hostpath" -}}
   {{- else if eq .Values.cloud.provider "local-rancher" -}}
     {{- $storageClass = "local-path" -}}
+  {{- else if eq .Values.cloud.provider "local-kind" -}}
+    {{- $storageClass = "standard" -}}
   {{- end -}}
 
   {{- if (not (empty $storageClass)) -}}

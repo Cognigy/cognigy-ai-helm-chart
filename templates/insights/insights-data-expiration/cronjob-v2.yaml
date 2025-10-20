@@ -1,0 +1,62 @@
+# This is going to be the default data expiration cronjob for the new Insights PostgreSQL cluster
+{{- $dataExpiration_dbSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights") }}
+{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: insights-data-expiration-v2
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      parallelism: 1
+      backoffLimit: 3 # Max 3 retries
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .Values.insights.dataExpiration.securityContext | nindent 12 }}
+          restartPolicy: OnFailure
+          {{- if .Values.insights.dataExpiration.affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .Values.insights.dataExpiration.affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.insights.dataExpiration.nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.insights.dataExpiration.nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.insights.dataExpiration.tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.insights.dataExpiration.tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.insights.dataExpiration.priorityClassName }}
+          priorityClassName: {{ .Values.insights.dataExpiration.priorityClassName }}
+          {{- end }}
+          containers:
+            - name: insights-data-expiration-v2
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.insights.postgresql.image) }}
+              command: ["sh", "-c", "psql 'postgresql://'${INSIGHTS_POSTGRES_USER}':'${INSIGHTS_POSTGRES_PASSWORD}'@'${INSIGHTS_POSTGRES_DB_HOST}':'${INSIGHTS_POSTGRES_PORT}'/'${INSIGHTS_POSTGRES_DB}'' -c 'SET timezone = '\''UTC'\''; DELETE FROM public.conversations_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.sessions_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.analytics_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.liveagentescalations_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.voicegatewayevents_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.stepevents_v2 WHERE \"expiresAt\" < NOW(); '"]
+              env:
+              - name: INSIGHTS_POSTGRES_DB_HOST
+                value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+              {{- if $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
+              - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
+                value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
+              {{- end }}
+              - name: INSIGHTS_POSTGRES_DB
+                value: {{ $.Values.insights.postgresql.database.name | quote }}
+              - name: INSIGHTS_POSTGRES_PORT
+                value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+              - name: INSIGHTS_POSTGRES_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ $dataExpiration_dbSecret }}
+                    key: username
+              - name: INSIGHTS_POSTGRES_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ $dataExpiration_dbSecret }}
+                    key: password
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+{{- end }}
