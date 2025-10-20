@@ -1,0 +1,12 @@
+{{- if and (.Values.managementUi.enabled) (.Values.managementUi.ingress.ipWhiteListMiddleware.enabled) }}
+{{- with .Values.managementUi.ingress.headersMiddleware }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: headersmanagementui
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  headers: {{- toYaml .headers | nindent 4 }}
+{{- end }}
+{{- end }}
