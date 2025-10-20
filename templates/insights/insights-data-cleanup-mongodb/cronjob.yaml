@@ -46,18 +46,21 @@ spec:
               args: 
               - -c
               - |
+                echo "Starting insights data cleanup mongodb job..."
+
                 mongosh $INSIGHTS_COLLECTOR_CONNECTION_STRING \
                 --eval 'function hashMd5(str) { return require("crypto").createHash("md5").update(str).digest("hex"); }' \
-                --eval 'const deleteAnalyticsRecords = db.insightsdeleterequests.find({requestedAt: {$gte: new Date(Date.now() - 6*60*60*1000)}}, {projectId: 1, organisation: 1, contactIds: 1, requestedAt:1, _id: 0}).toArray()'  \
-                --eval 'const deleteQueriesAnalytics = deleteAnalyticsRecords.map(doc => {doc.timestamp = {$lte: doc.requestedAt}; delete doc.requestedAt; if (doc.contactIds) {const hashedIds = doc.contactIds.map(id => hashMd5(id)); doc.contactId = {$in: [...doc.contactIds, ...hashedIds]}; delete doc.contactIds;}; return doc; })' \
+                --eval 'function clone(obj) { return JSON.parse(JSON.stringify(obj)); }' \
+                --eval 'const deleteAnalyticsRecords = db.insightsdeleterequests.find({requestedAt: {$gte: new Date(Date.now() - 6*60*60*1000)}}, {projectId: 1, organisation: 1, contactIds: 1, requestedAt:1, _id: 0}).toArray()' \
+                --eval 'const deleteQueriesAnalytics = deleteAnalyticsRecords.map(doc => { const cloned = clone(doc); cloned.timestamp = {$lte: new Date(doc.requestedAt)}; delete cloned.requestedAt; if (cloned.contactIds) { const hashed = cloned.contactIds.map(id => hashMd5(id)); cloned.contactId = {$in: [...cloned.contactIds, ...hashed]}; delete cloned.contactIds; } return cloned; })' \
                 --eval 'if (deleteQueriesAnalytics.length) { print("Deleting analytics data"); printjson(db.analytics.deleteMany({$or: deleteQueriesAnalytics})); }' \
-                --eval 'const deleteQueriesSessions = deleteQueriesAnalytics.map(doc => {doc.startedAt = doc.timestamp; delete doc.timestamp; if (doc.contactId) {doc.userId = doc.contactId; delete doc.contactId;}; doc.organisationId = new ObjectId(doc.organisation); delete doc.organisation; doc.projectId = new ObjectId(doc.projectId); return doc; })' \
+                --eval 'const deleteQueriesSessions = deleteQueriesAnalytics.map((orig, index) => { const doc = clone(orig); const originalRecord = deleteAnalyticsRecords[index]; doc.startedAt = {$lte: new Date(originalRecord.requestedAt)}; delete doc.timestamp; if (doc.contactId) { doc.userId = doc.contactId; delete doc.contactId; } doc.organisationId = new ObjectId(doc.organisation); delete doc.organisation; doc.projectId = new ObjectId(doc.projectId); return doc; })' \
                 --eval 'if (deleteQueriesSessions.length) { print("Deleting sessions data"); printjson(db.sessions.deleteMany({$or: deleteQueriesSessions})); }' \
-                --eval 'const deleteQueriesLiveAgentEscalations = deleteQueriesAnalytics.map(doc => {doc.organisationId = doc.organisation; delete doc.organisation; return doc; })' \
+                --eval 'const deleteQueriesLiveAgentEscalations = deleteQueriesAnalytics.map((orig, index) => { const doc = clone(orig); const originalRecord = deleteAnalyticsRecords[index]; doc.timestamp = {$lte: new Date(originalRecord.requestedAt)}; doc.organisationId = doc.organisation; delete doc.organisation; return doc; })' \
                 --eval 'if (deleteQueriesLiveAgentEscalations.length) { print("Deleting liveagentescalations data"); printjson(db.liveagentescalations.deleteMany({$or: deleteQueriesLiveAgentEscalations})); }' \
-                --eval 'const deleteQueriesVoiceGatewayEvents = deleteQueriesAnalytics.map(doc => {if (doc.contactId) {doc.userId = doc.contactId; delete doc.contactId;}; doc.organisationId = doc.organisation; delete doc.organisation; return doc; })' \
+                --eval 'const deleteQueriesVoiceGatewayEvents = deleteQueriesAnalytics.map((orig, index) => { const doc = clone(orig); const originalRecord = deleteAnalyticsRecords[index]; doc.timestamp = {$lte: new Date(originalRecord.requestedAt)}; if (doc.contactId) { doc.userId = doc.contactId; delete doc.contactId; } doc.organisationId = doc.organisation; delete doc.organisation; return doc; })' \
                 --eval 'if (deleteQueriesVoiceGatewayEvents.length) { print("Deleting voicegatewayevents data"); printjson(db.voicegatewayevents.deleteMany({$or: deleteQueriesVoiceGatewayEvents})); }' \
-                --eval 'const deleteQueriesStepEvents = deleteQueriesAnalytics.map(doc => {if (doc.contactId) {doc.userId = doc.contactId; delete doc.contactId;}; doc.organisationId = new ObjectId(doc.organisation); delete doc.organisation; doc.projectId = new ObjectId(doc.projectId); return doc; })' \
+                --eval 'const deleteQueriesStepEvents = deleteQueriesAnalytics.map((orig, index) => { const doc = clone(orig); const originalRecord = deleteAnalyticsRecords[index]; doc.timestamp = {$lte: new Date(originalRecord.requestedAt)}; if (doc.contactId) { doc.userId = doc.contactId; delete doc.contactId; } doc.organisationId = new ObjectId(doc.organisation); delete doc.organisation; doc.projectId = new ObjectId(doc.projectId); return doc; })' \
                 --eval 'if (deleteQueriesStepEvents.length) { print("Deleting stepevents data"); printjson(db.stepevents.deleteMany({$or: deleteQueriesStepEvents})); }'
                 
                 mongosh $INSIGHTS_CONVERSATIONS_CONNECTION_STRING \

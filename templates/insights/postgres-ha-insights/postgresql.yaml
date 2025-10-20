@@ -1,0 +1,4 @@
+{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+---
+{{ include "common.tplvalues.render" (dict "value" .Values.pgoperator.postgresqlClusterInsights.manifest "context" $) }}
+{{- end }}

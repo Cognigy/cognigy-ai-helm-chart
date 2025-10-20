@@ -1,13 +1,12 @@
-# This is going to be removed when the old Insights PostgreSQL cluster is removed
-{{- if and (.Values.cubejs.enabled) (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlCluster.enabled) }}
-{{- if .Values.cubejs.dataCleanup.enabled }}
-{{- $dataCleanup_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
-{{- with .Values.cubejs.dataCleanup }}
+# This is going to be the default data cleanup cronjob for the new Insights PostgreSQL cluster
+{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlClusterInsights.enabled) (.Values.insights.dataCleanup.enabled) }}
+{{- $dataCleanup_dbSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights") }}
+{{- with .Values.insights.dataCleanup }}
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: insights-data-cleanup-postgres
+  name: insights-data-cleanup-postgres-v2
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
@@ -40,8 +39,8 @@ spec:
           priorityClassName: {{ .priorityClassName }}
           {{- end }}
           containers:
-            - name: insights-data-cleanup-postgres
-              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.cubejs.postgresql.image) }}
+            - name: insights-data-cleanup-postgres-v2
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.insights.postgresql.image) }}
               resources: {{- toYaml .resources | nindent 16 }}
               command: ["/bin/sh"]
               args: 
@@ -53,7 +52,7 @@ spec:
                   SET timezone = 'UTC';
                   
                   \echo 'Processing table: analytics'
-                  DELETE FROM PUBLIC."analytics" A 
+                  DELETE FROM PUBLIC."analytics_v2" A 
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE A."organisation" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
@@ -66,7 +65,7 @@ spec:
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
                   
                   \echo 'Processing table: sessions'
-                  DELETE FROM PUBLIC."sessions" A 
+                  DELETE FROM PUBLIC."sessions_v2" A 
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE A."organisationId" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
@@ -79,7 +78,7 @@ spec:
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
                   
                   \echo 'Processing table: conversations'
-                  DELETE FROM PUBLIC."conversations" A 
+                  DELETE FROM PUBLIC."conversations_v2" A 
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE A."organisation" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
@@ -91,26 +90,11 @@ spec:
                   AND B."entityName" = 'conversations' 
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
                   
-                  \echo 'Checking for table: conversations_v2'
-                  DELETE FROM PUBLIC."conversations_v2" A 
-                  USING PUBLIC."insightsdeleterequests" B 
-                  WHERE EXISTS (SELECT 1 FROM information_schema.tables 
-                                WHERE table_schema = 'public' AND table_name = 'conversations_v2')
-                  AND A."organisation" = B."organisation" 
-                  AND A."projectId" = ANY (B."projectIds") 
-                  AND (A."contactId" = ANY (B."contactIds") OR A."contactId" = ANY (
-                      SELECT md5(id)::character varying 
-                      FROM unnest(B."contactIds") AS id
-                  ) OR B."contactIds" IS NULL) 
-                  AND A."timestamp" <= B."requestedAt" 
-                  AND B."entityName" = 'conversations' 
-                  AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
-                  
                   \echo 'Checking for table: liveagentescalations'
-                  DELETE FROM PUBLIC."liveagentescalations" A 
+                  DELETE FROM PUBLIC."liveagentescalations_v2" A 
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE EXISTS (SELECT 1 FROM information_schema.tables 
-                                WHERE table_schema = 'public' AND table_name = 'liveagentescalations')
+                                WHERE table_schema = 'public' AND table_name = 'liveagentescalations_v2')
                   AND A."organisationId" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
                   AND (A."contactId" = ANY (B."contactIds") OR A."contactId" = ANY (
@@ -122,10 +106,10 @@ spec:
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
                   
                   \echo 'Checking for table: voicegatewayevents'
-                  DELETE FROM PUBLIC."voicegatewayevents" A 
+                  DELETE FROM PUBLIC."voicegatewayevents_v2" A 
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE EXISTS (SELECT 1 FROM information_schema.tables 
-                                WHERE table_schema = 'public' AND table_name = 'voicegatewayevents')
+                                WHERE table_schema = 'public' AND table_name = 'voicegatewayevents_v2')
                   AND A."organisationId" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
                   AND (A."userId" = ANY (B."contactIds") OR A."userId" = ANY (
@@ -152,7 +136,7 @@ spec:
                   AND B."requestedAt" >= NOW() - INTERVAL '6 hours';
                   
                   \echo 'Processing table: stepevents'
-                  DELETE FROM PUBLIC."stepevents" A 
+                  DELETE FROM PUBLIC."stepevents_v2" A 
                   USING PUBLIC."insightsdeleterequests" B 
                   WHERE A."organisationId" = B."organisation" 
                   AND A."projectId" = ANY (B."projectIds") 
@@ -168,25 +152,27 @@ spec:
                 EOSQL
               env:
               - name: INSIGHTS_POSTGRES_DB_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
-              {{- if $.Values.cubejs.postgresql.readReplica.useReadReplica }}
+                value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+              {{- if $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
               - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.readReplica.host "context" $) | quote }}
+                value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
               {{- end }}
               - name: INSIGHTS_POSTGRES_DB
-                value: {{ $.Values.cubejs.postgresql.database | quote }}
+                value: {{ $.Values.insights.postgresql.database.name | quote }}
               - name: INSIGHTS_POSTGRES_SSL
-                value: {{ $.Values.cubejs.postgresql.sslmode | quote }}
+                value: {{ $.Values.insights.postgresql.cluster.sslmode | quote }}
               - name: INSIGHTS_POSTGRES_PORT
-                value: {{ $.Values.cubejs.postgresql.port | quote }}
+                value: {{ $.Values.insights.postgresql.cluster.port | quote }}
               - name: INSIGHTS_POSTGRES_USER
-                value: {{ $.Values.cubejs.postgresql.username | quote }}
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ $dataCleanup_dbSecret }}
+                    key: username
               - name: INSIGHTS_POSTGRES_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: {{ $dataCleanup_dbSecret }}
                     key: password
           {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
-{{- end }}
 {{- end }}
 {{- end }}

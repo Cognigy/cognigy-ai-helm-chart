@@ -14,3 +14,20 @@ Usage:
 
   {{- printf "%s" (include "common.tplvalues.render" (dict "value" $postgresqlHost "context" $)) -}}
 {{- end -}}
+
+{{/*
+Return host name of the Insights Postgres database
+Usage:
+{{- include "cognigy-ai.insights.postgresql.cluster.host" $ }}
+*/}}
+{{- define "cognigy-ai.insights.postgresql.cluster.host" -}}
+  {{- $postgresqlHost := "" -}}
+
+  {{- if .Values.insights.postgresql.cluster.readReplica.useReadReplica -}}
+    {{- $postgresqlHost = .Values.insights.postgresql.cluster.readReplica.host -}}
+  {{- else -}}
+    {{- $postgresqlHost = .Values.insights.postgresql.cluster.host -}}
+  {{- end -}}
+
+  {{- printf "%s" (include "common.tplvalues.render" (dict "value" $postgresqlHost "context" $)) -}}
+{{- end -}}

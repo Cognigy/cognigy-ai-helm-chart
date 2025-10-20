@@ -1,7 +1,6 @@
-{{- if $.Values.pgoperator.enabled }}
-{{- if $.Values.cubejs.dbMigration.enabled }}
-{{- $dbMigration_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
-{{- with .Values.cubejs.dbMigration }}
+{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlClusterInsights.enabled) (.Values.insights.dbMigration.enabled) }}
+{{- $dbMigration_dbSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.superUser.existingSecret .) "defaultSecret" "postgres-postgres-ha-insights") }}
+{{- with .Values.insights.dbMigration }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -36,6 +35,47 @@ spec:
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
+      initContainers:
+        - name: postgres-connection-check
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.insights.postgresql.image) }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL connection..."
+              timeout {{ .initContainer.postgresConnectionTimeout | default 300 }} sh -c 'until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "PostgreSQL is unavailable - sleeping"
+                sleep {{ .initContainer.retryInterval | default 2 }}
+              done'
+              echo "PostgreSQL is ready!"
+          env:
+            - name: POSTGRES_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+            {{- if $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
+            - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
+            {{- end }}
+            - name: POSTGRES_PORT
+              value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+            - name: POSTGRES_DB
+              value: {{ $.Values.insights.postgresql.database.name | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $dbMigration_dbSecret }}
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $dbMigration_dbSecret }}
+                  key: password
+          resources:
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
       containers:
         - name: insights-db-migration-manager
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
@@ -44,15 +84,15 @@ spec:
             - name: INSIGHTS_POSTGRES_DATA_MIGRATION_MODE
               value: {{ .migration.mode | quote }}
             - name: POSTGRES_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
-            {{- if $.Values.cubejs.postgresql.readReplica.useReadReplica }}
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+            {{- if $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
             - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.readReplica.host "context" $) | quote }}
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
             {{- end }}
             - name: POSTGRES_PORT
-              value: {{ $.Values.cubejs.postgresql.port | quote }}
+              value: {{ $.Values.insights.postgresql.cluster.port | quote }}
             - name: POSTGRES_DB
-              value: {{ $.Values.cubejs.postgresql.database | quote }}
+              value: {{ $.Values.insights.postgresql.database.name | quote }}
             {{- if .migration.include }}
             - name: INSIGHTS_INCLUDE_MIGRATION_NAME
               value: {{ .migration.include | quote }}
@@ -64,13 +104,15 @@ spec:
             - name: INSIGHTS_SCHEMA_CRITICAL_ERROR_DISABLE
               value: {{ .migration.disableSchemaCriticalError | quote }}
             - name: POSTGRES_USER
-              value: {{ $.Values.cubejs.postgresql.username | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $dbMigration_dbSecret }}
+                  key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $dbMigration_dbSecret }}
                   key: password
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
-{{- end }}
 {{- end }}
 {{- end }}
