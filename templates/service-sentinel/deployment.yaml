@@ -102,14 +102,12 @@ spec:
               value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_MASTER_NAME }}
             - name: FEATURE_REDIS_SENTINEL_MODE_ENABLED
               value: "{{ $.Values.cognigyEnv.FEATURE_REDIS_SENTINEL_MODE_ENABLED }}"
-            - name: FEATURE_ENABLE_OPS_CENTER_WHITELIST
-              value: {{ join "," $.Values.productFeature.opsCenter.orgWhiteList | quote }}
             - name: APPLICATION_PORT
               value: "8000"
             - name: METRICS_SERVER_PORT
               value: "9090"
             - name: METRICS_SERVER_HOST
-              value: {{ $.Values.cognigyEnv.METRICS_SERVER_HOST }}
+              value: {{ $.Values.productFeature.opsCenter.metricsServerHost }}
             - name: HEALTH_CHECK_PORT
               value: "8001"
             - name: METRICS_PORT
@@ -131,7 +129,7 @@ spec:
             - name: ERROR_STORAGE_TTL_IN_SECONDS
               value: "604800" # 7 days in seconds
             - name: DEFAULT_KUBE_PROM_STACK_CRD_CONFIG_VERSION
-              value: "{{ $.Values.productFeature.opsCenter.DEFAULT_KUBE_PROM_STACK_CRD_CONFIG_VERSION }}"
+              value: "{{ $.Values.productFeature.opsCenter.defaultKubePromStackCrdConfigVersion }}"
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -258,13 +256,15 @@ spec:
             - name: REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS
               value: "{{ $.Values.cognigyEnv.REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS }}"
             - name: DEFAULT_KUBE_PROM_STACK_CRD_CONFIG_VERSION
-              value: "{{ $.Values.productFeature.opsCenter.DEFAULT_KUBE_PROM_STACK_CRD_CONFIG_VERSION }}"
+              value: "{{ $.Values.productFeature.opsCenter.defaultKubePromStackCrdConfigVersion }}"
             - name: CRD_SYNC_INTERVAL_SECONDS
-              value: "{{ $.Values.productFeature.opsCenter.CRD_SYNC_INTERVAL_SECONDS }}"
+              value: "{{ $.Values.productFeature.opsCenter.crdSyncIntervalSeconds }}"
             - name: METRICS_SERVER_PORT
               value: "9090"
             - name: METRICS_SERVER_HOST
-              value: {{ $.Values.cognigyEnv.METRICS_SERVER_HOST }}
+              value: {{ $.Values.productFeature.opsCenter.metricsServerHost }}
+            - name: FRONTEND_URL
+              value: {{ if $.Values.ingress.serviceUi.host }}{{ printf "https://%s" $.Values.ingress.serviceUi.host | quote }}{{ else }}{{ $.Values.cognigyEnv.FRONTEND_BASE_URL_WITH_PROTOCOL | quote }}{{ end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

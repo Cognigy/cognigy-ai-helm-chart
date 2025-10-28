@@ -112,7 +112,7 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
-            - name: SIMULATOR_ENABLED_ORG_WHITELIST
+            - name: FEATURE_ENABLE_SIMULATOR_WHITELIST
               value: {{ join "," $.Values.productFeature.simulator.orgWhiteList | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}

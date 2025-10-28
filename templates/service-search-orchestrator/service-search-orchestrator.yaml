@@ -10,6 +10,8 @@ kind: Deployment
 metadata:
   name: service-search-orchestrator
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: carbon
 spec:
   selector:
     matchLabels:

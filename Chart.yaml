@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 2025.20.2
-appVersion: "2025.20.2"
+version: 2025.22.0
+appVersion: "2025.22.0"
 kubeVersion: "<v1.34.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
@@ -19,7 +19,7 @@ dependencies:
     repository: "https://helm.traefik.io/traefik"
     condition: traefik.enabled
   - name: qdrant
-    version: "1.13.4"
+    version: "1.15.4"
     repository: "https://qdrant.to/helm"
     condition: qdrant.enabled
   - name: redis

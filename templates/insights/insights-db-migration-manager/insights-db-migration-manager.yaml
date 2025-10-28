@@ -103,6 +103,8 @@ spec:
             {{- end }}
             - name: INSIGHTS_SCHEMA_CRITICAL_ERROR_DISABLE
               value: {{ .migration.disableSchemaCriticalError | quote }}
+            - name: INSIGHTS_DBINIT_INDEX_CREATION_DISABLE
+              value: {{ .migration.disableIndexCreation | quote }}
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -113,6 +115,9 @@ spec:
                 secretKeyRef:
                   name: {{ $dbMigration_dbSecret }}
                   key: password
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
 {{- end }}
 {{- end }}

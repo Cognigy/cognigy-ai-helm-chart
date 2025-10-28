@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: clamd
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
 spec:
   selector:
     matchLabels:
@@ -44,7 +46,15 @@ spec:
               port: 3310
           volumeMounts:
             - name: clamav-config
-              mountPath: /etc/clamav              
+              mountPath: /etc/clamav/clamd.conf
+              subPath: clamd.conf              
+              readOnly: false
+            - name: clamav-config
+              mountPath: /etc/clamav/freshclam.conf
+              subPath: freshclam.conf              
+              readOnly: false
+            - name: clamav-certs
+              mountPath: /etc/clamav/certs
               readOnly: false
           {{- if .extraEnvVars }}
           env:
@@ -53,7 +63,10 @@ spec:
       volumes: 
         - name: clamav-config
           configMap:
-            name: clamav      
+            name: clamav
+        - name: clamav-certs
+          configMap:
+            name: clamav-certs
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

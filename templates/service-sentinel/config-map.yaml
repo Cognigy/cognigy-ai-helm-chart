@@ -35,7 +35,8 @@ data:
                         "identifier": "cognigy_endpoint_raw_messages_count",
                         "queryTemplate": "sum(increase(cognigy_endpoint_raw_messages_count${filters}[1m]))",
                         "metric": "sum(increase(cognigy_endpoint_raw_messages_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
-                        "isPositiveTrend": true
+                        "isPositiveTrend": true,
+                        "isPreviewModeEnabled": true
                     },
                     "showCounts": true,
                     "chartConfig": {
@@ -63,7 +64,8 @@ data:
                         "identifier": "cognigy_endpoint_raw_vg2_messages_count",
                         "queryTemplate": "sum(increase(cognigy_endpoint_raw_vg2_messages_count${filters}[1m]))",
                         "metric": "sum(increase(cognigy_endpoint_raw_vg2_messages_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
-                        "isPositiveTrend": true
+                        "isPositiveTrend": true,
+                        "isPreviewModeEnabled": true
                     },
                     "showCounts": true,
                     "chartConfig": {
@@ -88,7 +90,8 @@ data:
                         "identifier": "cognigy_endpoint_raw_messages_count",
                         "queryTemplate": "sum(increase(cognigy_endpoint_raw_messages_count${filters}[1m]))",
                         "metric": "sum(increase(cognigy_endpoint_raw_messages_count[1m]))",
-                        "isPositiveTrend": true
+                        "isPositiveTrend": true,
+                        "isPreviewModeEnabled": true
                     },
                     "showCounts": true,
                     "chartConfig": {
@@ -111,7 +114,8 @@ data:
                         "identifier": "cognigy_endpoint_raw_messages_response_time_bucket",
                         "queryTemplate": "sum by (le)(increase(cognigy_endpoint_raw_messages_response_time_bucket${filters}[1m]))",
                         "metric": "sum by(le) (increase(cognigy_endpoint_raw_messages_response_time_bucket[1m]))",
-                        "isPositiveTrend": true
+                        "isPositiveTrend": true,
+                        "isPreviewModeEnabled": false
                     },
                     "showCounts": false,
                     "chartConfig": {
@@ -146,7 +150,8 @@ data:
                                 "identifier": "cognigy_endpoint_transformer_execution_time_bucket",
                                 "queryTemplate": "sum by (le)(increase(cognigy_endpoint_transformer_execution_time_bucket${filters}[1m]))",
                                 "metric": "sum by (le)(increase(cognigy_endpoint_transformer_execution_time_bucket[1m]))",
-                                "isPositiveTrend": true
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": false,
                             "chartConfig": {
@@ -169,7 +174,8 @@ data:
                                 "identifier": "transformer_error_count",
                                 "queryTemplate": "sum(increase(cognigy_endpoint_transformer_error_count${filters}[1m]))",
                                 "metric": "sum(increase(cognigy_endpoint_transformer_error_count[1m]))",
-                                "isPositiveTrend": false
+                                "isPositiveTrend": false,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": false,
                             "chartConfig": {
@@ -196,7 +202,8 @@ data:
                         "identifier": "flow_execution_time_90th_percentile",
                         "queryTemplate": "histogram_quantile(0.90, sum(increase(cognigy_ai_message_processing_time_bucket${filters}[1m])) by (le))",
                         "metric": "histogram_quantile(0.90, sum(increase(cognigy_ai_message_processing_time_bucket{organisationId='63babf6e92add771923e87b7'}[1m])) by (le))",
-                        "isPositiveTrend": false
+                        "isPositiveTrend": false,
+                        "isPreviewModeEnabled": true
                     },
                     "showCounts": true,
                     "chartConfig": {
@@ -231,7 +238,8 @@ data:
                                 "identifier": "outbound_http_requests",
                                 "queryTemplate": "sum(increase(cognigy_http_requests_count${filters}[1m]))",
                                 "metric": "sum(increase(cognigy_http_requests_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
-                                "isPositiveTrend": true
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": true,
                             "chartConfig": {
@@ -254,7 +262,8 @@ data:
                                 "identifier": "outbound_http_request_latency",
                                 "queryTemplate": "sum by(le) (increase(cognigy_http_requests_latency_bucket${filters}[1m]))",
                                 "metric": "sum by(le) (increase(cognigy_http_requests_latency_bucket[1m]))",
-                                "isPositiveTrend": true
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": false,
                             "chartConfig": {
@@ -291,7 +300,8 @@ data:
                                 "identifier": "nlu_scoring_time",
                                 "queryTemplate": "sum by (le)(increase(cognigy_nlp_classifier_score_rpc_latency_histogram_milliseconds_bucket${filters}[1m]))",
                                 "metric": "sum by (le)(increase(cognigy_nlp_classifier_score_rpc_latency_histogram_milliseconds_bucket{organisationId='63babf6e92add771923e87b7'}[1m]))",
-                                "isPositiveTrend": true
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": true,
                             "chartConfig": {
@@ -321,14 +331,15 @@ data:
                     "anchor": "llms",
                     "items": [
                         {
-                            "type": "bar-chart",
+                            "type": "line-chart",
                             "title": "LLM Fallbacks triggered",
                             "description": "Shows how often an LLM fallback was triggered as the primary LLM did not work.",
                             "queryConfig": {
                                 "identifier": "llm_fallbacks_triggered",
-                                "queryTemplate": "sum(increase(cognigy_ai_llm_fallback_triggered${filters}[1m]))",
-                                "metric": "sum(increase(cognigy_ai_llm_fallback_triggered{organisationId='63babf6e92add771923e87b7'}[1m]))",
-                                "isPositiveTrend": true
+                                "queryTemplate": "sum(increase(cognigy_ai_llm_fallback_triggered${filters}[30m]))",
+                                "metric": "sum(increase(cognigy_ai_llm_fallback_triggered{organisationId='63babf6e92add771923e87b7'}[30m]))",
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": true,
                             "chartConfig": {
@@ -344,14 +355,15 @@ data:
                             }
                         },
                         {
-                            "type": "bar-chart",
+                            "type": "line-chart",
                             "title": "LLM Retries triggered",
                             "description": "Shows how often API calls to LLMs were re-tried due to issues.",
                             "queryConfig": {
                                 "identifier": "llm_retries_triggered",
-                                "queryTemplate": "sum(increase(cognigy_ai_llm_fallback_primary_retries${filters}[1m]))",
-                                "metric": "sum(increase(cognigy_ai_llm_fallback_primary_retries{organisationId='63babf6e92add771923e87b7'}[1m]))",
-                                "isPositiveTrend": true
+                                "queryTemplate": "sum(increase(cognigy_ai_llm_fallback_primary_retries${filters}[30m]))",
+                                "metric": "sum(increase(cognigy_ai_llm_fallback_primary_retries{organisationId='63babf6e92add771923e87b7'}[30m]))",
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": false,
                             "chartConfig": {
@@ -388,7 +400,8 @@ data:
                                 "identifier": "knowledge_ai_queries",
                                 "queryTemplate": "sum(increase(search_orchestrator_successful_search_requests_total${filters}[1m]))",
                                 "metric": "sum(increase(search_orchestrator_successful_search_requests_total{organisationId='63babf6e92add771923e87b7'}[1m]))",
-                                "isPositiveTrend": true
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": true,
                             "chartConfig": {
@@ -411,7 +424,8 @@ data:
                                 "identifier": "knowledge_ai_query_latency",
                                 "queryTemplate": "sum by(le) (increase(search_orchestrator_search_latency_histogram_seconds_bucket${filters}[1m]))",
                                 "metric": "sum by(le) (increase(search_orchestrator_search_latency_histogram_seconds_bucket[1m]))",
-                                "isPositiveTrend": true
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": false,
                             "chartConfig": {
@@ -448,7 +462,8 @@ data:
                                 "identifier": "extension_processing_count",
                                 "queryTemplate": "sum(increase(cognigy_execution_extension_processing_time_count${filters}[1m]))",
                                 "metric": "sum(increase(cognigy_execution_extension_processing_time_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
-                                "isPositiveTrend": true
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": true,
                             "chartConfig": {
@@ -471,7 +486,8 @@ data:
                                 "identifier": "extension_processing_time",
                                 "queryTemplate": "sum by (le)(increase(cognigy_execution_extension_processing_time_bucket${filters}[1m]))",
                                 "metric": "sum by (le)(increase(cognigy_execution_extension_processing_time_bucket{organisationId='63babf6e92add771923e87b7'}[1m]))",
-                                "isPositiveTrend": true
+                                "isPositiveTrend": true,
+                                "isPreviewModeEnabled": false
                             },
                             "showCounts": true,
                             "chartConfig": {
@@ -498,7 +514,8 @@ data:
                         "identifier": "handover_provider_forwarding_errors",
                         "queryTemplate": "sum(increase(cognigy_ai_handover_send_message_to_provider_error_count${filters}[1m]))",
                         "metric": "sum(increase(cognigy_ai_handover_send_message_to_provider_error_count[1m]))",
-                        "isPositiveTrend": true
+                        "isPositiveTrend": true,
+                        "isPreviewModeEnabled": true
                     },
                     "showCounts": true,
                     "chartConfig": {
@@ -521,7 +538,8 @@ data:
                         "identifier": "handover_provider_api_call_duration",
                         "queryTemplate": "sum by(le) (increase(cognigy_http_request_duration_bucket${filters}[1m]))",
                         "metric": "sum by(le) (increase(cognigy_http_request_duration_bucket[1m]))",
-                        "isPositiveTrend": true
+                        "isPositiveTrend": true,
+                        "isPreviewModeEnabled": false
                     },
                     "showCounts": false,
                     "chartConfig": {
