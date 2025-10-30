@@ -360,7 +360,7 @@ data:
                 - name: redis-password
                   mountPath: /var/run/secrets/redis-password.conf
                   subPath: redis-password.conf
-                {{- if $.Values.migrateFS.enabled }}
+                {{- if $.Values.persistentVolumeClaim.runtime.enabled }}
                 - name: runtime
                   mountPath: /app/node_modules/_EXTENSION_
                   subPath: extensions/_EXTENSION_
@@ -378,7 +378,7 @@ data:
             - name: redis-password
               secret:
                 secretName: {{ $redisHa_secret }}
-            {{- if $.Values.migrateFS.enabled }}
+            {{- if $.Values.persistentVolumeClaim.runtime.enabled }}
             - name: runtime
               persistentVolumeClaim:
                 claimName: runtime

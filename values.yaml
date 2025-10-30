@@ -1713,7 +1713,6 @@ cognigyEnv:
 
   # VG enable call completed safety timeout. projectId or "*"
   VG_CALL_COMPLETED_SAFETY_TIMEOUT_PROJECT_ID_WHITELIST: "*"
-
   # The timeout for getting the conversation counter.
   # default 60000
   # CONVERSATION_COUNTER_TIMEOUT_IN_MS:

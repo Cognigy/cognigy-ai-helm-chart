@@ -43,7 +43,7 @@ spec:
       name: {{ $hpa_val.name | quote }}
       {{- if $hpa_val.behavior }}
       behavior:
-        {{- include "common.tplvalues.render" ( dict "value" $hpa_val.behavior "context" $ ) | nindent 4 }}
+        {{- include "common.tplvalues.render" ( dict "value" $hpa_val.behavior "context" $ ) | nindent 8 }}
       {{- end }}
 {{- end }}
     {{- end }}
