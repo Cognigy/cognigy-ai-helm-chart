@@ -360,10 +360,14 @@ data:
                 - name: redis-password
                   mountPath: /var/run/secrets/redis-password.conf
                   subPath: redis-password.conf
-                {{- if $.Values.persistentVolumeClaim.runtime.enabled }}
+                {{- if $.Values.migrateFS.enabled }}
                 - name: runtime
                   mountPath: /app/node_modules/_EXTENSION_
                   subPath: extensions/_EXTENSION_
+                {{- else }}
+                - name: flow-modules
+                  mountPath: /app/node_modules/_EXTENSION_
+                  subPath: _EXTENSION_
                 {{- end }}
                 {{- if .extraVolumeMounts }}
                 {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
@@ -378,10 +382,14 @@ data:
             - name: redis-password
               secret:
                 secretName: {{ $redisHa_secret }}
-            {{- if $.Values.persistentVolumeClaim.runtime.enabled }}
+            {{- if $.Values.migrateFS.enabled }}
             - name: runtime
               persistentVolumeClaim:
                 claimName: runtime
+            {{- else }}
+            - name: flow-modules
+              persistentVolumeClaim:
+                claimName: flow-modules
             {{- end }}
             {{- if .extraVolumes }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
