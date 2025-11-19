@@ -2347,7 +2347,7 @@ statefulRabbitMq:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-0be23ac804-1762416406
+  image: cognigy.azurecr.io/service-ai:release-dba97d62b4-1763458807
   replicaCount: 3
   resources:
     requests:
@@ -2510,7 +2510,7 @@ serviceAnalyticsOdata:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsReporter:
-  image: cognigy.azurecr.io/service-analytics-reporter:release-822dbaa-1761053890
+  image: cognigy.azurecr.io/service-analytics-reporter:release-7b2a27f-1762855536
   replicaCount: 3
   resources:
     requests:
@@ -2526,7 +2526,7 @@ serviceAnalyticsReporter:
   tolerations: []
   priorityClassName: ""
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-47ae9d0c0c-1761908519
+  image: cognigy.azurecr.io/service-api:release-dba97d62b4-1763458807
   replicaCount: 3
   resources:
     requests:
@@ -3034,7 +3034,7 @@ serviceParser:
   tolerations: []
   priorityClassName: ""
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:release-47ae9d0c0c-1761908519
+  image: cognigy.azurecr.io/service-playbook-execution:release-dba97d62b4-1763458807
   replicaCount: 3
   resources:
     requests:
@@ -3078,7 +3078,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-d6b948b6f6-1762182184
+  image: cognigy.azurecr.io/service-resources:release-dba97d62b4-1763458807
   replicaCount: 3
   resources:
     requests:
@@ -3291,7 +3291,7 @@ serviceSessionStateManager:
             averageUtilization: 70
     behavior: {}
 serviceStaticFiles:
-  image: cognigy.azurecr.io/service-static-files:release-5951fc17ed-1758116829
+  image: cognigy.azurecr.io/service-static-files:release-f804e2b4aa-1763536174
   replicaCount: 3
   resources:
     requests:
@@ -3339,7 +3339,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-84a41ce1ef-1762790546
+  image: cognigy.azurecr.io/service-ui:release-ae3c9e8586-1763456969
   replicaCount: 3
   resources:
     requests:
@@ -3873,7 +3873,7 @@ taskRunKnowledgeExtension:
   priorityClassName: ""
 
 taskCreatePackageNfs:
-  image: cognigy.azurecr.io/service-resources:release-d6b948b6f6-1762182184
+  image: cognigy.azurecr.io/service-resources:release-dba97d62b4-1763458807
   resources:
     requests:
       cpu: "1"
