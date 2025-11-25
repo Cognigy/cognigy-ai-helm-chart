@@ -46,6 +46,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: cognigy-env
+          {{- if .extraEnvVars }}
+          env:
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: mongodb-connection-string
               mountPath: /var/run/secrets/mongodbConnectionString
