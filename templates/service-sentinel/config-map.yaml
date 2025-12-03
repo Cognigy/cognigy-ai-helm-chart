@@ -508,12 +508,12 @@ data:
             "handover-provider": [
                 {
                     "type": "line-chart",
-                    "title": "Handover Requests",
-                    "description": "Total number of requests sent to handover providers.",
+                    "title": "Provider Forwarding Errors Count",
+                    "description": "Total number of errors when forwarding messages to providers.",
                     "queryConfig": {
-                        "identifier": "handover_provider_requests",
-                        "queryTemplate": "sum(increase(cognigy_ai_handover_request_handover_rpc_calls_total${filters}[1m]))",
-                        "metric": "sum(increase(cognigy_ai_handover_request_handover_rpc_calls_total[1m]))",
+                        "identifier": "handover_provider_forwarding_errors",
+                        "queryTemplate": "sum(increase(cognigy_ai_handover_send_message_to_provider_error_count${filters}[1m]))",
+                        "metric": "sum(increase(cognigy_ai_handover_send_message_to_provider_error_count[1m]))",
                         "isPositiveTrend": true,
                         "isPreviewModeEnabled": true
                     },
@@ -531,17 +531,17 @@ data:
                     }
                 },
                 {
-                    "type": "line-chart",
-                    "title": "Handover Messages",
-                    "description": "Total number of messages sent to handover providers.",
+                    "type": "heat-map",
+                    "title": "API Call Request Duration",
+                    "description": "Duration of http requests in milliseconds",
                     "queryConfig": {
-                        "identifier": "handover_provider_messages",
-                        "queryTemplate": "sum(increase(cognigy_ai_handover_send_message_to_provider_rpc_calls_total${filters}[1m]))",
-                        "metric": "sum(increase(cognigy_ai_handover_send_message_to_provider_rpc_calls_total[1m]))",
+                        "identifier": "handover_provider_api_call_duration",
+                        "queryTemplate": "sum by(le) (increase(cognigy_http_request_duration_bucket${filters}[1m]))",
+                        "metric": "sum by(le) (increase(cognigy_http_request_duration_bucket[1m]))",
                         "isPositiveTrend": true,
                         "isPreviewModeEnabled": false
                     },
-                    "showCounts": true,
+                    "showCounts": false,
                     "chartConfig": {
                         "color": "default",
                         "height": 270
