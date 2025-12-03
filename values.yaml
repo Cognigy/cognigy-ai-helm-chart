@@ -2494,7 +2494,7 @@ serviceAnalyticsConversations:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsOdata:
-  image: cognigy.azurecr.io/service-analytics-odata:release-84adbe4-1760977231
+  image: cognigy.azurecr.io/service-analytics-odata:release-5dcc48d-1764697743
   replicaCount: 3
   resources:
     requests:
