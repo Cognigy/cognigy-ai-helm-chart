@@ -91,7 +91,11 @@ spec:
             - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
               value: 'true'
             - name: HOST_VALIDATION_WHITELIST
-              value: {{ $.Values.ingress.serviceApi.host  | quote }}
+              {{- if $.Values.ingress.serviceApi.customServiceUrl }}
+              value: {{ printf "%s,%s" $.Values.ingress.serviceApi.host $.Values.ingress.serviceApi.customServiceUrl | quote }}
+              {{- else }}
+              value: {{ $.Values.ingress.serviceApi.host | quote }}
+              {{- end }}
             - name: AUTH_JWT_SIGNING_KEY
               valueFrom:
                 secretKeyRef:

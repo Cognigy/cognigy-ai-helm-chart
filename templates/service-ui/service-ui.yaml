@@ -58,7 +58,11 @@ spec:
                 name: cognigy-env
           env:
             - name: HOST_VALIDATION_WHITELIST
-              value: {{ $.Values.ingress.serviceUi.host  | quote }}
+              {{- if $.Values.ingress.serviceUi.customServiceUrl }}
+              value: {{ printf "%s,%s" $.Values.ingress.serviceUi.host $.Values.ingress.serviceUi.customServiceUrl | quote }}
+              {{- else }}
+              value: {{ $.Values.ingress.serviceUi.host | quote }}
+              {{- end }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
