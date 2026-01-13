@@ -71,13 +71,13 @@ data:
   ODATA_HOSTNAME: {{ printf "%s" .Values.ingress.serviceAnalyticsOdata.host | quote }}
   {{- end }}
   ODATA_PROTOCOL: "https"
-
-  {{- if and ($.Values.goals.enabled) (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.serviceInsightsResources.enabled) }}
+  {{- if and ($.Values.goals.enabled) (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.serviceInsightsResources.enabled) (not (hasKey .Values.cognigyEnv "FEATURE_INSIGHTS_USE_GOALS_DASHBOARD")) }}
   FEATURE_INSIGHTS_USE_GOALS_DASHBOARD: "true"
+  {{- end }}
+  {{- if and ($.Values.goals.enabled) (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.serviceInsightsResources.enabled) (not (hasKey .Values.cognigyEnv "FEATURE_USE_GOALS")) }}
   FEATURE_USE_GOALS: "true"
   {{- end }}
-
-  {{- if and (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.pgoperator.enabled) }}
+  {{- if and (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.pgoperator.enabled) (not (hasKey .Values.cognigyEnv "FEATURE_INSIGHTS_BUSINESS_DASHBOARD_DIRECT_POSTGRESQL")) }}
   FEATURE_INSIGHTS_BUSINESS_DASHBOARD_DIRECT_POSTGRESQL: "true"
   {{- end }}
 

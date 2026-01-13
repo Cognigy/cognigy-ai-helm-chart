@@ -75,6 +75,10 @@ spec:
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
+            {{- if $.Values.serviceTesting.enabled }}
+            - name: FEATURE_ENABLE_SIMULATOR_WHITELIST
+              value: {{ join "," $.Values.productFeature.simulator.orgWhiteList | quote }}
+            {{- end }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT

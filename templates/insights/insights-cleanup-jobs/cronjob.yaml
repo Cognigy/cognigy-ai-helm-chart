@@ -1,0 +1,104 @@
+# Insights jobDataCleanup v1 CronJob
+{{- if and ($.Values.insights.jobDataCleanup.enabled) ($.Values.pgoperator.enabled) ($.Values.pgoperator.postgresqlCluster.enabled) (not $.Values.insights.postgresql.usePartitionedTables) }}
+{{- $pgUserSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights") }}
+{{- $mongoCollectorSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }}
+{{- $mongoConversationsSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsConversations.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsConversations.serviceName)) }}
+{{- with .Values.insights.jobDataCleanup }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: job-insights-data-cleanup-v1
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: {{ .concurrencyPolicy | default "Forbid" }}
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit | default 1 }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit | default 1 }}
+  jobTemplate:
+    spec:
+      parallelism: {{ .parallelism | default 1 }}
+      backoffLimit: {{ .backoffLimit | default 3 }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds | default 840 }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished | default 300 }}
+      template:
+        spec:
+          restartPolicy: {{ .restartPolicy | default "OnFailure" }}
+          {{- if .securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+
+          containers:
+            - name: job-insights-data-cleanup-v1
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+              resources: {{- toYaml .resources | nindent 16 }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              env:
+                # Postgres connection
+                - name: POSTGRES_HOST
+                  value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
+                - name: POSTGRES_PORT
+                  value: {{ $.Values.cubejs.postgresql.port | quote }}
+                - name: POSTGRES_DB
+                  value: {{ $.Values.cubejs.postgresql.database | quote }}
+                - name: POSTGRES_USER
+                  value: {{ $.Values.cubejs.postgresql.username | quote }}
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "cubejs.postgresql.password.existingSecret" $ }}
+                      key: password
+                - name: INSIGHTS_POSTGRES_SSLMODE
+                  value: {{ $.Values.cubejs.postgresql.sslmode | default "disable" | quote }}
+
+                # Mongo connections (from existing secrets used in the repo)
+                - name: INSIGHTS_COLLECTOR_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $mongoCollectorSecret }}
+                      key: connection-string
+                - name: INSIGHTS_CONVERSATIONS_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $mongoConversationsSecret }}
+                      key: connection-string
+
+                # Windows and logging
+                - name: CLEANUP_WINDOW_HOURS
+                  value: {{ .cleanupWindowHours | default 2 | quote }}
+                - name: MASK_BUFFER_HOURS
+                  value: {{ .maskBufferHours | default 2 | quote }}
+                - name: MASKING_WINDOW_HOURS
+                  value: {{ .maskingWindowHours | default 2 | quote }}
+                - name: LOG_LEVEL
+                  value: {{ .logLevel | default "info" | quote }}
+                  
+                # Feature flags
+                - name: ENABLE_POSTGRES_DELETION
+                  value: {{ .features.enablePostgresCleanup | quote }}
+                - name: ENABLE_POSTGRES_EXPIRATION
+                  value: {{ .features.enablePostgresExpiration | quote }}
+                - name: ENABLE_MONGO_DELETION
+                  value: {{ .features.enableMongoDeletion | quote }}
+
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+{{- end }}
+{{- end }}
+

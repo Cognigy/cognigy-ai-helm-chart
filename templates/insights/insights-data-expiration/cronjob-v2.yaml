@@ -1,6 +1,6 @@
 # This is going to be the default data expiration cronjob for the new Insights PostgreSQL cluster
+{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlClusterInsights.enabled) (.Values.insights.dataExpiration.enabled) }}
 {{- $dataExpiration_dbSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights") }}
-{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlClusterInsights.enabled) }}
 ---
 apiVersion: batch/v1
 kind: CronJob
