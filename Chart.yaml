@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 2026.1.2
-appVersion: "2026.1.2"
+version: 2026.2.0
+appVersion: "2026.2.0"
 kubeVersion: "<v1.34.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
