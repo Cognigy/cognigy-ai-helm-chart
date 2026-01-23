@@ -3117,7 +3117,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-e43ea4102c-1769009215
+  image: cognigy.azurecr.io/service-resources:release-e9b5adf762-1768996601
   replicaCount: 3
   resources:
     requests:
