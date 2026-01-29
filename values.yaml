@@ -2600,9 +2600,6 @@ serviceAppSessionManager:
   tolerations: []
   priorityClassName: ""
 
-#
-# This is part of new functionality we are working on actively.
-#
 serviceCollaboration:
   enabled: true
   image: cognigy.azurecr.io/service-collaboration:release-1fc9ce8-1765185941
