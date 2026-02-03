@@ -90,6 +90,12 @@ spec:
               value: "true"
             - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
               value: 'true'
+            {{- if $.Values.niceCXOne }}
+            - name: FEATURE_NICE_CXONE_INTEGRATION
+              value: {{ $.Values.niceCXOne.enabled | quote }}
+            - name: CXONE_BASE_URL
+              value: {{ $.Values.niceCXOne.cxoneBaseUrl | quote }}
+            {{- end }}
             - name: HOST_VALIDATION_WHITELIST
               {{- if $.Values.ingress.serviceApi.customServiceUrl }}
               value: {{ printf "%s,%s" $.Values.ingress.serviceApi.host $.Values.ingress.serviceApi.customServiceUrl | quote }}
@@ -181,7 +187,7 @@ spec:
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
-              value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+              value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}
             - name: TRACING_ERRORS_ENABLED
               value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
             - name: TRACING_EVENTS_SAMPLE_RATE

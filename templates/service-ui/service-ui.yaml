@@ -63,6 +63,12 @@ spec:
               {{- else }}
               value: {{ $.Values.ingress.serviceUi.host | quote }}
               {{- end }}
+            {{- if $.Values.niceCXOne }}
+            - name: FEATURE_NICE_CXONE_INTEGRATION
+              value: {{ $.Values.niceCXOne.enabled | quote }}
+            - name: CXONE_BASE_URL
+              value: {{ $.Values.niceCXOne.cxoneBaseUrl | quote }}
+            {{- end }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN

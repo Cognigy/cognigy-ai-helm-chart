@@ -1,0 +1,67 @@
+{{- if and (.Values.serviceEndpointVgNightly.enabled) (.Values.ingress.serviceEndpointVgNightly.tls.enabled) }}
+{{- if not (.Values.ingress.serviceEndpointVgNightly.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceEndpointVgNightly.tls.crt) (.Values.ingress.serviceEndpointVgNightly.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-endpoint-vg-nightly-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # Your base64 encoded TLS certificate
+  tls.crt: {{ .Values.ingress.serviceEndpointVgNightly.tls.crt | b64enc | quote }}
+  # Your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceEndpointVgNightly.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if and (.Values.ingress.enabled) (.Values.serviceEndpointVgNightly.enabled) }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-endpoint-vg-nightly
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+    {{- if .Values.ingress.serviceEndpointVgNightly.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistserviceendpointvgnightly@kubernetescrd
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.ingress.serviceEndpointVgNightly.tls.enabled) }}
+  {{- if (.Values.ingress.serviceEndpointVgNightly.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceEndpointVgNightly.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceEndpointVgNightly.tls.crt) (.Values.ingress.serviceEndpointVgNightly.tls.key) }}
+  tls:
+    - secretName: cognigy-service-endpoint-vg-nightly-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.serviceEndpointVgNightly.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: service-endpoint-vg-nightly
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+{{- end }}

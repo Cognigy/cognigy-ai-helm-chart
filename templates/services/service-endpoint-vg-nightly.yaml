@@ -1,0 +1,29 @@
+{{- if .Values.serviceEndpointVgNightly.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-endpoint-vg-nightly
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-endpoint-vg-nightly
+  annotations:
+    # Annotation our traefik reverse-proxy uses to enable
+    # sticky-sessions. If you are not using traefik, this
+    # annotation will do nothing.
+    # Traefik v2:
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: "none"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.httponly: "true"
+    {{- if .Values.service.serviceEndpointVgNightly.annotations }}
+      {{- toYaml .Values.service.serviceEndpointVgNightly.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: service-endpoint-vg-nightly
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-endpoint-vg-nightly
+{{- end }}

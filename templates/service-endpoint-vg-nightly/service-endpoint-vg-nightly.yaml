@@ -1,0 +1,185 @@
+{{- if .Values.serviceEndpointVgNightly.enabled }}
+{{- $cognigyFacebook_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyFacebook.existingSecret "defaultSecret" "cognigy-facebook") }}
+{{- $cognigyRceCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyRceCredentials.existingSecret "defaultSecret" "cognigy-rce-credentials") }}
+{{- $cognigyJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyJwt.existingSecret "defaultSecret" "cognigy-jwt") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $redisPersistentHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisPersistentHa.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
+{{- $cognigyInsightsCollectorApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsCollectorApiKey.existingSecret "defaultSecret" "cognigy-insights-collector-api-key") }}
+{{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
+{{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
+{{- $cognigyNatsInternal_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.natsInternal.natsInternalCredentials.existingSecret "defaultSecret" "cognigy-nats-internal") }}
+{{- with .Values.serviceEndpointVgNightly }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-endpoint-vg-nightly
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
+spec:
+  selector:
+    matchLabels:
+      app: service-endpoint-vg-nightly
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-endpoint-vg-nightly
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
+        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
+        checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-live-agent-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret) }}{{ $cognigyLiveAgentCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.cognigyAgentAssist.enabled }}
+        checksum/cognigy-agent-assist-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret) }}{{ $agentAssistBackendApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret).data | sha256sum }}{{ end }}
+        {{- end }}
+        {{- if $.Values.cognigyCommonPodAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if $.Values.natsInternal.enabled }}
+        checksum/cognigy-nats-internal: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyNatsInternal_secret) }}{{ $cognigyNatsInternal_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyNatsInternal_secret).data | sha256sum }}{{ end }}
+        {{- end }}
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
+      containers:
+        - name: service-endpoint-vg-nightly
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: FB_VERIFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyFacebook_secret }}
+                  key: fb-verify-token
+            - name: RCE_VERIFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyRceCredentials_secret }}
+                  key: rce-verify-token
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyJwt_secret }}
+                  key: secret
+            - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyLiveAgentCredentials_secret }}
+                  key: cognigy-live-agent-platform-token
+            {{- if $.Values.cognigyAgentAssist.enabled }}
+            - name: AGENT_ASSIST_WORKSPACE_API_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $agentAssistBackendApiAccessToken_secret }}
+                  key: api-access-token
+            {{- end }}
+            - name: INSIGHTS_COLLECTOR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyInsightsCollectorApiKey_secret }}
+                  key: secret
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"
+            - name: TRACING_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
+            - name: TRACING_BASE_URL_WITH_PROTOCOL
+              value: {{ $.Values.tracing.sentry.runtime.baseUrl | quote }}
+            - name: TRACING_ERRORS_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.errorsEnabled | quote }}
+            - name: TRACING_EVENTS_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.eventsSampleRate | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.sampleRate | quote }}
+            - name: ENVIRONMENT
+              value: {{ $.Values.tracing.environment | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: redis-persistent-password
+              mountPath: /var/run/secrets/redis-persistent-password.conf
+              subPath: redis-persistent-password.conf
+            - name: redis-password
+              mountPath: /var/run/secrets/redis-password.conf
+              subPath: redis-password.conf
+            - name: rabbitmq-connection-string
+              mountPath: /var/run/secrets/rabbitmqConnectionString
+              subPath: rabbitmqConnectionString
+            {{- if $.Values.natsInternal.enabled }}
+            - name: nats-internal-user
+              mountPath: /var/run/secrets/natsInternalUser
+              subPath: natsInternalUser
+            - name: nats-internal-password
+              mountPath: /var/run/secrets/natsInternalPassword
+              subPath: natsInternalPassword
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8001
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+        - name: redis-persistent-password
+          secret:
+            secretName: {{ $redisPersistentHa_secret }}
+        - name: redis-password
+          secret:
+            secretName: {{ $redisHa_secret }}
+        - name: rabbitmq-connection-string
+          secret:
+            secretName: {{ $statefulRabbitMq_secret }}
+            items:
+              - key: connection-string
+                path: rabbitmqConnectionString
+        {{- if $.Values.natsInternal.enabled }}
+        - name: nats-internal-user
+          secret:
+            secretName: {{ $cognigyNatsInternal_secret }}
+            items:
+              - key: user
+                path: natsInternalUser
+        - name: nats-internal-password
+          secret:
+            secretName: {{ $cognigyNatsInternal_secret }}
+            items:
+              - key: password
+                path: natsInternalPassword
+        {{- end }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
+{{- end }}
