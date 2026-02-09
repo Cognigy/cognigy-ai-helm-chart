@@ -2768,7 +2768,7 @@ serviceCustomModules:
   tolerations: []
   priorityClassName: ""
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-e8a8985926-1769781909
+  image: cognigy.azurecr.io/service-endpoint:release-8da169a347-1769695750
   replicaCount: 3
   resources:
     requests:
@@ -2785,7 +2785,7 @@ serviceEndpoint:
   priorityClassName: ""
 serviceEndpointVgNightly:
   enabled: false
-  image: cognigy.azurecr.io/service-endpoint:release-e8a8985926-1769781909
+  image: cognigy.azurecr.io/service-endpoint:release-8da169a347-1769695750
   replicaCount: 3
   resources:
     requests:
@@ -3418,7 +3418,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-16d59520e8-1769786067
+  image: cognigy.azurecr.io/service-ui:release-4f3202bff3-1770451954
   replicaCount: 3
   resources:
     requests:
