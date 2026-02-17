@@ -4,6 +4,7 @@
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 {{- $platformProvidedLLM_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.platformProvidedLLM.azure.credentials.existingSecret "defaultSecret" "cognigy-platform-provided-llm-credentials") }}
+{{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
 {{- with .Values.serviceResources }}
 ---
 apiVersion: apps/v1
@@ -28,6 +29,7 @@ spec:
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceResources_dbSecret) }}{{ $serviceResources_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceResources_dbSecret).data | sha256sum }}{{ end }}
+        checksum/jwtPublicKey: {{ if not (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey) }}{{ $jwtPublicKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey).data | sha256sum }}{{ end }}
         {{- if $.Values.knowledgeSearch.enabled }}
         checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
         {{- end }}
@@ -83,6 +85,8 @@ spec:
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
+            - name: AUTH_GATEWAY_JWT_PUBLIC_KEY_PATH_AND_FILENAME
+              value: "/var/run/secrets/internal-auth-gateway-jwt-public-key.pem"
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
@@ -144,6 +148,9 @@ spec:
             - name: redis-persistent-password
               mountPath: /var/run/secrets/redis-persistent-password.conf
               subPath: redis-persistent-password.conf
+            - name: auth-gateway-public-key
+              mountPath: /var/run/secrets/internal-auth-gateway-jwt-public-key.pem
+              subPath: internal-auth-gateway-jwt-public-key.pem
             {{- if not $.Values.migrateFS.finished }}
             - name: flow-modules
               mountPath: /app/flowModules
@@ -204,6 +211,11 @@ spec:
         - name: redis-persistent-password
           secret:
             secretName: {{ $redisPersistentHa_secret }}
+        # public key to verify short lived JWTs
+        - name: auth-gateway-public-key
+          secret:
+            secretName: {{ $jwtPublicKey }}
+            defaultMode: 420
         {{- if not $.Values.migrateFS.finished }}
         - name: flow-modules
           persistentVolumeClaim:

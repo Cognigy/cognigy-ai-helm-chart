@@ -1,0 +1,29 @@
+{{- if .Values.niceCXOne.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-security
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-security
+  annotations:
+  {{- if .Values.service.serviceSecurity.annotations }}
+    {{- toYaml .Values.service.serviceSecurity.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: service-security
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+      {{- if .Values.service.serviceSecurity.type }}
+        {{- if and (eq .Values.service.serviceSecurity.type "NodePort") }}
+      nodePort: {{ .Values.service.serviceSecurity.nodePort | default 30007 }}
+        {{- end }}
+      {{- end }}
+  {{- if .Values.service.serviceSecurity.type }}
+  type: {{ .Values.service.serviceSecurity.type | default "ClusterIP" }}
+  {{- end }}
+  selector:
+    app: service-security
+{{- end }}

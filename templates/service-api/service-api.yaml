@@ -90,7 +90,7 @@ spec:
               value: "true"
             - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
               value: 'true'
-            {{- if $.Values.niceCXOne }}
+            {{- if $.Values.niceCXOne.enabled }}
             - name: FEATURE_NICE_CXONE_INTEGRATION
               value: {{ $.Values.niceCXOne.enabled | quote }}
             - name: CXONE_BASE_URL

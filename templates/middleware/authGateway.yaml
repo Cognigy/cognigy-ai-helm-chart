@@ -1,0 +1,38 @@
+{{- if and .Values.traefik.enabled .Values.ingress.enabled .Values.serviceApi.serviceAuthGateway.enabled }}
+#
+# Centralized authentication using Traefik forward auth.
+#
+# Traefik will intercept requests via Ingress objects that reference this middleware via annotations.
+#
+# To learn more about the centralised auth-gateway, please refer to:
+# https://cognigy.visualstudio.com/Cognigy.AI/_git/cognigy?path=/services/service-api/src/authGateway/README.md&_a=preview
+#
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: auth-gateway-forward-auth
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  #
+  # See for configuration:
+  # https://doc.traefik.io/traefik/reference/routing-configuration/http/middlewares/forwardauth/#configuration-example
+  #
+  forwardAuth:
+    # point to "service-auth-gateway" in "cognigy-ai" namespace
+    address: "http://service-auth-gateway.{{ $.Release.Namespace }}.svc.cluster.local:8000/verify"
+
+    # attach the following additional headers to requests Traefik will forward
+    # to the backend services (like service-resources, etc.)
+    authResponseHeaders:
+      - "x-cognigy-trace-id"
+      - "x-cognigy-internal-jwt"
+      # remove the original headers to avoid leaking them to the backend services
+      - "authorization"
+      - "x-api-key"
+    # will trust all "X-Forwarded-*" headers coming from Traefik
+    trustForwardHeader: false
+
+    # set max body size to 10 MB to protect our backends
+    maxBodySize: 10485760
+
+{{- end }}
