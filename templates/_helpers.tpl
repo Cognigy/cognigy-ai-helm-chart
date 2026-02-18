@@ -117,26 +117,6 @@ Usage:
     {{- end }}
 {{- end -}}
 
-{{- define "cognigy-ai.common.nodeOptions.render" -}}
-    {{- $nodeOptions := "" -}}
-    {{- if kindIs "map" .value -}}
-        {{- range $key, $val := .value }}
-            {{- if $val -}}
-                {{- $nodeOptions = printf "%s --%s=%v" $nodeOptions $key $val -}}
-            {{- else -}}
-                {{- $nodeOptions = printf "%s --%s" $nodeOptions $key -}}
-            {{- end -}}
-        {{- end -}}
-    {{- else if (typeIs "string" .value) -}}
-        {{- $nodeOptions = printf "%s" (tpl .value .context) -}}
-    {{- end -}}
-
-{{- if $nodeOptions -}}
-- name: NODE_OPTIONS
-  value: {{ $nodeOptions | trim | quote }}
-{{- end -}}
-{{- end -}}
-
 {{/*
 Return the proper Management Ui Credentials Secret Name
 */}}

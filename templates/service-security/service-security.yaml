@@ -3,9 +3,6 @@
 {{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
 {{- $vgWebappDefaultLoginCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret "defaultSecret" "cognigy-vg-webapp-default-login-creds") }}
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
-{{- $cognigy_cxone_aws_lambda_connection_secrets := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.niceCXoneAWSLambdaCredentials.existingSecret "defaultSecret" "cognigy-nice-cxone-aws-lambda-credentials") }}
-{{- $serviceSecurityInternalApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceSecurityInternalApiSecret.existingSecret "defaultSecret" "service-security-internal-api-secret") }}
-
 {{- with .Values.serviceSecurity }}
 ---
 apiVersion: apps/v1
@@ -29,19 +26,12 @@ spec:
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret) }}{{ $serviceSecurity_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-vg-webapp-default-login-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret) }}{{ $vgWebappDefaultLoginCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-live-agent-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret) }}{{ $cognigyLiveAgentCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret).data | sha256sum }}{{ end }}
-        checksum/cognigy-nice-cxone-aws-lambda-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigy_cxone_aws_lambda_connection_secrets) }}{{ $cognigy_cxone_aws_lambda_connection_secrets | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigy_cxone_aws_lambda_connection_secrets).data | sha256sum }}{{ end }}
-        {{- if $.Values.niceCXOne.enabled }}
-        checksum/service-security-internal-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret) }}{{ $serviceSecurityInternalApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret).data | sha256sum }}{{ end }}
-        {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
       labels:
         app: service-security
     spec:
-      {{- if .serviceAccountName }}
-      serviceAccountName: {{ .serviceAccountName }}
-      {{- end }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
@@ -84,7 +74,7 @@ spec:
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
-              value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}
+              value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
             - name: TRACING_ERRORS_ENABLED
               value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
             - name: TRACING_EVENTS_SAMPLE_RATE
@@ -95,41 +85,6 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
-            {{- if $.Values.niceCXOne.enabled }}
-            - name: FEATURE_NICE_CXONE_INTEGRATION
-              value: {{ $.Values.niceCXOne.enabled | quote }}
-            - name: CXONE_BASE_URL
-              value: {{ $.Values.niceCXOne.cxoneBaseUrl | quote }}
-            - name: NICE_CXONE_AWS_REGION
-              value: {{ $.Values.niceCXOne.awsRegion | quote }}
-            - name: NICE_CXONE_STACK_PREFIX
-              value: {{ $.Values.niceCXOne.stackPrefix | quote }}
-            - name: NICE_CXONE_ROLE_SESSION_NAME
-              value: {{ $.Values.niceCXOne.roleSessionName | quote }}
-            - name: NICE_CXONE_SESSION_DURATION
-              value: {{ $.Values.niceCXOne.sessionDuration | quote }}
-            - name: NICE_CXONE_ROLE_ARN
-              value: {{ $.Values.niceCXOne.roleArn | quote }}
-            - name: NICE_CXONE_AWS_ACCOUNT_ID
-              value: {{ $.Values.niceCXOne.cxoneAwsAccountId | quote }}
-            - name: NICE_CXONE_ASSUME_ROLE_EXTERNAL_ID
-              value: {{ $.Values.niceCXOne.cxoneAssumeRoleExternalId | quote }}
-            - name: SECURITY_INTERNAL_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $serviceSecurityInternalApiSecret_secret }}
-                  key: api-key
-            {{- end }}
-            - name: NICE_CXONE_LAMBDA_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigy_cxone_aws_lambda_connection_secrets }}
-                  key: nice-cxone-lambda-access-key-id
-            - name: NICE_CXONE_LAMBDA_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigy_cxone_aws_lambda_connection_secrets }}
-                  key: nice-cxone-lambda-secret-access-key
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

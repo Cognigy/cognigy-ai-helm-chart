@@ -10,7 +10,6 @@
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
 {{- $cognigyNatsInternal_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.natsInternal.natsInternalCredentials.existingSecret "defaultSecret" "cognigy-nats-internal") }}
-{{- $niceCXoneKnowledgeHubCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.niceCXoneKnowledgeHubCredentials.existingSecret "defaultSecret" "cognigy-nice-cxone-knowledgehub-credentials") }}
 {{- with .Values.serviceAi }}
 ---
 apiVersion: apps/v1
@@ -53,7 +52,6 @@ spec:
         {{- if $.Values.natsInternal.enabled }}
         checksum/cognigy-nats-internal: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyNatsInternal_secret) }}{{ $cognigyNatsInternal_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyNatsInternal_secret).data | sha256sum }}{{ end }}
         {{- end }}
-        checksum/nice-cxone-knowledgehub-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $niceCXoneKnowledgeHubCredentials_secret) }}{{ $niceCXoneKnowledgeHubCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $niceCXoneKnowledgeHubCredentials_secret).data | sha256sum }}{{ end }}
     spec:
       {{- if .serviceAccountName }}
       serviceAccountName: {{ .serviceAccountName }}
@@ -143,10 +141,6 @@ spec:
               value: {{ $.Values.migrateFS.enabled | quote }}
             - name: FEATURE_DEPRECATE_OLD_NFS
               value: {{ $.Values.migrateFS.finished | quote }}
-            # Setting nodeOptions before extraEnvVars to allow overrides from extraEnvVars
-            {{- with .nodeOptions }}
-            {{- include "cognigy-ai.common.nodeOptions.render" (dict "value" . "context" $) | nindent 12 }}
-            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -218,18 +212,6 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigyInsightsCollectorApiKey_secret }}
                   key: secret
-            {{- if or (and $.Values.commonSecrets.niceCXoneKnowledgeHubCredentials.clientId $.Values.commonSecrets.niceCXoneKnowledgeHubCredentials.clientSecret) $.Values.commonSecrets.niceCXoneKnowledgeHubCredentials.existingSecret }}
-            - name: NICE_CXONE_KNOWLEDGEHUB_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $niceCXoneKnowledgeHubCredentials_secret }}
-                  key: client-id
-            - name: NICE_CXONE_KNOWLEDGEHUB_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $niceCXoneKnowledgeHubCredentials_secret }}
-                  key: client-secret
-            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env

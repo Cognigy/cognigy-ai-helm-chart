@@ -65,11 +65,7 @@ spec:
             - name: ENVIRONMENT
               value: {{ $.Values.tracing.environment | quote }}
             - name: HOST_VALIDATION_WHITELIST
-              {{- if $.Values.ingress.serviceWebchat.customServiceUrl }}
-              value: {{ printf "%s,%s" $.Values.ingress.serviceWebchat.host $.Values.ingress.serviceWebchat.customServiceUrl | quote }}
-              {{- else }}
-              value: {{ $.Values.ingress.serviceWebchat.host | quote }}
-              {{- end }}
+              value: {{ $.Values.ingress.serviceWebchat.host  | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             {{- if .extraEnvVars }}

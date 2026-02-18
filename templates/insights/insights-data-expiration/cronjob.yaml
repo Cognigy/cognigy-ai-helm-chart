@@ -1,7 +1,6 @@
 # This is going to be removed when the old Insights PostgreSQL cluster is removed
-{{- if and (.Values.cubejs.enabled) (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlCluster.enabled) (.Values.cubejs.dataCleanup.enabled) }}
-{{- /* Legacy PG expiration */ -}}
 {{- $dataExpiration_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
+{{- if and (.Values.cubejs.enabled) (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlCluster.enabled) }}
 ---
 apiVersion: batch/v1
 kind: CronJob

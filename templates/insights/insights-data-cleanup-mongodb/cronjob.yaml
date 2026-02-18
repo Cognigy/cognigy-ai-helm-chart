@@ -1,4 +1,3 @@
-{{- /* Legacy Mongo cleanup gated by its own flag */ -}}
 {{- if .Values.insightsDataCleanupJob.enabled }}
 {{- $dataCleanup_dbCollectorSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }} 
 {{- $dataCleanup_dbConversationsSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsConversations.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsConversations.serviceName)) }} 

@@ -1,0 +1,64 @@
+{{- if .Values.serviceResources.analyseTransformers.enabled }}
+{{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
+{{- with .Values.serviceResources.analyseTransformers }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: job-analyse-transformers
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  {{- with .backoffLimit }}
+  backoffLimit: {{ . }}
+  {{- end }}
+  {{- with .parallelism }}
+  parallelism: {{ . }}
+  {{- end }}
+  {{- with .activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ . }}
+  {{- end }}
+  {{- with .ttlSecondsAfterFinished }}
+  ttlSecondsAfterFinished: {{ . }}
+  {{- end }}
+  template:
+    spec:
+      restartPolicy: {{ .restartPolicy }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      securityContext: {{- toYaml .securityContext | nindent 8 }}
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
+      containers:
+        - name: analyse-transformers
+          # use serviceResources image.
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceResources.image) }}
+          imagePullPolicy: IfNotPresent
+          resources: {{- toYaml .resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          volumeMounts:
+            - name: mongodb-connection-string
+              mountPath: /var/run/secrets/mongodbConnectionString
+              subPath: mongodbConnectionString
+          args:
+            - node
+            - /app/build/jobs/transformerAnalytics/index.js
+      volumes:
+        - name: mongodb-connection-string
+          secret:
+            secretName: {{ $serviceResources_dbSecret }}
+            items:
+              - key: connection-string
+                path: mongodbConnectionString
+{{- end }}
+{{- end }}

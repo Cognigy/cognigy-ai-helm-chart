@@ -5,94 +5,28 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
 data:
   # DNS names
-  {{- if .Values.ingress.serviceUi.customServiceUrl }}
-  FRONTEND_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceUi.customServiceUrl | quote }}
-  {{- else }}
-  FRONTEND_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceUi.host | quote }}
-  {{- end }}
-
-  {{- if .Values.ingress.serviceApi.customServiceUrl }}
-  BACKEND_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceApi.customServiceUrl | quote }}
-  {{- else }}
-  BACKEND_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceApi.host | quote }}
-  {{- end }}
-
-  {{- if .Values.ingress.serviceInsightsApi.customServiceUrl }}
-  INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceInsightsApi.customServiceUrl | quote }}
-  {{- else }}
-  INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceInsightsApi.host | quote }}
-  {{- end }}
-
-{{- if not (hasKey .Values.cognigyEnv "INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL") }}
-  {{- if .Values.ingress.serviceCollector.customServiceUrl }}
-  INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceCollector.customServiceUrl | quote }}
-  {{- else }}
-  INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceCollector.host | quote }}
-  {{- end }}
-{{- end }}
-
-  {{- if .Values.ingress.serviceEndpoint.customServiceUrl }}
-  ENDPOINT_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceEndpoint.customServiceUrl | quote }}
-  {{- else }}
-  ENDPOINT_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceEndpoint.host | quote }}
-  {{- end }}
-
-  {{- if .Values.ingress.serviceRuntimeFileManager.customServiceUrl }}
-  RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceRuntimeFileManager.customServiceUrl | quote }}
-  {{- else }}
-  RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceRuntimeFileManager.host | quote }}
-  {{- end }}
-
-  {{- if .Values.ingress.serviceWebchat.customServiceUrl }}
-  WEBCHAT_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceWebchat.customServiceUrl | quote }}
-  {{- else }}
-  WEBCHAT_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceWebchat.host | quote }}
-  {{- end }}
-
-  {{- if .Values.ingress.serviceAppSessionManager.customServiceUrl }}
-  APPS_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceAppSessionManager.customServiceUrl | quote }}
-  {{- else }}
-  APPS_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceAppSessionManager.host | quote }}
-  {{- end }}
-
-  {{- if .Values.ingress.agentAssistBackend.customServiceUrl }}
-  AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.agentAssistBackend.customServiceUrl | quote }}
-  {{- else }}
-  AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.agentAssistBackend.host | quote }}
-  {{- end }}
-
-  {{- if .Values.ingress.agentAssistFrontend.customServiceUrl }}
-  AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.agentAssistFrontend.customServiceUrl | quote }}
-  {{- else }}
-  AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.agentAssistFrontend.host | quote }}
-  {{- end }}
-
-  {{- if .Values.ingress.serviceStaticFiles.customServiceUrl }}
-  STATIC_FILES_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceStaticFiles.customServiceUrl | quote }}
-  {{- else }}
-  STATIC_FILES_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceStaticFiles.host | quote }}
-  {{- end }}
-
-  {{- if .Values.ingress.serviceAnalyticsOdata.customServiceUrl }}
-  ODATA_HOSTNAME: {{ printf "%s" .Values.ingress.serviceAnalyticsOdata.customServiceUrl | quote }}
-  {{- else }}
-  ODATA_HOSTNAME: {{ printf "%s" .Values.ingress.serviceAnalyticsOdata.host | quote }}
-  {{- end }}
-  ODATA_PROTOCOL: "https"
-  {{- if and ($.Values.goals.enabled) (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.serviceInsightsResources.enabled) (not (hasKey .Values.cognigyEnv "FEATURE_INSIGHTS_USE_GOALS_DASHBOARD")) }}
-  FEATURE_INSIGHTS_USE_GOALS_DASHBOARD: "true"
-  {{- end }}
-  {{- if and ($.Values.goals.enabled) (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.serviceInsightsResources.enabled) (not (hasKey .Values.cognigyEnv "FEATURE_USE_GOALS")) }}
-  FEATURE_USE_GOALS: "true"
-  {{- end }}
-  {{- if and (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.pgoperator.enabled) (not (hasKey .Values.cognigyEnv "FEATURE_INSIGHTS_BUSINESS_DASHBOARD_DIRECT_POSTGRESQL")) }}
-  FEATURE_INSIGHTS_BUSINESS_DASHBOARD_DIRECT_POSTGRESQL: "true"
-  {{- end }}
-
+  FRONTEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceUi.host | quote}}
+  BACKEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceApi.host | quote}}
+  INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceInsightsApi.host | quote}}
+  ENDPOINT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceEndpoint.host | quote}}
+  RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceRuntimeFileManager.host | quote}}
+  WEBCHAT_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceWebchat.host | quote}}
+  APPS_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceAppSessionManager.host | quote}}
+  AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.agentAssistBackend.host | quote}}
+  AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.agentAssistFrontend.host | quote}}
   {{- if .Values.knowledgeSearch.enabled }}
   FEATURE_ENABLE_KNOWLEDGE_SEARCH: "true"
   {{- end }}
-
-  {{- range $key, $value := .Values.cognigyEnv }}
-  {{ $key }}: {{ $value | quote }}
+  STATIC_FILES_URL_WITH_PROTOCOL: {{printf "https://%s" .Values.ingress.serviceStaticFiles.host | quote}}
+  ODATA_HOSTNAME: {{ .Values.ingress.serviceAnalyticsOdata.host | quote }}
+  ODATA_PROTOCOL: "https"
+  {{- if and ($.Values.goals.enabled) (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.serviceInsightsResources.enabled) }}
+  FEATURE_INSIGHTS_USE_GOALS_DASHBOARD: "true"
+  FEATURE_USE_GOALS: "true"
   {{- end }}
+  {{- if and (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.pgoperator.enabled) }}
+  FEATURE_INSIGHTS_BUSINESS_DASHBOARD_DIRECT_POSTGRESQL: "true"
+  {{- end }}
+{{- range $key, $value := .Values.cognigyEnv }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}

@@ -1,13 +1,12 @@
 {{- if .Values.serviceTesting.enabled }}
 {{- $serviceTesting_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceTesting.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceTesting.serviceName)) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- with .Values.serviceTesting.simulationCronJob }}
+{{- with .Values.serviceTesting.simulationRunBatchStatusChecker }}
 
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: simulation-cronjob
+  name: simulation-run-batch-status-checker
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
@@ -40,11 +39,11 @@ spec:
           priorityClassName: {{ .priorityClassName }}
           {{- end }}
           containers:
-            - name: simulation-cronjob
+            - name: simulation-run-batch-status-checker
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceTesting.image) }}
               resources: {{- toYaml .resources | nindent 16 }}
               command: ["node"]
-              args: ["/app/build/jobs/simulationCronJob/index"]
+              args: ["/app/build/jobs/simulationRunBatchStatusCheck/index"]
               envFrom:
                 - configMapRef:
                     name: cognigy-env
@@ -59,11 +58,6 @@ spec:
                     secretKeyRef:
                       name: {{ $redisHa_secret }}
                       key: REDIS_PASSWORD
-                - name: RABBITMQ_URI
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $statefulRabbitMq_secret }}
-                      key: connection-string
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL

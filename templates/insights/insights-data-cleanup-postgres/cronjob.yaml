@@ -1,6 +1,6 @@
 # This is going to be removed when the old Insights PostgreSQL cluster is removed
-{{- /* Legacy PG cleanup v1 gated by its own flags */ -}}
-{{- if and (.Values.cubejs.enabled) (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlCluster.enabled) (.Values.cubejs.dataCleanup.enabled) }}
+{{- if and (.Values.cubejs.enabled) (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlCluster.enabled) }}
+{{- if .Values.cubejs.dataCleanup.enabled }}
 {{- $dataCleanup_dbSecret := include "cubejs.postgresql.password.existingSecret" $ }}
 {{- with .Values.cubejs.dataCleanup }}
 ---
@@ -187,5 +187,6 @@ spec:
                     name: {{ $dataCleanup_dbSecret }}
                     key: password
           {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+{{- end }}
 {{- end }}
 {{- end }}
