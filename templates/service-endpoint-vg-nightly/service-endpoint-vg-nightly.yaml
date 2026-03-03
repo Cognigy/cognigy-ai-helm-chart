@@ -1,4 +1,4 @@
-{{- $cognigyServiceEndpointApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceEndpointApiAccessToken.existingSecret "defaultSecret" "cognigy-service-endpoint-api-access-token") }}
+{{- if .Values.serviceEndpointVgNightly.enabled }}
 {{- $cognigyFacebook_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyFacebook.existingSecret "defaultSecret" "cognigy-facebook") }}
 {{- $cognigyRceCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyRceCredentials.existingSecret "defaultSecret" "cognigy-rce-credentials") }}
 {{- $cognigyJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyJwt.existingSecret "defaultSecret" "cognigy-jwt") }}
@@ -9,30 +9,29 @@
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
 {{- $cognigyNatsInternal_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.natsInternal.natsInternalCredentials.existingSecret "defaultSecret" "cognigy-nats-internal") }}
-{{- with .Values.serviceEndpoint }}
+{{- with .Values.serviceEndpointVgNightly }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-endpoint
+  name: service-endpoint-vg-nightly
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
 spec:
   selector:
     matchLabels:
-      app: service-endpoint
+      app: service-endpoint-vg-nightly
   replicas: {{ .replicaCount }}
   template:
     metadata:
       labels:
-        app: service-endpoint
+        app: service-endpoint-vg-nightly
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
-        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret) }}{{ $cognigyServiceEndpointApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
         checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-live-agent-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret) }}{{ $cognigyLiveAgentCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret).data | sha256sum }}{{ end }}
@@ -59,7 +58,7 @@ spec:
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-endpoint
+        - name: service-endpoint-vg-nightly
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
@@ -96,16 +95,11 @@ spec:
                   name: {{ $agentAssistBackendApiAccessToken_secret }}
                   key: api-access-token
             {{- end }}
-            - name: SERVICE_ENDPOINT_API_ACCESS_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigyServiceEndpointApiAccessToken_secret }}
-                  key: api-access-token
             - name: INSIGHTS_COLLECTOR_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ $cognigyInsightsCollectorApiKey_secret }}
-                  key: secret  
+                  key: secret
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -113,7 +107,7 @@ spec:
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
-              value: {{ $.Values.tracing.sentry.runtime.baseUrl | quote }}      
+              value: {{ $.Values.tracing.sentry.runtime.baseUrl | quote }}
             - name: TRACING_ERRORS_ENABLED
               value: {{ $.Values.tracing.sentry.runtime.errorsEnabled | quote }}
             - name: TRACING_EVENTS_SAMPLE_RATE
@@ -124,15 +118,9 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
-            - name: SYSTEM_SPEECH_CREDENTIAL_LABEL
-              value: {{ $.Values.sharedSpeechCredentials.label | quote }}
-            - name: FEATURE_ENABLE_SHARED_SPEECH_CREDENTIALS
-              value: {{ $.Values.sharedSpeechCredentials.enabled | quote }}
-            - name: SHARED_SPEECH_CREDENTIALS_MICROSOFT_HD_VOICES_ENABLED
-              value: {{ $.Values.sharedSpeechCredentials.microsoftHdVoiceEnabled | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}			  
+            {{- end }}
           volumeMounts:
             - name: redis-persistent-password
               mountPath: /var/run/secrets/redis-persistent-password.conf
@@ -193,4 +181,5 @@ spec:
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
 {{- end }}

@@ -1,0 +1,64 @@
+# We are using the DNS name of "serviceAPI" as the "host"
+{{- if .Values.ingress.enabled }}
+
+#
+# This ingress is using the new auth-gateway (if configured).
+# It references the auth-gateway (Traefik middleware) see line 22 or line 28
+#
+# See templates/middlewares/authGateway.yaml
+#
+# See: https://cognigy.visualstudio.com/Cognigy.AI/_git/cognigy?path=/services/service-api/src/authGateway/README.md&_a=preview
+# for more information on how the auth-gateway works.
+#
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-resources
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+
+    {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled}}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceapi@kubernetescrd,{{ $.Release.Namespace }}-auth-gateway-forward-auth@kubernetescrd"
+        {{- else }}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceapi@kubernetescrd"
+        {{- end }}
+    {{- else }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled}}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-auth-gateway-forward-auth@kubernetescrd"
+        {{- end }}
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.ingress.serviceApi.tls.enabled) }}
+  {{- if (.Values.ingress.serviceApi.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceApi.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceApi.tls.crt) (.Values.ingress.serviceApi.tls.key) }}
+  tls:
+    - secretName: cognigy-service-api-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.serviceApi.host }}
+      http:
+        paths:
+          - path: /v1/tools/descriptors # redirects all calls to "/v1/tools/descriptors" to service-resources new HTTP interface
+            pathType: Prefix
+            backend:
+              service:
+                name: service-resources
+                port:
+                  number: 8000
+{{- end }}

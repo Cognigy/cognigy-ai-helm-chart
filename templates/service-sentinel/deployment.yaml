@@ -121,7 +121,10 @@ spec:
             - name: REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS
               value: "{{ $.Values.cognigyEnv.REDIS_KEEP_ALIVE_INTERVAL_IN_SECONDS }}"
             - name: FRONTEND_URL
-              value: {{ if $.Values.ingress.serviceUi.host }}{{ printf "https://%s" $.Values.ingress.serviceUi.host | quote }}{{ else }}{{ $.Values.cognigyEnv.FRONTEND_BASE_URL_WITH_PROTOCOL | quote }}{{ end }}
+              valueFrom:
+                configMapKeyRef:
+                  name: cognigy-env
+                  key: FRONTEND_BASE_URL_WITH_PROTOCOL
             - name: METRICS_CONFIG_FETCH_INTERVAL_SECONDS
               value: "60"
             - name: MAX_NOTIFICATION_EMAIL_COUNT
@@ -264,7 +267,10 @@ spec:
             - name: METRICS_SERVER_HOST
               value: {{ $.Values.productFeature.opsCenter.metricsServerHost }}
             - name: FRONTEND_URL
-              value: {{ if $.Values.ingress.serviceUi.host }}{{ printf "https://%s" $.Values.ingress.serviceUi.host | quote }}{{ else }}{{ $.Values.cognigyEnv.FRONTEND_BASE_URL_WITH_PROTOCOL | quote }}{{ end }}
+              valueFrom:
+                configMapKeyRef:
+                  name: cognigy-env
+                  key: FRONTEND_BASE_URL_WITH_PROTOCOL
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

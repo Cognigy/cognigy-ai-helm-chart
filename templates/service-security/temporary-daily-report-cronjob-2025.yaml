@@ -1,16 +1,13 @@
-{{- if .Values.serviceTesting.enabled }}
-{{- $serviceTesting_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceTesting.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceTesting.serviceName)) }}
-{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- if .Values.serviceSecurity.temporaryJobDailyConversation2025Reporter.enabled }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
-{{- with .Values.serviceTesting.simulationCronJob }}
+{{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
+{{- with .Values.serviceSecurity.temporaryJobDailyConversation2025Reporter }}
 
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: simulation-cronjob
+  name: daily-conversation-reporter-2025
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: Forbid
@@ -40,30 +37,15 @@ spec:
           priorityClassName: {{ .priorityClassName }}
           {{- end }}
           containers:
-            - name: simulation-cronjob
-              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceTesting.image) }}
+            - name: daily-conversation-reporter-2025
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceSecurity.image) }}
               resources: {{- toYaml .resources | nindent 16 }}
               command: ["node"]
-              args: ["/app/build/jobs/simulationCronJob/index"]
+              args: ["/app/build/jobs/daily-reporting/index"]
               envFrom:
                 - configMapRef:
                     name: cognigy-env
               env:
-                - name: MONGODB_URI
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $serviceTesting_dbSecret }}
-                      key: connection-string
-                - name: REDIS_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $redisHa_secret }}
-                      key: REDIS_PASSWORD
-                - name: RABBITMQ_URI
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $statefulRabbitMq_secret }}
-                      key: connection-string
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL
@@ -81,10 +63,29 @@ spec:
                 {{- if .extraEnvVars }}
                 {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
                 {{- end }}
+              volumeMounts:
+                - name: rabbitmq-connection-string
+                  mountPath: /var/run/secrets/rabbitmqConnectionString
+                  subPath: rabbitmqConnectionString
+                - name: mongodb-connection-string
+                  mountPath: /var/run/secrets/mongodbConnectionString
+                  subPath: mongodbConnectionString
               {{- if .extraVolumeMounts }}
               {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
               {{- end }}
           volumes:
+            - name: rabbitmq-connection-string
+              secret:
+                secretName: {{ $statefulRabbitMq_secret }}
+                items:
+                  - key: connection-string
+                    path: rabbitmqConnectionString
+            - name: mongodb-connection-string
+              secret:
+                secretName: {{ $serviceSecurity_dbSecret }}
+                items:
+                  - key: connection-string
+                    path: mongodbConnectionString
             {{- if .extraVolumes }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
             {{- end }}

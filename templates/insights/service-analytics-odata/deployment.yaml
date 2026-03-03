@@ -64,7 +64,7 @@ spec:
           env:
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
-            {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) }}
+            {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.insights.postgresql.database.name | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST
@@ -82,7 +82,7 @@ spec:
                   name: {{ $serviceAnalyticsOdata_dbSecret }}
                   key: password
             {{- end }}
-            {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) (not $.Values.insights.postgresql.usePartitionedTables) }}
+            {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) (not $.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlCluster.enabled) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST

@@ -14,3 +14,10 @@ data:
   advanced.config: |-
     {{- include "common.tplvalues.render" (dict "value" .Values.statefulRabbitMq.advancedConfiguration "context" $) | b64enc | nindent 4 }}
   {{- end }}
+  enabled_plugins: |-
+    {{- $requiredPlugins := list "rabbitmq_management" "rabbitmq_prometheus" "rabbitmq_consistent_hash_exchange" "rabbitmq_event_exchange" -}}
+    {{- $allPlugins := $requiredPlugins -}}
+    {{- if .Values.statefulRabbitMq.additionalPlugins -}}
+      {{- $allPlugins = concat $requiredPlugins .Values.statefulRabbitMq.additionalPlugins -}}
+    {{- end -}}
+    {{- printf "[%s]." (join "," $allPlugins) | b64enc | nindent 4 }}

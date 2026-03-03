@@ -60,7 +60,7 @@ spec:
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
-              value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+              value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}
             - name: TRACING_ERRORS_ENABLED
               value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
             - name: TRACING_EVENTS_SAMPLE_RATE
@@ -71,6 +71,8 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
+            - name: FEATURE_USE_NEW_NFS
+              value: {{ $.Values.migrateFS.enabled | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -93,6 +95,11 @@ spec:
             {{- end }}
             - name: task-jobs-service-resources-config
               mountPath: /var/run/config/task-jobs/service-resources-tasks
+            {{- if $.Values.migrateFS.enabled }}
+            - name: runtime
+              mountPath: /app/extensions
+              subPath: extensions
+            {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -125,6 +132,11 @@ spec:
         - name: task-jobs-knowledge-config
           configMap:
             name: knowledge-tasks-config
+        {{- end }}
+        {{- if $.Values.migrateFS.enabled }}
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: runtime
         {{- end }}
         - name: task-jobs-service-resources-config
           configMap:

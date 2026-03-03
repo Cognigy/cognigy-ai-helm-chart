@@ -38,3 +38,7 @@ minica.pem
 _local_dev/
 
 .cursor
+
+# ignore generated public / private-keypairs
+es256-private.pem
+es256-public.pem

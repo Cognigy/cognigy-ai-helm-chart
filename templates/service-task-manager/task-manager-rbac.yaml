@@ -23,6 +23,17 @@ rules:
   resources: ["jobs", "jobs/status"]
   verbs: ["get", "create"]
 
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: task-manager-cronjob-admin
+  namespace: {{ $.Release.Namespace | quote }}
+rules:
+- apiGroups: ["batch"]
+  resources: ["cronjobs"]
+  verbs: ["create", "get", "list", "update", "patch", "delete"]
+
 #
 # RoleBinding so our service account has access to the Role above
 # in order to programmatically create Jobs
@@ -40,4 +51,23 @@ subjects:
 roleRef:
   kind: Role
   name: task-manager-jobs-admin
+  apiGroup: rbac.authorization.k8s.io
+
+#
+# RoleBinding so our service account has access to the Role above
+# in order to programmatically create Jobs
+#
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: task-manager-cronjob-admin
+  namespace: {{ $.Release.Namespace | quote }}
+subjects:
+- kind: ServiceAccount
+  name: task-manager
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: task-manager-cronjob-admin
   apiGroup: rbac.authorization.k8s.io

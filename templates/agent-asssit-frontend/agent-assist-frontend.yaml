@@ -51,7 +51,10 @@ spec:
                   name: {{ $agentAssistBackendApiAccessToken_secret }}
                   key: api-access-token
             - name: APP_AGENT_ASSIST_API_URL
-              value: "https://{{ $.Values.ingress.agentAssistBackend.host }}"
+              valueFrom:
+                configMapKeyRef:
+                  name: cognigy-env
+                  key: AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL
             - name: SERVER_PORT
               value: "8000"
             - name: SERVER_HOST

@@ -58,7 +58,7 @@ data:
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL
-                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}
                 - name: TRACING_ERRORS_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
                 - name: TRACING_EVENTS_SAMPLE_RATE
@@ -113,7 +113,7 @@ data:
             {{- end }}
           {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
     {{- end }}
-  
+
   processKnowledgeSourceUrl.yaml: |
     {{- with .Values.taskProcessKnowledgeSourceUrl }}
     ---
@@ -158,7 +158,7 @@ data:
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL
-                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}
                 - name: TRACING_ERRORS_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
                 - name: TRACING_EVENTS_SAMPLE_RATE
@@ -242,7 +242,7 @@ data:
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL
-                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}
                 - name: TRACING_ERRORS_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
                 - name: TRACING_EVENTS_SAMPLE_RATE
@@ -305,96 +305,7 @@ data:
       namespace: {{ $.Release.Namespace | quote }}
       labels:
         owner-team: carbon
-    spec:
-      backoffLimit: 0
-      activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
-      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
-      template:
-        spec:
-          securityContext:
-            {{- toYaml .securityContext | nindent 12 }}
-          restartPolicy: Never
-          {{- if .affinity }}
-          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
-          {{- end }}
-          {{- if .nodeSelector }}
-          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
-          {{- end }}
-          {{- if .tolerations }}
-          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
-          {{- end }}
-          {{- if .priorityClassName }}
-          priorityClassName: {{ .priorityClassName }}
-          {{- end }}
-          containers:
-            - name: task-run-knowledge-extension
-              image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
-              resources: {{- toYaml .resources | nindent 16 }}
-              envFrom:
-                - configMapRef:
-                    name: cognigy-env
-              env:
-                - name: JOB_ARGUMENTS
-                  value: "_JOB_ARGUMENTS_"
-                - name: TRACING_ENABLED
-                  value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
-                - name: TRACING_BASE_URL_WITH_PROTOCOL
-                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
-                - name: TRACING_ERRORS_ENABLED
-                  value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
-                - name: TRACING_EVENTS_SAMPLE_RATE
-                  value: {{ $.Values.tracing.sentry.ide.eventsSampleRate | quote }}
-                - name: TRACING_SAMPLE_RATE
-                  value: {{ $.Values.tracing.sentry.ide.sampleRate | quote }}
-                - name: ENVIRONMENT
-                  value: {{ $.Values.tracing.environment | quote }}
-                - name: COGNIGY_AI_RELEASE_VERSION
-                  value: {{ $.Chart.AppVersion | quote }}
-                {{- if .extraEnvVars }}
-                {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
-                {{- end }}
-              volumeMounts:
-                - name: rabbitmq-connection-string
-                  mountPath: /var/run/secrets/rabbitmqConnectionString
-                  subPath: rabbitmqConnectionString
-                - name: redis-password
-                  mountPath: /var/run/secrets/redis-password.conf
-                  subPath: redis-password.conf
-                {{- if $.Values.migrateFS.enabled }}
-                - name: runtime
-                  mountPath: /app/node_modules/_EXTENSION_
-                  subPath: extensions/_EXTENSION_
-                {{- else }}
-                - name: flow-modules
-                  mountPath: /app/node_modules/_EXTENSION_
-                  subPath: _EXTENSION_
-                {{- end }}
-                {{- if .extraVolumeMounts }}
-                {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
-                {{- end }}
-          volumes:
-            - name: rabbitmq-connection-string
-              secret:
-                secretName: {{ $statefulRabbitMq_secret }}
-                items:
-                  - key: connection-string
-                    path: rabbitmqConnectionString
-            - name: redis-password
-              secret:
-                secretName: {{ $redisHa_secret }}
-            {{- if $.Values.migrateFS.enabled }}
-            - name: runtime
-              persistentVolumeClaim:
-                claimName: runtime
-            {{- else }}
-            - name: flow-modules
-              persistentVolumeClaim:
-                claimName: flow-modules
-            {{- end }}
-            {{- if .extraVolumes }}
-            {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
-            {{- end }}
-          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+    {{- include "service-task-manager.runKnowledgeExtensionJobTemplate" $ | nindent 4 }}
     {{- end }}
 
   jobSyncKnowledgeData.yaml: |
@@ -441,7 +352,7 @@ data:
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL
-                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+                  value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}
                 - name: TRACING_ERRORS_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
                 - name: TRACING_EVENTS_SAMPLE_RATE
@@ -506,6 +417,34 @@ data:
             {{- if .extraVolumes }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
             {{- end }}
-          {{- include "image.pullSecretsCognigy" $ | nindent 10 }} 
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+    {{- end }}
+
+  cronJobSyncKnowledgeData.yaml: |
+    {{- with .Values.taskRunKnowledgeExtension }}
+    ---
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: _NAME_
+      namespace: {{ $.Release.Namespace | quote }}
+      labels:
+        owner-team: carbon
+        type: kai-connector
+        connector-id: _CONNECTOR_ID_
+        project-id: _PROJECT_ID_
+        org-id: _ORGANISATION_ID_
+        store-id: _KNOWLEDGE_STORE_ID_
+    spec:
+      schedule: "_SCHEDULE_"
+      timeZone: "{{ .timeZone | default "UTC" }}"
+      successfulJobsHistoryLimit: {{ .cronJobSyncKnowledgeData.successfulJobsHistoryLimit | default 1 }}
+      failedJobsHistoryLimit: {{ .cronJobSyncKnowledgeData.failedJobsHistoryLimit | default 1 }}
+      concurrencyPolicy: {{ .cronJobSyncKnowledgeData.concurrencyPolicy | default "Forbid" }}
+      startingDeadlineSeconds: {{ .cronJobSyncKnowledgeData.startingDeadlineSeconds | default 1800 }}
+      suspend: _SUSPEND_
+      jobTemplate:
+        {{- include "service-task-manager.runKnowledgeExtensionJobTemplate" $ | nindent 8 }}
     {{- end }}
 {{- end }}
+

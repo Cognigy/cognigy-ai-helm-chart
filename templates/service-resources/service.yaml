@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-resources
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-resources
+    owner-team: boron
+  annotations:
+    {{- if .Values.service.serviceResources.annotations }}
+      {{- toYaml .Values.service.serviceResources.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: service-resources
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-resources

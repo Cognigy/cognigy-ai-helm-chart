@@ -13,6 +13,7 @@
 {{- $cognigyVoicegatewayClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyVoicegatewayClientSecret.existingSecret "defaultSecret" "cognigy-voicegateway-client-secret") }}
 {{- $vgWebappDefaultLoginCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret "defaultSecret" "cognigy-vg-webapp-default-login-creds") }}
 {{- $cognigyAutoDialerClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyADClientSecret.existingSecret "defaultSecret" "cognigy-auto-dialer-client-secret") }}
+{{- $sharedSpeechCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.sharedSpeechCredentials.existingSecret "defaultSecret" "vg-shared-speech-credentials") }}
 {{- with .Values.serviceApi }}
 ---
 apiVersion: apps/v1
@@ -52,6 +53,9 @@ spec:
         {{- if $.Values.cognigyAD.enabled }}
         checksum/cognigy-auto-dialer-client-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAutoDialerClient_secret) }}{{ $cognigyAutoDialerClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAutoDialerClient_secret).data | sha256sum }}{{ end }}
         {{- end }}
+        {{- if $.Values.sharedSpeechCredentials.enabled }}
+        checksum/sharedSpeechCredentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $sharedSpeechCredentials_secret) }}{{ $sharedSpeechCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $sharedSpeechCredentials_secret).data | sha256sum }}{{ end }}
+        {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -90,8 +94,18 @@ spec:
               value: "true"
             - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
               value: 'true'
+            {{- if $.Values.niceCXOne.enabled }}
+            - name: FEATURE_NICE_CXONE_INTEGRATION
+              value: {{ $.Values.niceCXOne.enabled | quote }}
+            - name: CXONE_BASE_URL
+              value: {{ $.Values.niceCXOne.cxoneBaseUrl | quote }}
+            {{- end }}
             - name: HOST_VALIDATION_WHITELIST
-              value: {{ $.Values.ingress.serviceApi.host  | quote }}
+              {{- if $.Values.ingress.serviceApi.customServiceUrl }}
+              value: {{ printf "%s,%s" $.Values.ingress.serviceApi.host $.Values.ingress.serviceApi.customServiceUrl | quote }}
+              {{- else }}
+              value: {{ $.Values.ingress.serviceApi.host | quote }}
+              {{- end }}
             - name: AUTH_JWT_SIGNING_KEY
               valueFrom:
                 secretKeyRef:
@@ -177,7 +191,7 @@ spec:
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
-              value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}      
+              value: {{ $.Values.tracing.sentry.ide.baseUrl | quote }}
             - name: TRACING_ERRORS_ENABLED
               value: {{ $.Values.tracing.sentry.ide.errorsEnabled | quote }}
             - name: TRACING_EVENTS_SAMPLE_RATE
@@ -192,6 +206,21 @@ spec:
               value: {{ $.Values.migrateFS.enabled | quote }}
             - name: FEATURE_DEPRECATE_OLD_NFS
               value: {{ $.Values.migrateFS.finished | quote }}
+            - name: SYSTEM_SPEECH_CREDENTIAL_LABEL
+              value: {{ $.Values.sharedSpeechCredentials.label | quote }}
+            - name: FEATURE_ENABLE_SHARED_SPEECH_CREDENTIALS
+              value: {{ $.Values.sharedSpeechCredentials.enabled | quote }}
+            - name: SHARED_SPEECH_CREDENTIALS_MICROSOFT_HD_VOICES_ENABLED
+              value: {{ $.Values.sharedSpeechCredentials.microsoftHdVoiceEnabled | quote }}
+            {{- if $.Values.sharedSpeechCredentials.enabled }}
+            - name: ENABLE_CLUSTER_WIDE_SHARED_CREDENTIALS
+              value: {{ $.Values.sharedSpeechCredentials.clusterWide | quote }}
+            - name: VG_SHARED_SPEECH_CREDENTIALS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $sharedSpeechCredentials_secret }}
+                  key: {{ $.Values.sharedSpeechCredentials.secretKey | quote }}
+            {{- end }} 
             {{- if $.Values.knowledgeSearch.enabled }}
             - name: SEARCH_ORCHESTRATOR_API_KEY
               valueFrom:

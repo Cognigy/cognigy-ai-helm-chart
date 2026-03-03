@@ -71,6 +71,9 @@ spec:
               mountPath: /etc/rabbitmq/conf.d/advanced.config
               subPath: advanced.config
             {{- end }}
+            - name: configuration
+              mountPath: /etc/rabbitmq/enabled_plugins
+              subPath: enabled_plugins
       volumes:
         - name: configuration
           secret:
@@ -82,6 +85,8 @@ spec:
               - key: advanced.config
                 path: advanced.config
               {{- end }}
+              - key: enabled_plugins
+                path: enabled_plugins
             defaultMode: 0644
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:

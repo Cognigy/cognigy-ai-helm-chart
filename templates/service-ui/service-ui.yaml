@@ -58,7 +58,17 @@ spec:
                 name: cognigy-env
           env:
             - name: HOST_VALIDATION_WHITELIST
-              value: {{ $.Values.ingress.serviceUi.host  | quote }}
+              {{- if $.Values.ingress.serviceUi.customServiceUrl }}
+              value: {{ printf "%s,%s" $.Values.ingress.serviceUi.host $.Values.ingress.serviceUi.customServiceUrl | quote }}
+              {{- else }}
+              value: {{ $.Values.ingress.serviceUi.host | quote }}
+              {{- end }}
+            {{- if $.Values.niceCXOne.enabled }}
+            - name: FEATURE_NICE_CXONE_INTEGRATION
+              value: {{ $.Values.niceCXOne.enabled | quote }}
+            - name: CXONE_BASE_URL
+              value: {{ $.Values.niceCXOne.cxoneBaseUrl | quote }}
+            {{- end }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
@@ -83,6 +93,14 @@ spec:
                   key: api-access-token
             - name: KNOWLEDGE_AI__AZURE_DOCUMENT_INTELLIGENCE_IS_CONFIGURED_SYSTEM_WIDE
               value: {{ $globalAzureDocumentIntelligenceEnabled }}
+            - name: SYSTEM_SPEECH_CREDENTIAL_LABEL
+              value: {{ $.Values.sharedSpeechCredentials.label | quote }}
+            - name: SHARED_SPEECH_CREDENTIALS_DISPLAY_NAME_SUFFIX
+              value: {{ $.Values.sharedSpeechCredentials.displayNameSuffix | quote }}
+            - name: FEATURE_ENABLE_SHARED_SPEECH_CREDENTIALS
+              value: {{ $.Values.sharedSpeechCredentials.enabled | quote }}
+            - name: SHARED_SPEECH_CREDENTIALS_MICROSOFT_HD_VOICES_ENABLED
+              value: {{ $.Values.sharedSpeechCredentials.microsoftHdVoiceEnabled | quote }}
             {{- if $.Values.serviceTesting.enabled }}
             - name: FEATURE_ENABLE_SIMULATOR_WHITELIST
               value: {{ join "," $.Values.productFeature.simulator.orgWhiteList | quote }}
