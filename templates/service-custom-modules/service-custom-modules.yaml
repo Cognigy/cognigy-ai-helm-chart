@@ -69,7 +69,11 @@ spec:
             - name: FEATURE_USE_NEW_NFS
               value: {{ $.Values.migrateFS.enabled | quote }}
             - name: FEATURE_DEPRECATE_OLD_NFS
-              value: {{ $.Values.migrateFS.finished | quote }}	  
+              value: {{ $.Values.migrateFS.finished | quote }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

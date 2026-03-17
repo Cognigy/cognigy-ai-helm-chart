@@ -44,10 +44,6 @@ spec:
             - name: metrics
               containerPort: 8002
           env:
-            {{- if $.Values.serviceTesting.enabled }}
-            - name: FEATURE_ENABLE_SIMULATOR_WHITELIST
-              value: {{ join "," $.Values.productFeature.simulator.orgWhiteList | quote }}
-            {{- end }}
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.insights.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
@@ -67,6 +63,10 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigyOauthClient_secret }}
                   key: secret
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

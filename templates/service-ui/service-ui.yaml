@@ -101,13 +101,13 @@ spec:
               value: {{ $.Values.sharedSpeechCredentials.enabled | quote }}
             - name: SHARED_SPEECH_CREDENTIALS_MICROSOFT_HD_VOICES_ENABLED
               value: {{ $.Values.sharedSpeechCredentials.microsoftHdVoiceEnabled | quote }}
-            {{- if $.Values.serviceTesting.enabled }}
-            - name: FEATURE_ENABLE_SIMULATOR_WHITELIST
-              value: {{ join "," $.Values.productFeature.simulator.orgWhiteList | quote }}
-            {{- end }}
             {{- if $.Values.platformProvidedLLM.whitelist }}
             - name: FEATURE_PLATFORM_PROVIDED_LLM_WHITELIST
               value: {{ join "," $.Values.platformProvidedLLM.whitelist | quote }}
+            {{- end }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
             {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}

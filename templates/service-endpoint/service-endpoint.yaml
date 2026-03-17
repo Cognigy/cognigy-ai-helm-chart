@@ -130,6 +130,10 @@ spec:
               value: {{ $.Values.sharedSpeechCredentials.enabled | quote }}
             - name: SHARED_SPEECH_CREDENTIALS_MICROSOFT_HD_VOICES_ENABLED
               value: {{ $.Values.sharedSpeechCredentials.microsoftHdVoiceEnabled | quote }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}			  

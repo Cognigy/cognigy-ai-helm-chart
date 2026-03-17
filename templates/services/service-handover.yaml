@@ -13,7 +13,7 @@ spec:
   ports:
     - name: service-handover
       port: 8000
-      targetPort: 8000
+      targetPort: http
       protocol: TCP
   selector:
     app: service-handover

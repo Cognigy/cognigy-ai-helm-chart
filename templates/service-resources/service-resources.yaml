@@ -5,6 +5,7 @@
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 {{- $platformProvidedLLM_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.platformProvidedLLM.azure.credentials.existingSecret "defaultSecret" "cognigy-platform-provided-llm-credentials") }}
 {{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
+{{- $cognigyInternalMigrationApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInternalMigrationApiKey.existingSecret "defaultSecret" "cognigy-internal-migration-api-key") }}
 {{- with .Values.serviceResources }}
 ---
 apiVersion: apps/v1
@@ -39,6 +40,7 @@ spec:
         {{- if $.Values.platformProvidedLLM.whitelist }}
         checksum/cognigy-platform-provided-llm-config: {{ include (print $.Template.BasePath "/configurations/cognigy-platform-provided-llm-config.yaml") $ | sha256sum }}
         {{- end }}
+        checksum/cognigy-internal-migration-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInternalMigrationApiKey_secret) }}{{ $cognigyInternalMigrationApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInternalMigrationApiKey_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -77,10 +79,6 @@ spec:
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
-            {{- if $.Values.serviceTesting.enabled }}
-            - name: FEATURE_ENABLE_SIMULATOR_WHITELIST
-              value: {{ join "," $.Values.productFeature.simulator.orgWhiteList | quote }}
-            {{- end }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -112,15 +110,24 @@ spec:
                   name: {{ $platformProvidedLLM_secret }}
                   key: platform-provided-llm-azure-api-key
             {{- end }}
-            {{- if .extraEnvVars }}
-            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
-            {{- end }}
             {{- if $.Values.knowledgeSearch.enabled }}
             - name: SEARCH_ORCHESTRATOR_API_KEY
               valueFrom:
                 secretKeyRef:
                     name: {{ $cognigySearchOrchestratorApiKey }}
                     key: api-key
+            {{- end }}
+            - name: INTERNAL_MIGRATION_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyInternalMigrationApiKey_secret }}
+                  key: api-key
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           ports:
             - name: metrics

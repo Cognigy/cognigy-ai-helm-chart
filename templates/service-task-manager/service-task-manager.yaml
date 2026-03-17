@@ -73,6 +73,10 @@ spec:
               value: {{ $.Chart.AppVersion | quote }}
             - name: FEATURE_USE_NEW_NFS
               value: {{ $.Values.migrateFS.enabled | quote }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -99,6 +103,9 @@ spec:
             - name: runtime
               mountPath: /app/extensions
               subPath: extensions
+            {{- else }}
+            - name: flow-modules
+              mountPath: /app/flowModules
             {{- end }}
           startupProbe:
             httpGet:
@@ -137,6 +144,10 @@ spec:
         - name: runtime
           persistentVolumeClaim:
             claimName: runtime
+        {{- else }}
+        - name: flow-modules
+          persistentVolumeClaim:
+            claimName: flow-modules
         {{- end }}
         - name: task-jobs-service-resources-config
           configMap:

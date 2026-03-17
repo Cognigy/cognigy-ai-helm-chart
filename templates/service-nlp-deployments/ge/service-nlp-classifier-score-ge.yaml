@@ -108,7 +108,11 @@ spec:
             - name: LABSE_VOCAB_FILE
               value: /labse_vocab/cased_vocab.txt
             - name: COGNIGY_AI_RELEASE_VERSION
-              value: {{ $.Chart.AppVersion | quote }} 
+              value: {{ $.Chart.AppVersion | quote }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

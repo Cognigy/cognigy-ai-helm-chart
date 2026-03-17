@@ -122,6 +122,10 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigyOdata_secret }}
                   key: odata-super-api-key
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

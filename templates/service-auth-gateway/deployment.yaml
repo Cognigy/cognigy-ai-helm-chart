@@ -73,6 +73,10 @@ spec:
               value: "true"
             - name: AUTH_GATEWAY_JWT_PRIVATE_KEY_PATH_AND_FILENAME
               value: "/var/run/secrets/internal-auth-gateway-jwt-private-key.pem"
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

@@ -5,6 +5,9 @@
 {{- $serviceHandover_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceHandover.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceHandover.serviceName)) }}
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
+{{- $jwtIssuer_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceHandoverJwtIssuer.existingSecret "defaultSecret" "cognigy-service-handover-jwt-issuer") }}
+{{- $niceCxOneT0UserCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.niceCXoneAWSLambdaCredentials.existingSecret "defaultSecret" "cognigy-nice-cxone-aws-lambda-credentials") }}
+{{- $niceCxOneOAuthClient_secret := include "common.secretName.render" ( dict "existingSecret" ((($.Values.niceCXOne).handoverService).oAuthClient).existingSecret "defaultSecret" "cognigy-service-handover-nice-cxone-oauth-client" )}}
 {{- with .Values.serviceHandover }}
 ---
 apiVersion: apps/v1
@@ -33,6 +36,11 @@ spec:
         checksum/cognigy-rce-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyRceCredentials_secret) }}{{ $cognigyRceCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyRceCredentials_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-service-handover-api-access-token: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceHandoverApiAccessToken_secret) }}{{ $cognigyServiceHandoverApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceHandoverApiAccessToken_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-live-agent-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret) }}{{ $cognigyLiveAgentCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret).data | sha256sum }}{{ end }}
+        checksum/jwt-issuer: {{ if not (lookup "v1" "Secret" $.Release.Namespace $jwtIssuer_secret) }}{{ $jwtIssuer_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $jwtIssuer_secret).data | sha256sum }}{{ end }}
+        {{- if (($.Values.niceCXOne).handoverService).enabled }}
+        checksum/cognigy-nice-cxone-t0-user-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $niceCxOneT0UserCredentials_secret) }}{{ $niceCxOneT0UserCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $niceCxOneT0UserCredentials_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-service-handover-nice-cxone-oauth-client: {{ if not (lookup "v1" "Secret" $.Release.Namespace $niceCxOneOAuthClient_secret) }}{{ $niceCxOneOAuthClient_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $niceCxOneOAuthClient_secret).data | sha256sum }}{{ end }}
+        {{- end }}
         {{- if $.Values.cognigyAgentAssist.enabled }}
         checksum/cognigy-agent-assist-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret) }}{{ $agentAssistBackendApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret).data | sha256sum }}{{ end }}
         {{- end }}
@@ -40,6 +48,9 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
+      {{- if .serviceAccountName }}
+      serviceAccountName: {{ .serviceAccountName | quote }}
+      {{- end }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
@@ -69,6 +80,8 @@ spec:
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
+            - name: http
+              containerPort: 8000
             - name: metrics
               containerPort: 8002
           volumeMounts:
@@ -122,7 +135,54 @@ spec:
             - name: ENVIRONMENT
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
-              value: {{ $.Chart.AppVersion | quote }}			  
+              value: {{ $.Chart.AppVersion | quote }}
+            - name: TOKEN_REQUEST_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $jwtIssuer_secret }}
+                  key: secret
+            {{- if (($.Values.niceCXOne).handoverService).enabled }}
+            - name: ENABLE_NICE_CX_ONE_HANDOVER_SERVICE
+              value: "true"
+            - name: NICE_CXONE_CHANNEL_INTEGRATION_ID
+              value: {{ $.Values.niceCXOne.handoverService.channelIntegrationId }}
+            - name: NICE_CXONE_API_BASE_URL
+              value: {{ $.Values.niceCXOne.apiBaseUrl | quote }}
+            - name: NICE_CXONE_AWS_REGION
+              value: {{ $.Values.niceCXOne.awsRegion | quote }}
+            - name: NICE_CXONE_SERVICE_TOKEN_LAMBDA
+              value: "{{ $.Values.niceCXOne.stackPrefix }}-lambda-service-token-provider"
+            - name: NICE_CXONE_T0_USER_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $niceCxOneT0UserCredentials_secret }}
+                  key: nice-cxone-lambda-access-key-id
+            - name: NICE_CXONE_T0_USER_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $niceCxOneT0UserCredentials_secret }}
+                  key: nice-cxone-lambda-secret-access-key
+            {{- if $.Values.niceCXOne.roleArn }}
+            - name: NICE_CXONE_AWS_ASSUME_ROLE_ARN
+              value: {{ $.Values.niceCXOne.roleArn | quote }}
+            {{- end }}
+            {{- if (($.Values.niceCXOne.handoverService).oAuthClient).existingSecret }}
+            - name: NICE_CXONE_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $niceCxOneOAuthClient_secret }}
+                  key: client-id
+            - name: NICE_CXONE_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $niceCxOneOAuthClient_secret }}
+                  key: client-secret
+            {{- end }}
+            {{- end }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

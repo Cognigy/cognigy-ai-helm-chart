@@ -1,0 +1,121 @@
+{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlCluster.enabled) (.Values.cubejs.dbMigration.enabled) }}
+{{- $dbMigration_dbSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.cubejs.dbMigration.auth.superUser.existingSecret .) "defaultSecret" (printf "postgres.%s.credentials.postgresql.acid.zalan.do" (tpl .Values.cubejs.postgresql.cluster .))) }}
+{{- with .Values.cubejs.dbMigration }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: insights-db-migration-manager-old-cluster
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/hook": {{ .helmHook.hook | quote }}
+    "helm.sh/hook-weight": {{ .helmHook.hookWeight | quote }}
+    "helm.sh/hook-delete-policy": {{ .helmHook.deletePolicy | quote }}
+  labels:
+    owner-team: gold
+spec:
+  template:
+    metadata:
+      name: insights-db-migration-manager-old-cluster
+    spec:
+      restartPolicy: Never
+      {{- if .securityContext }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+      {{- end }}
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
+      initContainers:
+        - name: postgres-connection-check
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.cubejs.postgresql.image) }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL connection..."
+              timeout {{ .initContainer.postgresConnectionTimeout | default 300 }} sh -c 'until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "PostgreSQL is unavailable - sleeping"
+                sleep {{ .initContainer.retryInterval | default 2 }}
+              done'
+              echo "PostgreSQL is ready!"
+          env:
+            - name: POSTGRES_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
+            - name: POSTGRES_PORT
+              value: {{ $.Values.cubejs.postgresql.port | quote }}
+            - name: POSTGRES_DB
+              value: {{ $.Values.cubejs.postgresql.database | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $dbMigration_dbSecret }}
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $dbMigration_dbSecret }}
+                  key: password
+          resources:
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+      containers:
+        - name: insights-db-migration-manager
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.insights.dbMigration.image) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          env:
+            - name: INSIGHTS_POSTGRES_DATA_MIGRATION_MODE
+              value: {{ .migration.mode | quote }}
+            - name: MIGRATIONS_PATH
+              value: {{ .migration.migrationsPath | quote }}
+            - name: POSTGRES_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
+            - name: POSTGRES_PORT
+              value: {{ $.Values.cubejs.postgresql.port | quote }}
+            - name: POSTGRES_DB
+              value: {{ $.Values.cubejs.postgresql.database | quote }}
+            {{- if .migration.include }}
+            - name: INSIGHTS_INCLUDE_MIGRATION_NAME
+              value: {{ .migration.include | quote }}
+            {{- end }}
+            {{- if .migration.exclude }}
+            - name: INSIGHTS_EXCLUDE_MIGRATION_NAME
+              value: {{ .migration.exclude | quote }}
+            {{- end }}
+            - name: INSIGHTS_DISABLE_PARTMAN_MAINTENANCE
+              value: {{ .migration.disablePartmanMaintenance | quote }}
+            - name: INSIGHTS_SCHEMA_VERIFICATION_DISABLE
+              value: {{ .migration.disableSchemaVerification | quote }}
+            - name: INSIGHTS_SCHEMA_CRITICAL_ERROR_DISABLE
+              value: {{ .migration.disableSchemaCriticalError | quote }}
+            - name: INSIGHTS_DBINIT_INDEX_CREATION_DISABLE
+              value: {{ .migration.disableIndexCreation | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $dbMigration_dbSecret }}
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $dbMigration_dbSecret }}
+                  key: password
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+{{- end }}
+{{- end }}

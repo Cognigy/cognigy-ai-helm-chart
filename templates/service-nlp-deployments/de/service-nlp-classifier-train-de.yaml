@@ -94,7 +94,11 @@ spec:
             - name: EMBEDDING_SERVER_ADDRESS
               value: service-nlp-embedding-xx:8000
             - name: COGNIGY_AI_RELEASE_VERSION
-              value: {{ $.Chart.AppVersion | quote }} 
+              value: {{ $.Chart.AppVersion | quote }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

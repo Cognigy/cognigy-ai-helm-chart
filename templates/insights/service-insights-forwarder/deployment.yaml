@@ -1,6 +1,7 @@
 {{- if .Values.serviceInsightsForwarder.enabled }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" (dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" (dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $serviceInsightsForwarder_dbSecret :=  ternary (include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights")) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
 {{- with .Values.serviceInsightsForwarder }}
 ---
 apiVersion: apps/v1
@@ -29,6 +30,9 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
+      {{- if .serviceAccountName }}
+      serviceAccountName: {{ .serviceAccountName }}
+      {{- end }}
       {{- if .affinity }}
       affinity:
         {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
@@ -66,6 +70,39 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+            - name: INSIGHTS_POSTGRES_DB_NAME
+              value: {{ $.Values.insights.postgresql.database.name | quote }}
+            - name: INSIGHTS_POSTGRES_DB_HOST
+              value: {{ include "cognigy-ai.insights.postgresql.cluster.host" $ | quote }}
+            - name: INSIGHTS_POSTGRES_DB_PORT
+              value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+            - name: INSIGHTS_POSTGRES_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceInsightsForwarder_dbSecret }}
+                  key: username
+            - name: INSIGHTS_POSTGRES_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceInsightsForwarder_dbSecret }}
+                  key: password
+            {{- end }}
+            {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) (not $.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlCluster.enabled) }}
+            - name: INSIGHTS_POSTGRES_DB_NAME
+              value: {{ $.Values.cubejs.postgresql.database | quote }}
+            - name: INSIGHTS_POSTGRES_DB_HOST
+              value: {{ include "cognigy-ai.cubejs.postgresql.host" $ | quote }}
+            - name: INSIGHTS_POSTGRES_DB_PORT
+              value: {{ $.Values.cubejs.postgresql.port | quote }}
+            - name: INSIGHTS_POSTGRES_DB_USERNAME
+              value: {{ $.Values.cubejs.postgresql.username | quote }}
+            - name: INSIGHTS_POSTGRES_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceInsightsForwarder_dbSecret }}
+                  key: password
+            {{- end }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -84,6 +121,84 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
+            {{- if .cxOneParameters.kafkaPublishingEnabled }}
+            - name: KAFKA_PUBLISHING_ENABLED
+              value: {{ .cxOneParameters.kafkaPublishingEnabled | quote }}
+            - name: KAFKA_BROKERS
+              value: {{ .cxOneParameters.kafkaBrokers | quote }}
+            - name: KAFKA_CLIENT_ID
+              value: {{ .cxOneParameters.kafkaClientId | quote }}
+            - name: KAFKA_SSL_ENABLED
+              value: {{ .cxOneParameters.kafkaSslEnabled | quote }}
+            - name: KAFKA_SASL_MECHANISM
+              value: {{ .cxOneParameters.kafkaSaslMechanism | quote }}
+            - name: KAFKA_CONNECTION_TIMEOUT
+              value: {{ .cxOneParameters.kafkaConnectionTimeout | quote }}
+            - name: KAFKA_REQUEST_TIMEOUT
+              value: {{ .cxOneParameters.kafkaRequestTimeout | quote }}
+            - name: KAFKA_RETRY_INITIAL_TIME
+              value: {{ .cxOneParameters.kafkaRetryInitialTime | quote }}
+            - name: KAFKA_RETRY_RETRIES
+              value: {{ .cxOneParameters.kafkaRetryRetries | quote }}
+            - name: KAFKA_PRODUCER_ALLOW_AUTO_TOPIC_CREATION
+              value: {{ .cxOneParameters.kafkaProducerAllowAutoTopicCreation | quote }}
+            - name: KAFKA_PRODUCER_TRANSACTION_TIMEOUT
+              value: {{ .cxOneParameters.kafkaProducerTransactionTimeout | quote }}
+            - name: KAFKA_PRODUCER_IDEMPOTENT
+              value: {{ .cxOneParameters.kafkaProducerIdempotent | quote }}
+            - name: KAFKA_PRODUCER_MAX_IN_FLIGHT_REQUESTS
+              value: {{ .cxOneParameters.kafkaProducerMaxInFlightRequests | quote }}
+            - name: KAFKA_PRODUCER_ACKS
+              value: {{ .cxOneParameters.kafkaProducerAcks | quote }}
+            - name: KAFKA_TOPIC_SESSIONS
+              value: {{ .cxOneParameters.kafkaTopicSessions | quote }}
+            - name: KAFKA_SCHEMA_REGISTRY_ENABLED
+              value: {{ .cxOneParameters.kafkaSchemaRegistryEnabled | quote }}
+            - name: KAFKA_SCHEMA_REGISTRY_URL
+              value: {{ .cxOneParameters.kafkaSchemaRegistryUrl | quote }}
+            - name: KAFKA_SCHEMA_REGISTRY_AUTO_REGISTER
+              value: {{ .cxOneParameters.kafkaSchemaRegistryAutoRegister | quote }}
+            - name: KAFKA_SCHEMA_REGISTRY_SCHEMA_VERSION
+              value: {{ .cxOneParameters.kafkaSchemaRegistrySchemaVersion | quote }}
+            - name: KAFKA_SCHEMA_REGISTRY_REJECT_UNAUTHORIZED
+              value: {{ .cxOneParameters.kafkaSchemaRegistryRejectUnauthorized | quote }}
+            - name: KAFKA_PROTO_MESSAGE_NAME
+              value: {{ .cxOneParameters.kafkaProtoMessageName | quote }}
+            - name: KAFKA_PRODUCER_COMPRESSION
+              value: {{ .cxOneParameters.kafkaProducerCompression | quote }}
+            - name: KAFKA_PRODUCER_BATCH_SIZE
+              value: {{ .cxOneParameters.kafkaProducerBatchSize | quote }}
+            - name: KAFKA_PRODUCER_LINGER_MS
+              value: {{ .cxOneParameters.kafkaProducerLingerMs | quote }}
+            - name: CXONE_TRANSFORM_ENABLED
+              value: {{ .cxOneParameters.cxOneTransformEnabled | quote }}
+            - name: INSIGHTS_SERVICE_FORWARDER_AMQP_PREFETCH_VALUE
+              value: {{ .cxOneParameters.insightsServiceForwarderAmqpPrefetchValue | quote }}
+            - name: CXONE_SECRETS_ENABLED
+              value: {{ .cxOneParameters.kafkaSecretsEnabled | quote }}
+            - name: CXONE_SECRET_NAME
+              value: {{ .cxOneParameters.kafkaCredentialsSecretName | quote }}
+            {{- if .cxOneParameters.roleSessionName }}
+            - name: CXONE_ROLE_SESSION_NAME
+              value: {{ .cxOneParameters.roleSessionName | quote }}
+            {{- end }}
+            - name: CXONE_AWS_REGION
+              value: {{ $.Values.niceCXOne.awsRegion | quote }}
+            - name: CXONE_ROLE_ARN
+              value: {{ .cxOneParameters.roleArn | quote }}
+            - name: CXONE_ASSUME_ROLE_EXTERNAL_ID
+              value: {{ $.Values.niceCXOne.cxoneAssumeRoleExternalId | quote }}
+            {{- if $.Values.niceCXOne.sessionDuration }}
+            - name: CXONE_SESSION_DURATION
+              value: {{ $.Values.niceCXOne.sessionDuration | quote }}
+            {{- end }}
+            - name: FORWARDER_DEAD_LETTER_ENABLED
+              value: {{ .cxOneParameters.deadLetterEnabled | quote }}
+            {{- end }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

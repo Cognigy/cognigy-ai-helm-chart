@@ -81,6 +81,10 @@ spec:
             - name: APP_LIVE_AGENT_URL
               value: "{{ $.Values.cognigyEnv.COGNIGY_LIVE_AGENT_UI_BASE_URL_WITH_PROTOCOL }}"
             {{- end }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

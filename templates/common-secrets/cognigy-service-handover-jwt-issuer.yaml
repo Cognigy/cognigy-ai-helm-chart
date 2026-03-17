@@ -1,0 +1,16 @@
+{{- if (not .Values.commonSecrets.cognigyServiceHandoverJwtIssuer.existingSecret) }}
+  {{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-handover-jwt-issuer") }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-handover-jwt-issuer
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  # use 128 bytes of random value, hex
+  secret: "{{ .Values.commonSecrets.cognigyServiceHandoverJwtIssuer.secret | default (printf "%x" (randAlphaNum 128)) | b64enc }}"
+  {{- end }}
+{{- end }}

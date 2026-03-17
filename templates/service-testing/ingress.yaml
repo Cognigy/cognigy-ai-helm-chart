@@ -31,9 +31,17 @@ metadata:
     {{- end }}
 
     {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
-    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceapi@kubernetescrd, {{ $.Release.Namespace }}-path-rewrite-testing@kubernetescrd"
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled}}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceapi@kubernetescrd,{{ $.Release.Namespace }}-auth-gateway-forward-auth@kubernetescrd, {{ $.Release.Namespace }}-path-rewrite-testing@kubernetescrd"
+        {{- else }}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceapi@kubernetescrd, {{ $.Release.Namespace }}-path-rewrite-testing@kubernetescrd"        
+        {{- end }}
     {{- else }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled}}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-auth-gateway-forward-auth@kubernetescrd"
+        {{- else }}
     traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-path-rewrite-testing@kubernetescrd
+        {{- end }}
     {{- end }}
 spec:
   ingressClassName: traefik

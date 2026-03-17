@@ -1,4 +1,5 @@
 {{- if and (.Values.migrateFS.enabled) ($.Values.jobCopyNfs.enabled) }}
+{{- $cognigyInternalMigrationApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInternalMigrationApiKey.existingSecret "defaultSecret" "cognigy-internal-migration-api-key") }}
 {{- with .Values.jobCopyNfs }}
 ---
 apiVersion: batch/v1
@@ -36,6 +37,11 @@ spec:
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
+            - name: INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyInternalMigrationApiKey_secret }}
+                  key: api-key
           volumeMounts:
             - name: runtime
               mountPath: /app/resources

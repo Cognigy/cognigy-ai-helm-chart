@@ -231,6 +231,10 @@ spec:
             - name: CXONE_BASE_URL
               value: {{ $.Values.niceCXOne.cxoneBaseUrl | quote }}
             {{- end }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
