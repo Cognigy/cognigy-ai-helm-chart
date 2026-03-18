@@ -3002,7 +3002,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-4cea235a88-1773414901
+  image: cognigy.azurecr.io/service-handover:release-b03174f-1773396874
   replicaCount: 3
   resources:
     requests:
@@ -3113,7 +3113,7 @@ serviceInsightsResources:
   tolerations: []
   priorityClassName: ""
 serviceInsightsForwarder:
-  enabled: true
+  enabled: false
   image: cognigy.azurecr.io/service-insights-forwarder:release-204f25c-1773418091
   serviceAccountName: ""
   replicaCount: 3
@@ -3158,7 +3158,7 @@ serviceInsightsForwarder:
     insightsServiceForwarderAmqpPrefetchValue: "1000"
     roleSessionName: ""
     roleArn: ""
-    kafkaSecretsEnabled: true
+    kafkaSecretsEnabled: false
     kafkaCredentialsSecretName: ""
     kafkaProducerCompression: "gzip"
     kafkaProducerBatchSize: "50"
@@ -4551,9 +4551,9 @@ hpa:
       behavior: {}
     serviceInsightsForwarder:
       name: service-insights-forwarder
-      enabled: true
+      enabled: false
       keda:
-        enabled: true
+        enabled: false
         pollingInterval: 2
         cooldownPeriod: 10
         triggers:

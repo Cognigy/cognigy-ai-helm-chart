@@ -121,7 +121,10 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
-            {{- if .cxOneParameters.kafkaPublishingEnabled }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
             - name: KAFKA_PUBLISHING_ENABLED
               value: {{ .cxOneParameters.kafkaPublishingEnabled | quote }}
             - name: KAFKA_BROKERS
@@ -194,11 +197,6 @@ spec:
             {{- end }}
             - name: FORWARDER_DEAD_LETTER_ENABLED
               value: {{ .cxOneParameters.deadLetterEnabled | quote }}
-            {{- end }}
-            {{- if $.Values.logRedaction.enabled }}
-            - name: LOG_REDACTION_ENABLED
-              value: "true"
-            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
