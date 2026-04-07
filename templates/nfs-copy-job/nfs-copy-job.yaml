@@ -45,14 +45,10 @@ spec:
           volumeMounts:
             - name: runtime
               mountPath: /app/resources
-            {{- if .mountFlowModules }}
             - name: flow-modules
               mountPath: /app/flowModules
-            {{- end }}
-            {{- if .mountFunctions }}
             - name: functions
               mountPath: /app/oldFunctions
-            {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -63,16 +59,12 @@ spec:
         - name: runtime
           persistentVolumeClaim:
             claimName: {{ .runtimeVolumeClaimName }}
-        {{- if .mountFlowModules }}
         - name: flow-modules
           persistentVolumeClaim:
             claimName: {{ .flowModulesVolumeClaimName }}
-        {{- end }}
-        {{- if .mountFunctions }}
         - name: functions
           persistentVolumeClaim:
-            claimName: {{ .functionsVolumeClaimName }}
-        {{- end }}
+            claimName: {{ .functionsolumeClaimName }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}
