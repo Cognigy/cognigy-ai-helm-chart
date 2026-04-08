@@ -165,6 +165,12 @@ spec:
             {{- if $.Values.niceCXOne.roleArn }}
             - name: NICE_CXONE_AWS_ASSUME_ROLE_ARN
               value: {{ $.Values.niceCXOne.roleArn | quote }}
+            - name: NICE_CXONE_AWS_ASSUME_ROLE_EXTERNAL_ID
+              value: {{ $.Values.niceCXOne.cxoneAssumeRoleExternalId | quote }}
+            - name: NICE_CXONE_AWS_ASSUME_ROLE_SESSION_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             {{- end }}
             {{- if (($.Values.niceCXOne.handoverService).oAuthClient).existingSecret }}
             - name: NICE_CXONE_OAUTH_CLIENT_ID
