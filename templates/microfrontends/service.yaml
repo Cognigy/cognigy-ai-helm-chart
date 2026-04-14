@@ -1,0 +1,25 @@
+{{- range $mfe := (include "mfe.list" $ | fromJson).items }}
+{{- if and $mfe.values $mfe.values.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $mfe.name }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: {{ $mfe.name }}
+    owner-team: {{ $mfe.team }}
+  {{- if $mfe.values.annotations }}
+  annotations:
+    {{- toYaml $mfe.values.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3001
+      protocol: TCP
+  selector:
+    app: {{ $mfe.name }}
+{{- end }}
+{{- end }}

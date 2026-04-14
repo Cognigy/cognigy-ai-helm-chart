@@ -555,3 +555,17 @@ Usage:
     {{- $bytes | int64 -}}
 {{- end -}}
 
+{{- define "mfe.list" -}}
+{{- $mfes := list
+  (dict "name" "mfe-simulator" "pathName" "simulator" "values" .Values.mfeSimulator "team" "gold")
+  (dict "name" "mfe-ai-agents-v2" "pathName" "ai-agents-v2" "values" .Values.mfeAiAgentsV2 "team" "boron")
+  (dict "name" "mfe-interaction-panel" "pathName" "interaction-panel" "values" .Values.mfeInteractionPanel "team" "aluminium")
+  (dict "name" "mfe-sidebar" "pathName" "sidebar" "values" .Values.mfeSidebar "team" "aluminium")
+  (dict "name" "mfe-global-toolbar" "pathName" "global-toolbar" "values" .Values.mfeGlobalToolbar "team" "aluminium")
+  (dict "name" "mfe-knowledge-store" "pathName" "knowledge-store" "values" .Values.mfeKnowledgeStore "team" "carbon")
+  (dict "name" "mfe-endpoints" "pathName" "endpoints" "values" .Values.mfeEndpoints "team" "dubnium")
+  (dict "name" "mfe-example" "pathName" "example" "values" .Values.mfeExample "team" "aluminium")
+-}}
+{{- dict "items" $mfes | toJson -}}
+{{- end -}}
+

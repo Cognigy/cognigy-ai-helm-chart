@@ -113,10 +113,19 @@ spec:
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           volumeMounts:
+            {{- if $.Values.commonConfigs.cognigyRollout }}
+            - name: cognigy-rollout
+              mountPath: /config/rollout
+            {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
       volumes:
+        {{- if $.Values.commonConfigs.cognigyRollout }}
+        - name: cognigy-rollout
+          configMap:
+            name: cognigy-rollout
+        {{- end }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

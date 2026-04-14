@@ -8,6 +8,8 @@ kind: Deployment
 metadata:
   name: service-custom-modules
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: aluminium
 spec:
   selector:
     matchLabels:
