@@ -2650,7 +2650,7 @@ serviceAnalyticsCollector:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsConversations:
-  image: cognigy.azurecr.io/service-analytics-conversations:release-5cc6e5e-1774961797
+  image: cognigy.azurecr.io/service-analytics-conversations:release-efd00a4-1776249885
   replicaCount: 3
   resources:
     requests:
@@ -3337,7 +3337,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-d26169f536-1775127582
+  image: cognigy.azurecr.io/service-resources:release-ff210c03ea-1776252291
   replicaCount: 3
   resources:
     requests:
@@ -4283,7 +4283,7 @@ taskRunKnowledgeExtension:
     concurrencyPolicy: Forbid
 
 taskCreatePackageNfs:
-  image: cognigy.azurecr.io/service-resources:release-d26169f536-1775127582
+  image: cognigy.azurecr.io/service-resources:release-ff210c03ea-1776252291
   resources:
     requests:
       cpu: "1"
