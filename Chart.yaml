@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 2026.7.2
-appVersion: "2026.7.2"
+version: 2026.8.2
+appVersion: "2026.8.2"
 kubeVersion: "<v1.35.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
@@ -38,7 +38,7 @@ dependencies:
     condition: redisPersistentHa.enabled
     alias: redisPersistentHa
   - name: postgres-operator
-    version: "1.10.1"
+    version: "1.14.0"
     repository: "https://opensource.zalando.com/postgres-operator/charts/postgres-operator"
     condition: pgoperator.enabled
     alias: pgoperator

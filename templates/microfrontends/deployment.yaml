@@ -1,0 +1,64 @@
+{{- range $mfe := (include "mfe.list" $ | fromJson).items }}
+{{- if and $mfe.values $mfe.values.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $mfe.name }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: {{ $mfe.team }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $mfe.name }}
+  replicas: {{ $mfe.values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ $mfe.name }}
+      annotations:
+        {{- if $.Values.cognigyCommonPodAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if $mfe.values.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" $mfe.values.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if $mfe.values.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" $mfe.values.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if $mfe.values.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" $mfe.values.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if $mfe.values.priorityClassName }}
+      priorityClassName: {{ $mfe.values.priorityClassName }}
+      {{- end }}
+      containers:
+        - name: {{ $mfe.name }}
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" $mfe.values.image) }}
+          resources: {{- toYaml $mfe.values.resources | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 3001
+          livenessProbe:
+            httpGet:
+              path: /remoteEntry.js
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /remoteEntry.js
+              port: 3001
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          {{- if $mfe.values.extraEnvVars }}
+          env:
+            {{- include "common.tplvalues.render" (dict "value" $mfe.values.extraEnvVars "context" $) | nindent 12 }}
+          {{- end }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml $mfe.values.securityContext | nindent 8 }}
+{{- end }}
+{{- end }}
