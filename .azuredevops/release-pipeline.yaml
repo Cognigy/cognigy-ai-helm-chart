@@ -24,7 +24,7 @@ resources:
     ref: main
 
 variables:
-  azureContainerRegistry: "Azure Container Registry Prod"
+  azureContainerRegistry: "Azure Container Registry Prod (Federated)"
   chartName: "cognigy.ai"
   ACRName: "cognigy.azurecr.io"
   ACRPath: "helm"
