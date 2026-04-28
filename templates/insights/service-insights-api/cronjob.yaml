@@ -1,0 +1,155 @@
+{{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $serviceInsightsApi_dbSecret :=  ternary (include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights")) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
+{{- $serviceInsightsApi_mongoDbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceInsightsApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceInsightsApi.serviceName)) }}
+{{- if .Values.serviceInsightsApi.conversationAnalyzer.enabled }}
+{{- with .Values.serviceInsightsApi.conversationAnalyzer.cronJob }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: conversation-analyzer-cronjob
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      parallelism: 1
+      backoffLimit: {{ .backoffLimit }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          restartPolicy: OnFailure
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: conversation-analyzer-cronjob
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceInsightsApi.image) }}
+              resources: {{- toYaml .resources | nindent 16 }}
+              command: ["node"]
+              args: ["/app/build/jobs/conversationAnalyzerSchedulerCronJob/index"]
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              env:
+                {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+                - name: INSIGHTS_POSTGRES_DB_NAME
+                  value: {{ $.Values.insights.postgresql.database.name | quote }}
+                - name: INSIGHTS_POSTGRES_DB_HOST
+                  value: {{ include "cognigy-ai.insights.postgresql.cluster.host" $ | quote }}
+                - name: INSIGHTS_POSTGRES_DB_PORT
+                  value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+                - name: INSIGHTS_POSTGRES_DB_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $serviceInsightsApi_dbSecret }}
+                      key: username
+                - name: INSIGHTS_POSTGRES_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $serviceInsightsApi_dbSecret }}
+                      key: password
+                {{- end }}
+                {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) (not $.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlCluster.enabled) }}
+                - name: INSIGHTS_POSTGRES_DB_NAME
+                  value: {{ $.Values.cubejs.postgresql.database | quote }}
+                - name: INSIGHTS_POSTGRES_DB_HOST
+                  value: {{ include "cognigy-ai.cubejs.postgresql.host" $ | quote }}
+                - name: INSIGHTS_POSTGRES_DB_PORT
+                  value: {{ $.Values.cubejs.postgresql.port | quote }}
+                - name: INSIGHTS_POSTGRES_DB_USERNAME
+                  value: {{ $.Values.cubejs.postgresql.username | quote }}
+                - name: INSIGHTS_POSTGRES_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $serviceInsightsApi_dbSecret }}
+                      key: password
+                {{- end }}
+                - name: REDIS_ENABLE_RECONNECT
+                  value: "true"
+                - name: RABBITMQ_ENABLE_RECONNECT
+                  value: "true"
+                - name: INSIGHTS_JWT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $cognigyInsightsJwt_secret }}
+                      key: secret
+                - name: TRACING_ENABLED
+                  value: {{ $.Values.tracing.sentry.insights.enabled | quote }}
+                - name: TRACING_BASE_URL_WITH_PROTOCOL
+                  value: {{ $.Values.tracing.sentry.insights.baseUrl | quote }}
+                - name: TRACING_ERRORS_ENABLED
+                  value: {{ $.Values.tracing.sentry.insights.errorsEnabled | quote }}
+                - name: TRACING_EVENTS_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.insights.eventsSampleRate | quote }}
+                - name: TRACING_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.insights.sampleRate | quote }}
+                - name: ENVIRONMENT
+                  value: {{ $.Values.tracing.environment | quote }}
+                - name: COGNIGY_AI_RELEASE_VERSION
+                  value: {{ $.Chart.AppVersion | quote }}
+                {{- if $.Values.logRedaction.enabled }}
+                - name: LOG_REDACTION_ENABLED
+                  value: "true"
+                {{- end }}
+                # Setting nodeOptions before extraEnvVars to allow overrides from extraEnvVars
+                {{- with .nodeOptions }}
+                {{- include "cognigy-ai.common.nodeOptions.render" (dict "value" . "context" $) | nindent 16 }}
+                {{- end }}
+                {{- if .extraEnvVars }}
+                {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
+                {{- end }}
+              volumeMounts:
+                - name: rabbitmq-connection-string
+                  mountPath: /var/run/secrets/rabbitmqConnectionString
+                  subPath: rabbitmqConnectionString
+                - name: mongodb-connection-string
+                  mountPath: /var/run/secrets/mongodbConnectionString
+                  subPath: mongodbConnectionString
+                - name: redis-password
+                  mountPath: /var/run/secrets/redis-password.conf
+                  subPath: redis-password.conf
+                {{- if .extraVolumeMounts }}
+                {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
+                {{- end }}
+          volumes:
+            - name: rabbitmq-connection-string
+              secret:
+                secretName: {{ $statefulRabbitMq_secret }}
+                items:
+                  - key: connection-string
+                    path: rabbitmqConnectionString
+            - name: mongodb-connection-string
+              secret:
+                secretName: {{ $serviceInsightsApi_mongoDbSecret }}
+                items:
+                  - key: connection-string
+                    path: mongodbConnectionString
+            - name: redis-password
+              secret:
+                secretName: {{ $redisHa_secret }}
+            {{- if .extraVolumes }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
+            {{- end }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+{{- end }}
+{{- end }}

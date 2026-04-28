@@ -2,6 +2,7 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceInsightsApi_dbSecret :=  ternary (include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights")) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
+{{- $serviceInsightsApi_mongoDbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceInsightsApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceInsightsApi.serviceName)) }}
 {{- with .Values.serviceInsightsApi }}
 ---
 apiVersion: apps/v1
@@ -24,6 +25,7 @@ spec:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
+        checksum/mongodb: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceInsightsApi_mongoDbSecret) }}{{ $serviceInsightsApi_mongoDbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceInsightsApi_mongoDbSecret).data | sha256sum }}{{ end }}
         {{- if and ($.Values.pgoperator.enabled) }}
         checksum/postgres: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceInsightsApi_dbSecret) }}{{ $serviceInsightsApi_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceInsightsApi_dbSecret).data | sha256sum }}{{ end }}
         {{- end }}
@@ -31,6 +33,9 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
+      {{- if and $.Values.serviceInsightsApi.conversationAnalyzer.enabled $.Values.serviceInsightsApi.serviceAccountName }}
+      serviceAccountName: {{ $.Values.serviceInsightsApi.serviceAccountName }}
+      {{- end }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
@@ -58,7 +63,11 @@ spec:
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.insights.postgresql.database.name | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "cognigy-ai.insights.postgresql.cluster.host" $ | quote }}
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+            {{- if or $.Values.insights.postgresql.cluster.readReplica.useReadReplica .useReadReplica }}
+            - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
+            {{- end }}
             - name: INSIGHTS_POSTGRES_DB_PORT
               value: {{ $.Values.insights.postgresql.cluster.port | quote }}
             - name: INSIGHTS_POSTGRES_DB_USERNAME
@@ -76,7 +85,11 @@ spec:
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
             - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "cognigy-ai.cubejs.postgresql.host" $ | quote }}
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
+            {{- if or $.Values.cubejs.postgresql.readReplica.useReadReplica .useReadReplica }}
+            - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
+              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.readReplica.host "context" $) | quote }}
+            {{- end }}
             - name: INSIGHTS_POSTGRES_DB_PORT
               value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: INSIGHTS_POSTGRES_DB_USERNAME
@@ -114,6 +127,39 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- if $.Values.serviceInsightsApi.conversationAnalyzer.enabled }}
+            - name: ANALYTICS_COLLECTOR_MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }}
+                  key: connection-string
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SERVICE_INSIGHTS_API_IMAGE
+              value: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+            - name: ANALYZER_LLM_REFERENCE_ID
+              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.llmReferenceId | default "" | quote }}
+            - name: ANALYZER_RESULTS_TTL_DAYS
+              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.resultsTtlDays | default 30 | quote }}
+            - name: ANALYZER_MAX_CONCURRENT_JOBS
+              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.maxConcurrentJobs | default 100 | quote }}
+            - name: ANALYZER_DISPATCH_INTERVAL_MS
+              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.dispatchIntervalMs | default 30000 | quote }}
+            - name: ANALYZER_JOB_BACKOFF_LIMIT
+              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.bulkAnalysisJob.backoffLimit | default 0 | quote }}
+            - name: ANALYZER_JOB_TTL_SECONDS
+              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.bulkAnalysisJob.ttlSecondsAfterFinished | default 3600 | quote }}
+            - name: ANALYZER_JOB_ACTIVE_DEADLINE
+              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.bulkAnalysisJob.activeDeadlineSeconds | default 7200 | quote }}
+            - name: ANALYZER_JOB_POSTGRESQL_SECRET
+              value: {{ $serviceInsightsApi_dbSecret | quote }}
+            {{- if $.Values.serviceInsightsApi.serviceAccountName }}
+            - name: ANALYZER_JOB_SERVICE_ACCOUNT
+              value: {{ $.Values.serviceInsightsApi.serviceAccountName | quote }}
+            {{- end }}
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -121,6 +167,9 @@ spec:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
               subPath: rabbitmqConnectionString
+            - name: mongodb-connection-string
+              mountPath: /var/run/secrets/mongodbConnectionString
+              subPath: mongodbConnectionString
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
@@ -146,6 +195,12 @@ spec:
             items:
               - key: connection-string
                 path: rabbitmqConnectionString
+        - name: mongodb-connection-string
+          secret:
+            secretName: {{ $serviceInsightsApi_mongoDbSecret }}
+            items:
+              - key: connection-string
+                path: mongodbConnectionString
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}

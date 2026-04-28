@@ -41,6 +41,9 @@ spec:
         checksum/cognigy-platform-provided-llm-config: {{ include (print $.Template.BasePath "/configurations/cognigy-platform-provided-llm-config.yaml") $ | sha256sum }}
         {{- end }}
         checksum/cognigy-internal-migration-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInternalMigrationApiKey_secret) }}{{ $cognigyInternalMigrationApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInternalMigrationApiKey_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.llmGateway.enabled }}
+        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-resources") }}{{"cognigy-llm-gateway-caller-service-resources" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-resources").data | sha256sum }}{{ end }}
+        {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -126,6 +129,17 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- if $.Values.llmGateway.enabled }}
+            - name: LLM_GATEWAY_BASE_URL
+              value: {{ $.Values.llmGateway.serviceUrl | quote }}
+            - name: LLM_GATEWAY_SERVICE_ID
+              value: "service-resources"
+            - name: LLM_GATEWAY_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-llm-gateway-caller-service-resources
+                  key: secret
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -177,6 +191,10 @@ spec:
             - name: ide
               mountPath: /app/snapshots
               subPath: snapshots
+            {{- end }}
+            {{- if $.Values.commonConfigs.cognigyRollout }}
+            - name: cognigy-rollout
+              mountPath: /config/rollout
             {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
@@ -238,6 +256,11 @@ spec:
         - name: ide
           persistentVolumeClaim:
             claimName: ide
+        {{- end }}
+        {{- if $.Values.commonConfigs.cognigyRollout }}
+        - name: cognigy-rollout
+          configMap:
+            name: cognigy-rollout
         {{- end }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}

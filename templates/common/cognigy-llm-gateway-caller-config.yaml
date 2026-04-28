@@ -1,0 +1,17 @@
+{{- if .Values.llmGateway.enabled -}}
+{{- $callers := list "service-ai" "service-api" "service-resources" "service-playbook-execution" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cognigy-llm-gateway-caller-config
+  namespace: {{ .Release.Namespace | quote }}
+data:
+  values.yaml: |
+    serviceLlmGateway:
+      callerSecrets:
+        {{- range $callers }}
+        - serviceId: {{ . }}
+          existingSecret: cognigy-llm-gateway-caller-{{ . }}
+          existingSecretKey: secret
+        {{- end }}
+{{- end }}

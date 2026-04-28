@@ -148,6 +148,8 @@ spec:
               value: {{ $.Values.niceCXOne.handoverService.channelIntegrationId }}
             - name: NICE_CXONE_API_BASE_URL
               value: {{ $.Values.niceCXOne.apiBaseUrl | quote }}
+            - name: NICE_CXONE_DISCOVERY_BASE_URL
+              value: {{ default $.Values.niceCXOne.apiBaseUrl $.Values.niceCXOne.cxoneBaseUrl | quote }}
             - name: NICE_CXONE_AWS_REGION
               value: {{ $.Values.niceCXOne.awsRegion | quote }}
             - name: NICE_CXONE_SERVICE_TOKEN_LAMBDA

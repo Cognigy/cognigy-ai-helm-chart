@@ -2,6 +2,7 @@
 {{- $cognigyTestingJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyTestingJwt.existingSecret "defaultSecret" "cognigy-testing-jwt") }}
 {{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
 {{- $serviceTesting_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceTesting.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceTesting.serviceName)) }}
+{{- $serviceTestingBilling_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceTestingBilling.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceTestingBilling.serviceName)) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
@@ -26,6 +27,7 @@ spec:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceTesting_dbSecret) }}{{ $serviceTesting_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceTesting_dbSecret).data | sha256sum }}{{ end }}
+        checksum/billing-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceTestingBilling_dbSecret) }}{{ $serviceTestingBilling_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceTestingBilling_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-testing-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret) }}{{ $cognigyTestingJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
@@ -87,6 +89,11 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ $serviceTesting_dbSecret }}
+                  key: connection-string
+            - name: BILLING_MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceTestingBilling_dbSecret }}
                   key: connection-string
             - name: REDIS_PASSWORD
               valueFrom:

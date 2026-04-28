@@ -56,6 +56,9 @@ spec:
         {{- if $.Values.niceCXOne.enabled }}
         checksum/service-security-internal-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret) }}{{ $serviceSecurityInternalApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret).data | sha256sum }}{{ end }}
         {{- end }}
+        {{- if $.Values.llmGateway.enabled }}
+        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-ai") }}{{"cognigy-llm-gateway-caller-service-ai" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-ai").data | sha256sum }}{{ end }}
+        {{- end }}
     spec:
       {{- if .serviceAccountName }}
       serviceAccountName: {{ .serviceAccountName }}
@@ -158,6 +161,17 @@ spec:
                 secretKeyRef:
                     name: {{ $cognigySearchOrchestratorApiKey }}
                     key: api-key
+            {{- end }}
+            {{- if $.Values.llmGateway.enabled }}
+            - name: LLM_GATEWAY_BASE_URL
+              value: {{ $.Values.llmGateway.serviceUrl | quote }}
+            - name: LLM_GATEWAY_SERVICE_ID
+              value: "service-ai"
+            - name: LLM_GATEWAY_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-llm-gateway-caller-service-ai
+                  key: secret
             {{- end }}
             - name: SERVICE_SECURE_FORMS_API_KEY
               valueFrom:

@@ -18,9 +18,9 @@ metadata:
 type: Opaque
 data:
   {{- if $service_val.auth.password }}
-  connection-string: "{{- include "connectionString.mongodb" (dict "pw" $service_val.auth.password "serviceName" $service_val.serviceName "mongodbScheme" $.Values.mongodb.scheme "mongodbHosts" $.Values.mongodb.hosts "mongodbParams" $.Values.mongodb.params) | b64enc }}"
+  connection-string: "{{- include "connectionString.mongodb" (dict "pw" $service_val.auth.password "serviceName" $service_val.serviceName "dbName" (default $service_val.serviceName $service_val.dbName) "mongodbScheme" $.Values.mongodb.scheme "mongodbHosts" $.Values.mongodb.hosts "mongodbParams" $.Values.mongodb.params) | b64enc }}"
   {{- else }}
-  connection-string: "{{- include "connectionString.mongodb" (dict "pw" (randAlphaNum 24) "serviceName" $service_val.serviceName "mongodbScheme" $.Values.mongodb.scheme "mongodbHosts" $.Values.mongodb.hosts "mongodbParams" $.Values.mongodb.params) | b64enc }}"
+  connection-string: "{{- include "connectionString.mongodb" (dict "pw" (randAlphaNum 24) "serviceName" $service_val.serviceName "dbName" (default $service_val.serviceName $service_val.dbName) "mongodbScheme" $.Values.mongodb.scheme "mongodbHosts" $.Values.mongodb.hosts "mongodbParams" $.Values.mongodb.params) | b64enc }}"
   {{- end }}
 
           {{- end }}

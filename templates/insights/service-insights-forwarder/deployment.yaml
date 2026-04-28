@@ -197,6 +197,20 @@ spec:
             {{- end }}
             - name: FORWARDER_DEAD_LETTER_ENABLED
               value: {{ .cxOneParameters.deadLetterEnabled | quote }}
+            - name: KAFKA_TOPIC_MESSAGE_ANALYTICS
+              value: {{ .cxOneParameters.kafkaTopicMessageAnalytics | quote }}
+            - name: KAFKA_TOPIC_GOAL_TRACKING
+              value: {{ .cxOneParameters.kafkaTopicGoalTracking | quote }}
+            - name: KAFKA_TOPIC_GOAL_DEFINITION
+              value: {{ .cxOneParameters.kafkaTopicGoalDefinition | quote }}
+            - name: KAFKA_TOPIC_GOAL_STEP_DEFINITION
+              value: {{ .cxOneParameters.kafkaTopicGoalStepDefinition | quote }}
+            - name: CXONE_MESSAGE_ANALYTICS_ENABLED
+              value: {{ .cxOneParameters.cxOneMessageAnalyticsEnabled | quote }}
+            - name: CXONE_GOAL_TRACKING_ENABLED
+              value: {{ .cxOneParameters.cxOneGoalTrackingEnabled | quote }}
+            - name: CXONE_GOAL_DEFINITION_ENABLED
+              value: {{ .cxOneParameters.cxOneGoalDefinitionEnabled | quote }}
             {{- with .nodeOptions }}
             {{- include "cognigy-ai.common.nodeOptions.render" (dict "value" . "context" $) | nindent 12 }}
             {{- end }}
