@@ -3148,7 +3148,7 @@ serviceHttp:
             averageUtilization: 70
     behavior: {}
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-1c5bb44-1777288185
+  image: cognigy.azurecr.io/service-insights-api:release-f97b963-1777532967
   replicaCount: 3
   serviceAccountName: "service-insights-api"
   resources:
@@ -3319,7 +3319,7 @@ serviceCollector:
   tolerations: []
   priorityClassName: ""
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-4fde0d8-1777036579
+  image: cognigy.azurecr.io/service-insights-ui:release-0923d40-1777535479
   replicaCount: 3
   resources:
     requests:
@@ -6162,7 +6162,7 @@ cubejs:
     priorityClassName: ""
   # Insights Job for Database Schema Migration in Postgres (old cluster)
   dbMigration:
-    enabled: false
+    enabled: true
     helmHook:
       hook: "post-install,pre-upgrade"
       hookWeight: "-3"
