@@ -1,8 +1,9 @@
 # We are using the ingress configuration "serviceApi" from values.yaml
 # as both service-api and service-testing both share the same host and
 # use path based routing.
-{{- if and (eq .Values.ingress.enabled true) (eq .Values.serviceTesting.enabled true) }}
+{{- if and (eq .Values.ingress.enabled true)  (eq .Values.serviceTesting.enabled true) }}
 
+{{- if (eq .Values.ingress.ingresController "traefik") }}
 # Traefik middleware which strips the "/testing" prefix
 # Middleware
 # Strip prefix /overview
@@ -17,6 +18,7 @@ spec:
   replacePathRegex:
     regex: ^/testing/(.*)
     replacement: /$1
+{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

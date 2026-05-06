@@ -1,4 +1,4 @@
-{{- if .Values.ingress.enabled }}
+{{- if and (.Values.ingress.enabled) (eq .Values.ingress.ingresController "traefik")}}
 {{- range $mfe := (include "mfe.list" $ | fromJson).items }}
 {{- if and $mfe.values $mfe.values.enabled }}
 ---

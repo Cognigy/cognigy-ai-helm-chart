@@ -67,13 +67,8 @@ spec:
             {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.insights.postgresql.database.name | quote }}
-            {{- if or $.Values.insights.postgresql.cluster.readReplica.useReadReplica .useReadReplica }}
             - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
-            {{- else }}
-            - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
-            {{- end }}
+              value: {{ include "cognigy-ai.insights.postgresql.cluster.host" $ | quote }}
             - name: INSIGHTS_POSTGRES_DB_PORT
               value: {{ $.Values.insights.postgresql.cluster.port | quote }}
             - name: INSIGHTS_POSTGRES_DB_USERNAME
@@ -90,13 +85,8 @@ spec:
             {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) (not $.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlCluster.enabled) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.cubejs.postgresql.database | quote }}
-            {{- if or $.Values.cubejs.postgresql.readReplica.useReadReplica .useReadReplica }}
             - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.readReplica.host "context" $) | quote }}
-            {{- else }}
-            - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
-            {{- end }}
+              value: {{ include "cognigy-ai.cubejs.postgresql.host" $ | quote }}
             - name: INSIGHTS_POSTGRES_DB_PORT
               value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: INSIGHTS_POSTGRES_DB_USERNAME

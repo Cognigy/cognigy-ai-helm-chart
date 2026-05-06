@@ -3,6 +3,7 @@
 # use path based routing.
 {{- if and (eq .Values.ingress.enabled true) (eq .Values.serviceCollaboration.enabled true) }}
 
+{{- if (eq .Values.ingress.ingresController "traefik") }}
 # Traefik middleware which strips the "/collaboration" prefix
 # Middleware
 # Strip prefix /overview
@@ -17,6 +18,7 @@ spec:
   replacePathRegex:
     regex: ^/collaboration/(.*)
     replacement: /$1
+{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

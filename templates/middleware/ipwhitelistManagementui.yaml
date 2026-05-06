@@ -1,4 +1,4 @@
-{{- if and (.Values.managementUi.enabled) (.Values.managementUi.ingress.ipWhiteListMiddleware.enabled) }}
+{{- if and (.Values.managementUi.enabled) (eq .Values.ingress.ingresController "traefik") (.Values.managementUi.ingress.ipWhiteListMiddleware.enabled) }}
 {{- with .Values.managementUi.ingress.ipWhiteListMiddleware }}
 ---
 # Whitelisting Based on `X-Forwarded-For` with `depth=0`

@@ -1,4 +1,4 @@
-{{- if and .Values.traefik.enabled .Values.ingress.enabled .Values.serviceApi.serviceAuthGateway.enabled }}
+{{- if and (.Values.ingress.enabled) (eq .Values.ingress.ingresController "traefik") (.Values.serviceApi.serviceAuthGateway.enabled) }}
 #
 # Centralized authentication using Traefik forward auth.
 #

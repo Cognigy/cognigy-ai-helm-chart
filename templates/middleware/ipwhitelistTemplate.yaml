@@ -1,4 +1,4 @@
-{{- if and (.Values.traefik.enabled) (.Values.ingress.enabled) }}
+{{- if and (.Values.ingress.enabled) (eq .Values.ingress.ingresController "traefik") }}
   {{- range $ingress_key, $ingress_val := .Values.ingress }}
     {{- if kindIs "map" $ingress_val }}
       {{- if hasKey $ingress_val "ipWhiteListMiddleware" }}
