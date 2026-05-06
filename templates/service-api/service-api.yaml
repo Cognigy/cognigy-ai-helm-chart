@@ -56,6 +56,9 @@ spec:
         {{- if $.Values.sharedSpeechCredentials.enabled }}
         checksum/sharedSpeechCredentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $sharedSpeechCredentials_secret) }}{{ $sharedSpeechCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $sharedSpeechCredentials_secret).data | sha256sum }}{{ end }}
         {{- end }}
+        {{- if $.Values.llmGateway.enabled }}
+        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-api") }}{{"cognigy-llm-gateway-caller-service-api" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-api").data | sha256sum }}{{ end }}
+        {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -232,6 +235,17 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- if $.Values.llmGateway.enabled }}
+            - name: LLM_GATEWAY_BASE_URL
+              value: {{ $.Values.llmGateway.serviceUrl | quote }}
+            - name: LLM_GATEWAY_SERVICE_ID
+              value: "service-api"
+            - name: LLM_GATEWAY_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-llm-gateway-caller-service-api
+                  key: secret
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -265,6 +279,10 @@ spec:
             - name: ide
               mountPath: /app/resumableUploads
               subPath: resumableUploads
+            {{- end }}
+            {{- if $.Values.commonConfigs.cognigyRollout }}
+            - name: cognigy-rollout
+              mountPath: /config/rollout
             {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
@@ -315,6 +333,11 @@ spec:
         - name: ide
           persistentVolumeClaim:
             claimName: ide
+        {{- end }}
+        {{- if $.Values.commonConfigs.cognigyRollout }}
+        - name: cognigy-rollout
+          configMap:
+            name: cognigy-rollout
         {{- end }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}

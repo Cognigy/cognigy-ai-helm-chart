@@ -22,6 +22,9 @@ spec:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.llmGateway.enabled }}
+        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-playbook-execution") }}{{"cognigy-llm-gateway-caller-service-playbook-execution" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-playbook-execution").data | sha256sum }}{{ end }}
+        {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -78,6 +81,17 @@ spec:
             {{- if $.Values.logRedaction.enabled }}
             - name: LOG_REDACTION_ENABLED
               value: "true"
+            {{- end }}
+            {{- if $.Values.llmGateway.enabled }}
+            - name: LLM_GATEWAY_BASE_URL
+              value: {{ $.Values.llmGateway.serviceUrl | quote }}
+            - name: LLM_GATEWAY_SERVICE_ID
+              value: "service-playbook-execution"
+            - name: LLM_GATEWAY_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cognigy-llm-gateway-caller-service-playbook-execution
+                  key: secret
             {{- end }}
             {{- with .nodeOptions }}
             {{- include "cognigy-ai.common.nodeOptions.render" (dict "value" . "context" $) | nindent 12 }}

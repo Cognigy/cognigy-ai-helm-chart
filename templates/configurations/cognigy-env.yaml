@@ -23,13 +23,11 @@ data:
   INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceInsightsApi.host | quote }}
   {{- end }}
 
-{{- if not (hasKey .Values.cognigyEnv "INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL") }}
   {{- if .Values.ingress.serviceCollector.customServiceUrl }}
   INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceCollector.customServiceUrl | quote }}
   {{- else }}
   INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceCollector.host | quote }}
   {{- end }}
-{{- end }}
 
   {{- if .Values.ingress.serviceEndpoint.customServiceUrl }}
   ENDPOINT_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceEndpoint.customServiceUrl | quote }}
@@ -91,6 +89,10 @@ data:
 
   {{- if .Values.knowledgeSearch.enabled }}
   FEATURE_ENABLE_KNOWLEDGE_SEARCH: "true"
+  {{- end }}
+
+  {{- if .Values.llmGateway.enabled }}
+  FEATURE_ENABLE_LLM_GATEWAY_ROUTING_WHITELIST: {{ .Values.llmGateway.routingWhitelist | quote }}
   {{- end }}
 
   {{- range $key, $value := .Values.cognigyEnv }}

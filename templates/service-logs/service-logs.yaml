@@ -107,6 +107,10 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            {{- if $.Values.commonConfigs.cognigyRollout }}
+            - name: cognigy-rollout
+              mountPath: /config/rollout
+            {{- end }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -135,6 +139,11 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        {{- if $.Values.commonConfigs.cognigyRollout }}
+        - name: cognigy-rollout
+          configMap:
+            name: cognigy-rollout
+        {{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

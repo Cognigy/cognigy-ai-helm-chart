@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 2026.8.3
-appVersion: "2026.8.3"
+version: 2026.9.2
+appVersion: "2026.9.2"
 kubeVersion: "<v1.35.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
@@ -12,7 +12,6 @@ sources:
 maintainers:
   - name: SRE Team
     email: sre@cognigy.com
-
 dependencies:
   - name: traefik
     version: "35.4.0"

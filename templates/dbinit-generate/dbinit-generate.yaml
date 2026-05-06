@@ -151,6 +151,13 @@ spec:
               - key: connection-string
                 path: cognigy-service-testing
 {{- end }}
+{{- if .Values.dbConnectionString.services.serviceTestingBilling.enabled }}
+          - secret:
+              name: cognigy-service-testing-billing
+              items:
+              - key: connection-string
+                path: cognigy-service-testing-billing
+{{- end }}
           - secret:
               name: cognigy-service-function-scheduler
               items:
@@ -211,6 +218,11 @@ spec:
               items:
               - key: connection-string
                 path: cognigy-agent-assist
+          - secret:
+              name: cognigy-service-insights-api
+              items:
+              - key: connection-string
+                path: cognigy-service-insights-api
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
 {{- end }}
 {{- if and (.Values.mongodb.enabled) (eq .Values.mongodb.scheme "mongodb") (not .Values.mongodb.auth.existingSecret) }}
