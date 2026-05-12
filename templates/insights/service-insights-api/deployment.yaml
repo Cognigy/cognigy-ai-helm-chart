@@ -12,6 +12,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-insights-api.git"
 spec:
   selector:
     matchLabels:
@@ -137,8 +139,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: SERVICE_INSIGHTS_API_IMAGE
-              value: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
             - name: ANALYZER_LLM_REFERENCE_ID
               value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.llmReferenceId | default "" | quote }}
             - name: ANALYZER_RESULTS_TTL_DAYS
@@ -147,18 +147,6 @@ spec:
               value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.maxConcurrentJobs | default 100 | quote }}
             - name: ANALYZER_DISPATCH_INTERVAL_MS
               value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.dispatchIntervalMs | default 30000 | quote }}
-            - name: ANALYZER_JOB_BACKOFF_LIMIT
-              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.bulkAnalysisJob.backoffLimit | default 0 | quote }}
-            - name: ANALYZER_JOB_TTL_SECONDS
-              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.bulkAnalysisJob.ttlSecondsAfterFinished | default 3600 | quote }}
-            - name: ANALYZER_JOB_ACTIVE_DEADLINE
-              value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.bulkAnalysisJob.activeDeadlineSeconds | default 7200 | quote }}
-            - name: ANALYZER_JOB_POSTGRESQL_SECRET
-              value: {{ $serviceInsightsApi_dbSecret | quote }}
-            {{- if $.Values.serviceInsightsApi.serviceAccountName }}
-            - name: ANALYZER_JOB_SERVICE_ACCOUNT
-              value: {{ $.Values.serviceInsightsApi.serviceAccountName | quote }}
-            {{- end }}
             {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
@@ -173,6 +161,10 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            {{- if $.Values.serviceInsightsApi.conversationAnalyzer.enabled }}
+            - name: analyzer-job-config
+              mountPath: /var/run/config/analyzer-jobs
+            {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -204,6 +196,11 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        {{- if $.Values.serviceInsightsApi.conversationAnalyzer.enabled }}
+        - name: analyzer-job-config
+          configMap:
+            name: analyzer-job-config
+        {{- end }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

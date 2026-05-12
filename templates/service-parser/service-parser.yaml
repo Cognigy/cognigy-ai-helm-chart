@@ -8,6 +8,11 @@ kind: Deployment
 metadata:
   name: service-parser
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: aluminium
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-parser"
 spec:
   selector:
     matchLabels:

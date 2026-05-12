@@ -1,27 +1,24 @@
+{{- if and ($.Values.niceCXOne.enabled) ($.Values.serviceCxoneAwsGateway.enabled) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
-{{- $vgWebappDefaultLoginCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret "defaultSecret" "cognigy-vg-webapp-default-login-creds") }}
-{{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $cognigy_cxone_aws_lambda_connection_secrets := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.niceCXoneAWSLambdaCredentials.existingSecret "defaultSecret" "cognigy-nice-cxone-aws-lambda-credentials") }}
-{{- $serviceSecurityInternalApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceSecurityInternalApiSecret.existingSecret "defaultSecret" "service-security-internal-api-secret") }}
 {{- $serviceCxoneAwsGatewayApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceCxoneAwsGatewayApiSecret.existingSecret "defaultSecret" "service-cxone-aws-gateway-api-secret") }}
-{{- with .Values.serviceSecurity }}
+
+{{- with .Values.serviceCxoneAwsGateway }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-security
+  name: service-cxone-aws-gateway
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: boron
+    owner-team: {{ .ownerTeam }}
   annotations:
-    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
-    "cognigy.com/source-path": "services/service-security"
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-cxone-aws-gateway.git"
 spec:
   selector:
     matchLabels:
-      app: service-security
+      app: service-cxone-aws-gateway
   replicas: {{ .replicaCount }}
   template:
     metadata:
@@ -29,19 +26,14 @@ spec:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
-        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret) }}{{ $serviceSecurity_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret).data | sha256sum }}{{ end }}
-        checksum/cognigy-vg-webapp-default-login-creds: {{ if not (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret) }}{{ $vgWebappDefaultLoginCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $vgWebappDefaultLoginCredentials_secret).data | sha256sum }}{{ end }}
-        checksum/cognigy-live-agent-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret) }}{{ $cognigyLiveAgentCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-nice-cxone-aws-lambda-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigy_cxone_aws_lambda_connection_secrets) }}{{ $cognigy_cxone_aws_lambda_connection_secrets | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigy_cxone_aws_lambda_connection_secrets).data | sha256sum }}{{ end }}
-        {{- if $.Values.niceCXOne.enabled }}
-        checksum/service-security-internal-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret) }}{{ $serviceSecurityInternalApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret).data | sha256sum }}{{ end }}
         checksum/service-cxone-aws-gateway-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCxoneAwsGatewayApiSecret_secret) }}{{ $serviceCxoneAwsGatewayApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCxoneAwsGatewayApiSecret_secret).data | sha256sum }}{{ end }}
-        {{- end }}
+        checksum/kinesis-event-queue-mapping: {{ include (print $.Template.BasePath "/service-cxone-aws-gateway/kinesis-event-queue-mapping.yaml") $ | sha256sum }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
       labels:
-        app: service-security
+        app: service-cxone-aws-gateway
     spec:
       {{- if .serviceAccountName }}
       serviceAccountName: {{ .serviceAccountName }}
@@ -58,8 +50,37 @@ spec:
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
+      {{- if and (hasKey $.Values.serviceCxoneAwsGateway "localstack") ($.Values.serviceCxoneAwsGateway.localstack.enabled) (default true $.Values.serviceCxoneAwsGateway.localstack.waitForReady) }}
+      initContainers:
+        - name: wait-for-localstack
+          image: {{ $.Values.serviceCxoneAwsGateway.localstack.image | quote }}
+          command: ['sh', '-c']
+          args:
+            - |
+              echo "Waiting for LocalStack to be ready..."
+              LOCALSTACK_URL="{{ $.Values.serviceCxoneAwsGateway.localstack.externalEndpoint }}"
+              TIMEOUT={{ $.Values.serviceCxoneAwsGateway.localstack.initTimeout | default 300 }}
+              ELAPSED=0
+              until wget -q -O- ${LOCALSTACK_URL}/_localstack/health | grep -q '"kinesis"'; do
+                if [ $ELAPSED -ge $TIMEOUT ]; then
+                  echo "Timeout waiting for LocalStack after ${TIMEOUT}s"
+                  exit 1
+                fi
+                echo "LocalStack not ready yet, waiting... (${ELAPSED}s/${TIMEOUT}s)"
+                sleep 5
+                ELAPSED=$((ELAPSED + 5))
+              done
+              echo "LocalStack is ready!"
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+      {{- end }}
       containers:
-        - name: service-security
+        - name: service-cxone-aws-gateway
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
@@ -75,16 +96,16 @@ spec:
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
-            - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
+            - name: RABBITMQ_CONNECTION_STRING
               valueFrom:
                 secretKeyRef:
-                  name: {{ $cognigyLiveAgentCredentials_secret }}
-                  key: cognigy-live-agent-platform-token
-            - name: COGNIGY_VOICE_GATEWAY_WEB_APP_DEFAULT_USER_CREDENTIAL
+                  name: {{ $statefulRabbitMq_secret }}
+                  key: connection-string  
+            - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $vgWebappDefaultLoginCredentials_secret }}
-                  key: vg-webapp-login-creds
+                  name: {{ $redisHa_secret }}
+                  key: REDIS_PASSWORD  
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
@@ -99,10 +120,8 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
-            {{- if $.Values.niceCXOne }}
             - name: FEATURE_NICE_CXONE_INTEGRATION
               value: {{ $.Values.niceCXOne.enabled | quote }}
-            {{if $.Values.niceCXOne.enabled }}
             - name: CXONE_BASE_URL
               value: {{ $.Values.niceCXOne.cxoneBaseUrl | quote }}
             - name: NICE_CXONE_AWS_REGION
@@ -119,13 +138,6 @@ spec:
               value: {{ $.Values.niceCXOne.cxoneAwsAccountId | quote }}
             - name: NICE_CXONE_ASSUME_ROLE_EXTERNAL_ID
               value: {{ $.Values.niceCXOne.cxoneAssumeRoleExternalId | quote }}
-            - name: CXONE_AWS_GATEWAY_URL
-              value: {{ $.Values.niceCXOne.awsGatewayUrl | default "http://service-cxone-aws-gateway:8000" | quote }}
-            - name: SECURITY_INTERNAL_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $serviceSecurityInternalApiSecret_secret }}
-                  key: api-key
             - name: CXONE_AWS_GATEWAY_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -141,25 +153,21 @@ spec:
                 secretKeyRef:
                   name: {{ $cognigy_cxone_aws_lambda_connection_secrets }}
                   key: nice-cxone-lambda-secret-access-key
-            {{- end }}
-            {{- end }}
-            {{- if $.Values.logRedaction.enabled }}
-            - name: LOG_REDACTION_ENABLED
-              value: "true"
+            {{- if and (hasKey $.Values.serviceCxoneAwsGateway "localstack") $.Values.serviceCxoneAwsGateway.localstack.enabled }}
+            - name: LOCALSTACK_ENDPOINT
+              value: {{ $.Values.serviceCxoneAwsGateway.localstack.externalEndpoint | quote }}
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ $.Values.serviceCxoneAwsGateway.localstack.awsAccessKeyId | default "test" | quote }}
+            - name: AWS_SECRET_ACCESS_KEY
+              value: {{ $.Values.serviceCxoneAwsGateway.localstack.awsSecretAccessKey | default "test" | quote }}
             {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           volumeMounts:
-            - name: rabbitmq-connection-string
-              mountPath: /var/run/secrets/rabbitmqConnectionString
-              subPath: rabbitmqConnectionString
-            - name: mongodb-connection-string
-              mountPath: /var/run/secrets/mongodbConnectionString
-              subPath: mongodbConnectionString
-            - name: redis-password
-              mountPath: /var/run/secrets/redis-password.conf
-              subPath: redis-password.conf
+            - name: cxone-integration-kinesis-event-queue-mapping
+              mountPath: /etc/config/kinesis-event-mapping.json
+              subPath: event-mapping.json 
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -167,6 +175,7 @@ spec:
             httpGet:
               path: /health/startup
               port: 8001
+  
           livenessProbe:
             httpGet:
               path: /health/liveness
@@ -176,28 +185,17 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
-        - name: rabbitmq-connection-string
-          secret:
-            secretName: {{ $statefulRabbitMq_secret }}
+        - name: cxone-integration-kinesis-event-queue-mapping
+          configMap:
+            name: cxone-integration-kinesis-event-queue-mapping
             items:
-              - key: connection-string
-                path: rabbitmqConnectionString
-        - name: mongodb-connection-string
-          secret:
-            secretName: {{ $serviceSecurity_dbSecret }}
-            items:
-              - key: connection-string
-                path: mongodbConnectionString
-        - name: redis-password
-          secret:
-            secretName: {{ $redisHa_secret }}
-        - name: vg-webapp-login-creds
-          secret:
-            secretName: {{ $vgWebappDefaultLoginCredentials_secret }}
+              - key: event-mapping.json
+                path: event-mapping.json
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
 {{- end }}

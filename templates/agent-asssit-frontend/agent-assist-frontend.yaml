@@ -9,6 +9,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: iron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/agent-assist-frontend.git"
 spec:
   selector:
     matchLabels:

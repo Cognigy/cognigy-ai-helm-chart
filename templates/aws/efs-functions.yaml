@@ -7,6 +7,9 @@ kind: Deployment
 metadata:
   labels:
     app: efs-provisioner-functions
+    owner-team: sre
+  annotations:
+    "cognigy.com/source-code": null
   name: efs-provisioner-functions
   namespace: {{ $.Release.Namespace | quote }}
 spec:

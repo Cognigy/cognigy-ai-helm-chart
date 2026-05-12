@@ -1,0 +1,25 @@
+{{- if .Values.niceCXOne.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-cxone-aws-gateway
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-cxone-aws-gateway
+    owner-team: {{ .Values.serviceCxoneAwsGateway.ownerTeam }}
+  {{- if .Values.service.serviceCxoneAwsGateway.annotations }}
+  annotations:
+    {{- toYaml .Values.service.serviceCxoneAwsGateway.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: service-cxone-aws-gateway
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  {{- if .Values.service.serviceCxoneAwsGateway.type }}
+  type: {{ .Values.service.serviceCxoneAwsGateway.type | default "ClusterIP" }}
+  {{- end }}
+  selector:
+    app: service-cxone-aws-gateway
+{{- end }}
