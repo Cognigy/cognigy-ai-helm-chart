@@ -1,0 +1,22 @@
+{{- if and (.Values.podMonitors.enabled) (.Values.niceCXOne.enabled) }}
+{{- with .Values.podMonitors }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: prom-cognigy-monitor-cognigy-ai-service-cxone-aws-gateway
+  namespace: {{ .namespace }}
+  labels:
+    owner-team: {{ $.Values.serviceCxoneAwsGateway.ownerTeam }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+  podMetricsEndpoints:
+    - path: /metrics
+      port: metrics
+  selector:
+    matchLabels:
+      app: service-cxone-aws-gateway
+{{- end }}
+{{- end }}

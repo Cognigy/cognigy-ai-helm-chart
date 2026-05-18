@@ -1,0 +1,273 @@
+{{- if .Values.serviceInsightsApi.conversationAnalyzer.enabled }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $serviceInsightsApi_mongoDbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceInsightsApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceInsightsApi.serviceName)) }}
+{{- $serviceInsightsApi_dbSecret := ternary (include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights")) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
+{{- $analyticsCollectorMongoDb_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: analyzer-job-config
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+data:
+  bulkAnalysis.yaml: |
+    {{- with .Values.serviceInsightsApi.conversationAnalyzer.bulkAnalysisJob }}
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: _NAME_
+      namespace: {{ $.Release.Namespace | quote }}
+      labels:
+        app: conversation-analyzer
+        job-type: bulk-analysis
+        projectId: _PROJECT_ID_
+        organisationId: _ORGANISATION_ID_
+        task-id: _TASK_ID_
+    spec:
+      backoffLimit: {{ .backoffLimit | default 0 }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished | default 3600 }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds | default 7200 }}
+      template:
+        metadata:
+          labels:
+            app: conversation-analyzer
+            job-type: bulk-analysis
+        spec:
+          restartPolicy: {{ .restartPolicy | default "Never" }}
+          serviceAccountName: {{ $.Values.serviceInsightsApi.serviceAccountName }}
+          {{- if .securityContext }}
+          securityContext: {{- include "common.tplvalues.render" (dict "value" .securityContext "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: bulk-analysis
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceInsightsApi.image) }}
+              command: ["node", "build/jobs/bulkAnalysis/index.js"]
+              resources: {{- toYaml .resources | nindent 16 }}
+              env:
+                - name: JOB_ARGUMENTS
+                  value: "_JOB_ARGUMENTS_"
+                {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+                - name: INSIGHTS_POSTGRES_DB_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $serviceInsightsApi_dbSecret }}
+                      key: username
+                - name: INSIGHTS_POSTGRES_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $serviceInsightsApi_dbSecret }}
+                      key: password
+                - name: INSIGHTS_POSTGRES_DB_HOST
+                  value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+                - name: INSIGHTS_POSTGRES_DB_PORT
+                  value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+                - name: INSIGHTS_POSTGRES_DB_NAME
+                  value: {{ $.Values.insights.postgresql.database.name | quote }}
+                {{- end }}
+                {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) (not $.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlCluster.enabled) }}
+                - name: INSIGHTS_POSTGRES_DB_USERNAME
+                  value: {{ $.Values.cubejs.postgresql.username | quote }}
+                - name: INSIGHTS_POSTGRES_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $serviceInsightsApi_dbSecret }}
+                      key: password
+                - name: INSIGHTS_POSTGRES_DB_HOST
+                  value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
+                - name: INSIGHTS_POSTGRES_DB_PORT
+                  value: {{ $.Values.cubejs.postgresql.port | quote }}
+                - name: INSIGHTS_POSTGRES_DB_NAME
+                  value: {{ $.Values.cubejs.postgresql.database | quote }}
+                {{- end }}
+                {{- if .extraEnvVars }}
+                {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
+                {{- end }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              volumeMounts:
+                - name: rabbitmq-connection-string
+                  mountPath: /var/run/secrets/rabbitmqConnectionString
+                  subPath: rabbitmqConnectionString
+                - name: mongodb-connection-string
+                  mountPath: /var/run/secrets/mongodbConnectionString
+                  subPath: mongodbConnectionString
+                - name: analytics-collector-mongodb-connection-string
+                  mountPath: /run/secrets/analyticsCollectorMongodbConnectionString
+                  subPath: analyticsCollectorMongodbConnectionString
+                {{- if .extraVolumeMounts }}
+                {{- include "common.tplvalues.render" (dict "value" .extraVolumeMounts "context" $) | nindent 16 }}
+                {{- end }}
+          volumes:
+            - name: rabbitmq-connection-string
+              secret:
+                secretName: {{ $statefulRabbitMq_secret }}
+                items:
+                  - key: connection-string
+                    path: rabbitmqConnectionString
+            - name: mongodb-connection-string
+              secret:
+                secretName: {{ $serviceInsightsApi_mongoDbSecret }}
+                items:
+                  - key: connection-string
+                    path: mongodbConnectionString
+            - name: analytics-collector-mongodb-connection-string
+              secret:
+                secretName: {{ $analyticsCollectorMongoDb_secret }}
+                items:
+                  - key: connection-string
+                    path: analyticsCollectorMongodbConnectionString
+            {{- if .extraVolumes }}
+            {{- include "common.tplvalues.render" (dict "value" .extraVolumes "context" $) | nindent 12 }}
+            {{- end }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+    {{- end }}
+  promoteSuggestedTopic.yaml: |
+    {{- with .Values.serviceInsightsApi.conversationAnalyzer.promoteSuggestedTopicJob }}
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: _NAME_
+      namespace: {{ $.Release.Namespace | quote }}
+      labels:
+        app: conversation-analyzer
+        job-type: promote-suggested-topic
+        projectId: _PROJECT_ID_
+        organisationId: _ORGANISATION_ID_
+        task-id: _TASK_ID_
+    spec:
+      backoffLimit: {{ .backoffLimit | default 0 }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished | default 3600 }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds | default 7200 }}
+      template:
+        metadata:
+          labels:
+            app: conversation-analyzer
+            job-type: promote-suggested-topic
+        spec:
+          restartPolicy: {{ .restartPolicy | default "Never" }}
+          serviceAccountName: {{ $.Values.serviceInsightsApi.serviceAccountName }}
+          {{- if .securityContext }}
+          securityContext: {{- include "common.tplvalues.render" (dict "value" .securityContext "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: promote-suggested-topic
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceInsightsApi.image) }}
+              command: ["node", "build/jobs/promoteSuggestedTopic/index.js"]
+              resources: {{- toYaml .resources | nindent 16 }}
+              env:
+                - name: PROMOTE_TASK_ID
+                  value: "_TASK_ID_"
+                - name: PROMOTE_PROJECT_ID
+                  value: "_PROJECT_ID_"
+                - name: PROMOTE_ORGANISATION_ID
+                  value: "_ORGANISATION_ID_"
+                - name: PROMOTE_USER_ID
+                  value: "_USER_ID_"
+                - name: PROMOTE_TRACE_ID
+                  value: "_TRACE_ID_"
+                - name: PROMOTE_PATH
+                  value: "_PROMOTE_PATH_"
+                {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+                - name: INSIGHTS_POSTGRES_DB_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $serviceInsightsApi_dbSecret }}
+                      key: username
+                - name: INSIGHTS_POSTGRES_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $serviceInsightsApi_dbSecret }}
+                      key: password
+                - name: INSIGHTS_POSTGRES_DB_HOST
+                  value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+                - name: INSIGHTS_POSTGRES_DB_PORT
+                  value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+                - name: INSIGHTS_POSTGRES_DB_NAME
+                  value: {{ $.Values.insights.postgresql.database.name | quote }}
+                {{- end }}
+                {{- if and ($.Values.pgoperator.enabled) ($.Values.cubejs.enabled) (not $.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlCluster.enabled) }}
+                - name: INSIGHTS_POSTGRES_DB_USERNAME
+                  value: {{ $.Values.cubejs.postgresql.username | quote }}
+                - name: INSIGHTS_POSTGRES_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $serviceInsightsApi_dbSecret }}
+                      key: password
+                - name: INSIGHTS_POSTGRES_DB_HOST
+                  value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
+                - name: INSIGHTS_POSTGRES_DB_PORT
+                  value: {{ $.Values.cubejs.postgresql.port | quote }}
+                - name: INSIGHTS_POSTGRES_DB_NAME
+                  value: {{ $.Values.cubejs.postgresql.database | quote }}
+                {{- end }}
+                {{- if .extraEnvVars }}
+                {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
+                {{- end }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              volumeMounts:
+                - name: rabbitmq-connection-string
+                  mountPath: /var/run/secrets/rabbitmqConnectionString
+                  subPath: rabbitmqConnectionString
+                - name: mongodb-connection-string
+                  mountPath: /var/run/secrets/mongodbConnectionString
+                  subPath: mongodbConnectionString
+                - name: analytics-collector-mongodb-connection-string
+                  mountPath: /run/secrets/analyticsCollectorMongodbConnectionString
+                  subPath: analyticsCollectorMongodbConnectionString
+                {{- if .extraVolumeMounts }}
+                {{- include "common.tplvalues.render" (dict "value" .extraVolumeMounts "context" $) | nindent 16 }}
+                {{- end }}
+          volumes:
+            - name: rabbitmq-connection-string
+              secret:
+                secretName: {{ $statefulRabbitMq_secret }}
+                items:
+                  - key: connection-string
+                    path: rabbitmqConnectionString
+            - name: mongodb-connection-string
+              secret:
+                secretName: {{ $serviceInsightsApi_mongoDbSecret }}
+                items:
+                  - key: connection-string
+                    path: mongodbConnectionString
+            - name: analytics-collector-mongodb-connection-string
+              secret:
+                secretName: {{ $analyticsCollectorMongoDb_secret }}
+                items:
+                  - key: connection-string
+                    path: analyticsCollectorMongodbConnectionString
+            {{- if .extraVolumes }}
+            {{- include "common.tplvalues.render" (dict "value" .extraVolumes "context" $) | nindent 12 }}
+            {{- end }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+    {{- end }}
+{{- end }}

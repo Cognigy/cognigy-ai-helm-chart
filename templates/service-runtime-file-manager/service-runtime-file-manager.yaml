@@ -11,6 +11,9 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-runtime-file-manager"
 spec:
   selector:
     matchLabels:

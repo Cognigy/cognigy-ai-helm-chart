@@ -5,6 +5,11 @@ kind: Deployment
 metadata:
   name: service-static-files
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: aluminium
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-static-files"
 spec:
   selector:
     matchLabels:

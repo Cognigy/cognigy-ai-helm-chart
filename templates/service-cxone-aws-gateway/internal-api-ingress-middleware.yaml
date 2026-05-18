@@ -1,0 +1,11 @@
+{{- if and (.Values.ingress.enabled) (eq .Values.ingress.ingresController "traefik") (.Values.niceCXOne.enabled) (.Values.serviceCxoneAwsGateway.internalApiIngress.ipWhiteListMiddleware.enabled)}}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ipwhitelistinternalapiservicecxone
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: {{ .Values.serviceCxoneAwsGateway.ownerTeam }}
+spec:
+  ipAllowList: {{- toYaml .Values.serviceCxoneAwsGateway.internalApiIngress.ipWhiteListMiddleware.ipWhiteList | nindent 4 }}
+{{- end }}

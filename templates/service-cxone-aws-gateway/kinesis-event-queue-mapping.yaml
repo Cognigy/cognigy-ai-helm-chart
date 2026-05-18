@@ -1,0 +1,37 @@
+{{- if $.Values.niceCXOne.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cxone-integration-kinesis-event-queue-mapping
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: {{ .Values.serviceCxoneAwsGateway.ownerTeam }}
+data:
+  event-mapping.json: |
+    {
+      "streams": {
+        "userManagement": {
+          "eventTypeParam": "eventHeader.eventName",
+          "events": {
+            "UserCreated": { "targetQueue": "security-queue", "handler": "cxoneUserEventsHandler" },
+            "UserModified": { "targetQueue": "security-queue", "handler": "cxoneUserEventsHandler" }
+          }
+        },
+        "tenantManagerEvents": {
+          "eventTypeParam": "tenantEventType",
+          "events": {
+            "TENANT_CREATED": { "targetQueue": "security-queue", "handler": "cxoneTenantEventsHandler" },
+            "TENANT_UPDATED": { "targetQueue": "security-queue", "handler": "cxoneTenantEventsHandler" },
+            "TENANT_DELETED": { "targetQueue": "security-queue", "handler": "cxoneTenantEventsHandler" }
+          }
+        },
+        "roleEvents": {
+          "eventTypeParam": "eventHeader.eventName",
+          "events": {
+            "RoleUpdated": { "targetQueue": "security-queue", "handler": "cxoneRoleEventsHandler" }
+          }
+        }
+      }
+    }
+{{- end }}
