@@ -20,6 +20,9 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: aluminium
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-ai"
 spec:
   selector:
     matchLabels:
@@ -57,7 +60,7 @@ spec:
         checksum/service-security-internal-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret) }}{{ $serviceSecurityInternalApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret).data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.llmGateway.enabled }}
-        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-ai") }}{{"cognigy-llm-gateway-caller-service-ai" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-ai").data | sha256sum }}{{ end }}
+        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-ai") }}{{"llm-gateway-caller-service-ai" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-ai").data | sha256sum }}{{ end }}
         {{- end }}
     spec:
       {{- if .serviceAccountName }}
@@ -170,7 +173,7 @@ spec:
             - name: LLM_GATEWAY_SERVICE_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-llm-gateway-caller-service-ai
+                  name: llm-gateway-caller-service-ai
                   key: secret
             {{- end }}
             - name: SERVICE_SECURE_FORMS_API_KEY

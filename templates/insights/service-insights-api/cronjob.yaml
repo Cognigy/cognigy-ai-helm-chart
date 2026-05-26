@@ -13,6 +13,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-insights-api.git"
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: Forbid

@@ -92,7 +92,8 @@ data:
   {{- end }}
 
   {{- if .Values.llmGateway.enabled }}
-  FEATURE_ENABLE_LLM_GATEWAY_ROUTING_WHITELIST: {{ .Values.llmGateway.routingWhitelist | quote }}
+  FEATURE_ENABLE_LLM_GATEWAY_ROUTING_WHITELIST: {{ .Values.llmGateway.routingWhitelist | join "," | quote }}
+  FEATURE_ENABLE_LLM_GATEWAY_LLM_PROVIDERS_WHITELIST: {{ .Values.llmGateway.llmProvidersRoutingWhitelist | join "," | quote }}
   {{- end }}
 
   {{- range $key, $value := .Values.cognigyEnv }}

@@ -8,6 +8,11 @@ kind: Deployment
 metadata:
   name: service-trainer
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: carbon
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-trainer"
 spec:
   selector:
     matchLabels:
