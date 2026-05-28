@@ -12,6 +12,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: carbon
+  annotations:
+    "cognigy.com/source-code": "cognigy@vs-ssh.visualstudio.com:v3/cognigy/Cognigy.AI/service-search-orchestrator"
 spec:
   selector:
     matchLabels:
@@ -30,6 +32,7 @@ spec:
         checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
+        checksum/llm-gateway-config: {{ printf "%s|%s|%s" (toString $.Values.llmGateway.enabled) ($.Values.llmGateway.serviceUrl | default "") ($.Values.llmGateway.llmProvidersRoutingWhitelist | join ",") | sha256sum }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -99,6 +102,10 @@ spec:
             {{- if $.Values.logRedaction.enabled }}
             - name: LOG_REDACTION_ENABLED
               value: "true"
+            {{- end }}
+            {{- if $.Values.llmGateway.enabled }}
+            - name: LLM_GATEWAY_BASE_URL
+              value: {{ $.Values.llmGateway.serviceUrl | quote }}
             {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}

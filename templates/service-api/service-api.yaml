@@ -14,6 +14,7 @@
 {{- $vgWebappDefaultLoginCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret "defaultSecret" "cognigy-vg-webapp-default-login-creds") }}
 {{- $cognigyAutoDialerClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyADClientSecret.existingSecret "defaultSecret" "cognigy-auto-dialer-client-secret") }}
 {{- $sharedSpeechCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.sharedSpeechCredentials.existingSecret "defaultSecret" "vg-shared-speech-credentials") }}
+{{- $serviceCxoneAwsGatewayApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceCxoneAwsGatewayApiSecret.existingSecret "defaultSecret" "service-cxone-aws-gateway-api-secret") }}
 {{- with .Values.serviceApi }}
 ---
 apiVersion: apps/v1
@@ -23,6 +24,9 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-api"
 spec:
   selector:
     matchLabels:
@@ -56,8 +60,11 @@ spec:
         {{- if $.Values.sharedSpeechCredentials.enabled }}
         checksum/sharedSpeechCredentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $sharedSpeechCredentials_secret) }}{{ $sharedSpeechCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $sharedSpeechCredentials_secret).data | sha256sum }}{{ end }}
         {{- end }}
+        {{- if $.Values.niceCXOne.enabled }}
+        checksum/service-cxone-aws-gateway-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCxoneAwsGatewayApiSecret_secret) }}{{ $serviceCxoneAwsGatewayApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCxoneAwsGatewayApiSecret_secret).data | sha256sum }}{{ end }}
+        {{- end }}
         {{- if $.Values.llmGateway.enabled }}
-        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-api") }}{{"cognigy-llm-gateway-caller-service-api" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-api").data | sha256sum }}{{ end }}
+        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-api") }}{{"llm-gateway-caller-service-api" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-api").data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
@@ -235,6 +242,19 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- if $.Values.niceCXOne.enabled }}
+            - name: CXONE_AWS_GATEWAY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceCxoneAwsGatewayApiSecret_secret }}
+                  key: api-key
+            - name: CXONE_AWS_GATEWAY_URL
+              value: {{ $.Values.niceCXOne.awsGatewayUrl | default "http://service-cxone-aws-gateway:8000" | quote }}
+            - name: CXONE_ACTIVITY_AUDIT_KINESIS_STREAM_NAME
+              value: {{ printf "%s-%s" $.Values.niceCXOne.stackPrefix ($.Values.niceCXOne.activityAuditStreamName | default "activity-audit-data-stream") | quote }}
+            - name: CXONE_CHANGE_AUDIT_KINESIS_STREAM_NAME
+              value: {{ printf "%s-%s" $.Values.niceCXOne.stackPrefix ($.Values.niceCXOne.changeAuditStreamName | default "change-audit-data-stream") | quote }}
+            {{- end }}
             {{- if $.Values.llmGateway.enabled }}
             - name: LLM_GATEWAY_BASE_URL
               value: {{ $.Values.llmGateway.serviceUrl | quote }}
@@ -243,7 +263,7 @@ spec:
             - name: LLM_GATEWAY_SERVICE_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-llm-gateway-caller-service-api
+                  name: llm-gateway-caller-service-api
                   key: secret
             {{- end }}
             {{- if .extraEnvVars }}

@@ -65,6 +65,14 @@ data:
   AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.agentAssistFrontend.host | quote }}
   {{- end }}
 
+  {{- if and (.Values.servicePlatformAgent.enabled) (not (hasKey .Values.cognigyEnv "PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL")) }}
+    {{- if .Values.ingress.servicePlatformAgent.customServiceUrl }}
+  PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.servicePlatformAgent.customServiceUrl | quote }}
+    {{- else }}
+  PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.servicePlatformAgent.host | quote }}
+    {{- end }}
+  {{- end }}
+
   {{- if .Values.ingress.serviceStaticFiles.customServiceUrl }}
   STATIC_FILES_URL_WITH_PROTOCOL: {{ printf "https://%s" .Values.ingress.serviceStaticFiles.customServiceUrl | quote }}
   {{- else }}
@@ -92,7 +100,8 @@ data:
   {{- end }}
 
   {{- if .Values.llmGateway.enabled }}
-  FEATURE_ENABLE_LLM_GATEWAY_ROUTING_WHITELIST: {{ .Values.llmGateway.routingWhitelist | quote }}
+  FEATURE_ENABLE_LLM_GATEWAY_ROUTING_WHITELIST: {{ .Values.llmGateway.routingWhitelist | join "," | quote }}
+  FEATURE_ENABLE_LLM_GATEWAY_LLM_PROVIDERS_WHITELIST: {{ .Values.llmGateway.llmProvidersRoutingWhitelist | join "," | quote }}
   {{- end }}
 
   {{- range $key, $value := .Values.cognigyEnv }}

@@ -7,7 +7,10 @@ kind: Job
 metadata:
   name: migration-endpoint-deletion
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
   annotations:
+    "cognigy.com/source-code": null
     "helm.sh/hook": {{ .hooks }}
     "helm.sh/hook-weight": "-2"
     "helm.sh/hook-delete-policy": {{ .hookDeletePolicy }}

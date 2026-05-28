@@ -166,6 +166,10 @@
 		"mfeExample": {
 			"$ref": "#/$defs/microfrontend",
 			"description": "Example microfrontend"
+		},
+		"mfeProjectSettings": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Project Settings microfrontend"
 		}
 	},
 	"$defs": {

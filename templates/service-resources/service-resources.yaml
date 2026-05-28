@@ -15,6 +15,9 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-resources"
 spec:
   selector:
     matchLabels:
@@ -42,7 +45,7 @@ spec:
         {{- end }}
         checksum/cognigy-internal-migration-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInternalMigrationApiKey_secret) }}{{ $cognigyInternalMigrationApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInternalMigrationApiKey_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.llmGateway.enabled }}
-        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-resources") }}{{"cognigy-llm-gateway-caller-service-resources" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-resources").data | sha256sum }}{{ end }}
+        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-resources") }}{{"llm-gateway-caller-service-resources" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-resources").data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
@@ -137,7 +140,7 @@ spec:
             - name: LLM_GATEWAY_SERVICE_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-llm-gateway-caller-service-resources
+                  name: llm-gateway-caller-service-resources
                   key: secret
             {{- end }}
             {{- if .extraEnvVars }}
