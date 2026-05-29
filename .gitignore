@@ -40,3 +40,5 @@ _local_dev/
 # ignore generated public / private-keypairs
 es256-private.pem
 es256-public.pem
+
+.serena/

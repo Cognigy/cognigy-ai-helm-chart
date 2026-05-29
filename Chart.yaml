@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 2026.9.2
-appVersion: "2026.9.2"
+version: 2026.12.0-2
+appVersion: "2026.12.0-2"
 kubeVersion: "<v1.35.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
@@ -50,3 +50,12 @@ dependencies:
     repository: "https://nats-io.github.io/k8s/helm/charts"
     condition: natsInternal.enabled
     alias: natsInternal
+  - name: serverless
+    version: "0.14.0"
+    repository: "oci://cognigy.azurecr.io/charts"
+    condition: serverless.enabled
+  - name: llm-gateway-app
+    alias: llmGatewayApp
+    version: "0.3.0"
+    repository: "https://raw.githubusercontent.com/Cognigy/llm-gateway-helm-chart/main"
+    condition: llmGatewayApp.enabled
