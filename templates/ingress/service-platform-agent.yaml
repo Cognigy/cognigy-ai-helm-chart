@@ -1,0 +1,65 @@
+{{- if and (.Values.servicePlatformAgent.enabled) (.Values.ingress.servicePlatformAgent.tls.enabled) }}
+{{- if not (.Values.ingress.servicePlatformAgent.tls.existingSecret) }}
+{{- if and (.Values.ingress.servicePlatformAgent.tls.crt) (.Values.ingress.servicePlatformAgent.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-platform-agent-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  tls.crt: {{ .Values.ingress.servicePlatformAgent.tls.crt | b64enc | quote }}
+  tls.key: {{ .Values.ingress.servicePlatformAgent.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.servicePlatformAgent.tls is required!" .Values.ingress.servicePlatformAgent.tls.crt }}
+  {{ required "A valid value for .Values.ingress.servicePlatformAgent.tls is required!" .Values.ingress.servicePlatformAgent.tls.key }}
+  {{ required "A valid value for .Values.ingress.servicePlatformAgent.tls is required!" .Values.ingress.servicePlatformAgent.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if and .Values.ingress.enabled .Values.servicePlatformAgent.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-platform-agent
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+    {{- if .Values.ingress.servicePlatformAgent.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-ipwhitelistserviceplatformagent@kubernetescrd
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.ingress.servicePlatformAgent.tls.enabled) }}
+  {{- if (.Values.ingress.servicePlatformAgent.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.servicePlatformAgent.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.servicePlatformAgent.tls.crt) (.Values.ingress.servicePlatformAgent.tls.key) }}
+  tls:
+    - secretName: cognigy-service-platform-agent-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.servicePlatformAgent.tls is required!" .Values.ingress.servicePlatformAgent.tls.crt }}
+    {{ required "A valid value for .Values.ingress.servicePlatformAgent.tls is required!" .Values.ingress.servicePlatformAgent.tls.key }}
+    {{ required "A valid value for .Values.ingress.servicePlatformAgent.tls is required!" .Values.ingress.servicePlatformAgent.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.serviceUi.host }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: service-platform-agent
+                port:
+                  number: 8000
+            path: /platform-agent
+            pathType: Prefix
+{{- end }}
