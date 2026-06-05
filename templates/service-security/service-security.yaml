@@ -5,7 +5,7 @@
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $cognigy_cxone_aws_lambda_connection_secrets := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.niceCXoneAWSLambdaCredentials.existingSecret "defaultSecret" "cognigy-nice-cxone-aws-lambda-credentials") }}
 {{- $serviceSecurityInternalApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceSecurityInternalApiSecret.existingSecret "defaultSecret" "service-security-internal-api-secret") }}
-
+{{- $serviceCxoneAwsGatewayApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceCxoneAwsGatewayApiSecret.existingSecret "defaultSecret" "service-cxone-aws-gateway-api-secret") }}
 {{- with .Values.serviceSecurity }}
 ---
 apiVersion: apps/v1
@@ -15,6 +15,9 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-security"
 spec:
   selector:
     matchLabels:
@@ -32,6 +35,7 @@ spec:
         checksum/cognigy-nice-cxone-aws-lambda-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigy_cxone_aws_lambda_connection_secrets) }}{{ $cognigy_cxone_aws_lambda_connection_secrets | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigy_cxone_aws_lambda_connection_secrets).data | sha256sum }}{{ end }}
         {{- if $.Values.niceCXOne.enabled }}
         checksum/service-security-internal-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret) }}{{ $serviceSecurityInternalApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret).data | sha256sum }}{{ end }}
+        checksum/service-cxone-aws-gateway-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCxoneAwsGatewayApiSecret_secret) }}{{ $serviceCxoneAwsGatewayApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCxoneAwsGatewayApiSecret_secret).data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
@@ -115,10 +119,17 @@ spec:
               value: {{ $.Values.niceCXOne.cxoneAwsAccountId | quote }}
             - name: NICE_CXONE_ASSUME_ROLE_EXTERNAL_ID
               value: {{ $.Values.niceCXOne.cxoneAssumeRoleExternalId | quote }}
+            - name: CXONE_AWS_GATEWAY_URL
+              value: {{ $.Values.niceCXOne.awsGatewayUrl | default "http://service-cxone-aws-gateway:8000" | quote }}
             - name: SECURITY_INTERNAL_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ $serviceSecurityInternalApiSecret_secret }}
+                  key: api-key
+            - name: CXONE_AWS_GATEWAY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceCxoneAwsGatewayApiSecret_secret }}
                   key: api-key
             - name: NICE_CXONE_LAMBDA_ACCESS_KEY_ID
               valueFrom:
