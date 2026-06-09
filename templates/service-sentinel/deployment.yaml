@@ -13,6 +13,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-sentinel.git"
 spec:
   selector:
     matchLabels:
@@ -167,6 +169,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-sentinel.git"
 spec:
   selector:
     matchLabels:

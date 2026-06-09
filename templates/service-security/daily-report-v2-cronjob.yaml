@@ -8,6 +8,11 @@ kind: CronJob
 metadata:
   name: daily-conversation-reporter-v2
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-security"
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: Forbid

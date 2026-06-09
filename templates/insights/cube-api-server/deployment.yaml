@@ -10,6 +10,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
+  annotations:
+    "cognigy.com/source-code": null
 spec:
   selector:
     matchLabels:
