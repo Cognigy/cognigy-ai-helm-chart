@@ -10,6 +10,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: iron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-handover-inactivity.git"
 spec:
   selector:
     matchLabels:

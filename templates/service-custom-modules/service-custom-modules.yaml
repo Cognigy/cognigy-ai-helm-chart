@@ -10,6 +10,9 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: aluminium
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-custom-modules"
 spec:
   selector:
     matchLabels:
@@ -98,6 +101,10 @@ spec:
               mountPath: /app/extensions
               subPath: extensions
             {{- end }}
+            {{- if $.Values.commonConfigs.cognigyRollout }}
+            - name: cognigy-rollout
+              mountPath: /config/rollout
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
@@ -138,6 +145,11 @@ spec:
         - name: runtime
           persistentVolumeClaim:
             claimName: runtime
+        {{- end }}
+        {{- if $.Values.commonConfigs.cognigyRollout }}
+        - name: cognigy-rollout
+          configMap:
+            name: cognigy-rollout
         {{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
