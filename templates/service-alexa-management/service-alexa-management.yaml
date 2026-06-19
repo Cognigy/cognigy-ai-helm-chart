@@ -9,7 +9,10 @@ metadata:
   name: service-alexa-management
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: boron
+    owner-team: dubnium
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-alexa-management"
 spec:
   selector:
     matchLabels:

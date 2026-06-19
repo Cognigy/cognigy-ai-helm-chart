@@ -8,6 +8,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: aluminium
+  annotations:
+    "cognigy.com/source-code": null
 spec:
   selector:
     matchLabels:
