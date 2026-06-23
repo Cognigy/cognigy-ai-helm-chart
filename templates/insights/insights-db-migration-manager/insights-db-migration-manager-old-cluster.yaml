@@ -8,6 +8,7 @@ metadata:
   name: insights-db-migration-manager-old-cluster
   namespace: {{ $.Release.Namespace | quote }}
   annotations:
+    "cognigy.com/source-code": "empty"
     "helm.sh/hook": {{ .helmHook.hook | quote }}
     "helm.sh/hook-weight": {{ .helmHook.hookWeight | quote }}
     "helm.sh/hook-delete-policy": {{ .helmHook.deletePolicy | quote }}

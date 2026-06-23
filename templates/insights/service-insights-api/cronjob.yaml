@@ -13,6 +13,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-insights-api.git"
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: Forbid
@@ -29,6 +31,9 @@ spec:
           securityContext:
             {{- toYaml .securityContext | nindent 12 }}
           restartPolicy: OnFailure
+          {{- if $.Values.serviceInsightsApi.serviceAccountName }}
+          serviceAccountName: {{ $.Values.serviceInsightsApi.serviceAccountName }}
+          {{- end }}
           {{- if .affinity }}
           affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
           {{- end }}

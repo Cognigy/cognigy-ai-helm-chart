@@ -1,0 +1,121 @@
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $cognigyJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyJwt.existingSecret "defaultSecret" "cognigy-jwt") }}
+{{- with .Values.servicePlatformAgent }}
+{{- if .enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-platform-agent
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: team-x
+spec:
+  selector:
+    matchLabels:
+      app: service-platform-agent
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.cognigyCommonPodAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+      labels:
+        app: service-platform-agent
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: service-platform-agent
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: PLATFORM_AGENT_PORT
+              value: "8000"
+            - name: PLATFORM_AGENT_RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $statefulRabbitMq_secret }}
+                  key: connection-string
+            - name: PLATFORM_AGENT_CORS_ORIGIN
+              {{- if $.Values.ingress.serviceUi.customServiceUrl }}
+              value: {{ printf "https://%s" $.Values.ingress.serviceUi.customServiceUrl | quote }}
+              {{- else }}
+              value: {{ printf "https://%s" $.Values.ingress.serviceUi.host | quote }}
+              {{- end }}
+            - name: COGNIGY_API_BASE_URL
+              {{- if $.Values.ingress.serviceApi.customServiceUrl }}
+              value: {{ printf "https://%s" $.Values.ingress.serviceApi.customServiceUrl | quote }}
+              {{- else }}
+              value: {{ printf "https://%s" $.Values.ingress.serviceApi.host | quote }}
+              {{- end }}
+            - name: AI_AGENTS_V2_BASE_URL
+              {{- if $.Values.ingress.serviceApi.customServiceUrl }}
+              value: {{ printf "https://%s" $.Values.ingress.serviceApi.customServiceUrl | quote }}
+              {{- else }}
+              value: {{ printf "https://%s" $.Values.ingress.serviceApi.host | quote }}
+              {{- end }}
+            - name: PLATFORM_AGENT_SKIP_AUTH
+              value: "false"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyJwt_secret }}
+                  key: secret
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000 # must match containerPort / livenessProbe.httpGet.port
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
+{{- end }}
