@@ -9,6 +9,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/insights-cleanup-jobs.git"
 spec:
   schedule: "*/15 * * * *"
   concurrencyPolicy: Forbid

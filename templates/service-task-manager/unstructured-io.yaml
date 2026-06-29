@@ -6,6 +6,10 @@ kind: Deployment
 metadata:
   name: unstructured-io
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
+  annotations:
+    "cognigy.com/source-code": "empty"
 spec:
   selector:
     matchLabels:

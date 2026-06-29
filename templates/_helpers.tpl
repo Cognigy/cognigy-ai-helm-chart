@@ -563,8 +563,10 @@ Usage:
   (dict "name" "mfe-sidebar" "pathName" "sidebar" "values" .Values.mfeSidebar "team" "aluminium")
   (dict "name" "mfe-global-toolbar" "pathName" "global-toolbar" "values" .Values.mfeGlobalToolbar "team" "aluminium")
   (dict "name" "mfe-knowledge-store" "pathName" "knowledge-store" "values" .Values.mfeKnowledgeStore "team" "carbon")
+  (dict "name" "mfe-platform-agent" "pathName" "platform-agent" "values" .Values.mfePlatformAgent "team" "aluminium")
   (dict "name" "mfe-endpoints" "pathName" "endpoints" "values" .Values.mfeEndpoints "team" "dubnium")
   (dict "name" "mfe-example" "pathName" "example" "values" .Values.mfeExample "team" "aluminium")
+  (dict "name" "mfe-project-settings" "pathName" "project-settings" "values" .Values.mfeProjectSettings "team" "boron")
 -}}
 {{- dict "items" $mfes | toJson -}}
 {{- end -}}
