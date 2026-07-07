@@ -7,6 +7,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cron-nfs-cleanup.git"
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: {{ .concurrencyPolicy }}

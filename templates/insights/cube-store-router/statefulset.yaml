@@ -8,6 +8,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
+  annotations:
+    "cognigy.com/source-code": "empty"
 spec:
   replicas: {{ .replicaCount }}
   serviceName: cube-store-router

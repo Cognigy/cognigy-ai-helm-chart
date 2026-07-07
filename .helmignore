@@ -26,3 +26,13 @@ local-temp-files
 
 # Don't package + expose CHANGELOG folder
 CHANGELOG/
+
+# Local agent / session state — must never be packaged into the chart
+.claude/
+.remember/
+.ipynb_checkpoints/
+
+# Repo assets + dev-only values not needed at runtime (keep release object small)
+assets/
+values-local.yaml
+values-local.out.yaml

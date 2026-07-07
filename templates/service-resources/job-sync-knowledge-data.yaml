@@ -11,6 +11,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: carbon
+  annotations:
+    "cognigy.com/source-code": "cognigy@vs-ssh.visualstudio.com:v3/cognigy/Cognigy.AI/job-sync-knowledge-data"
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: {{ .concurrencyPolicy }}

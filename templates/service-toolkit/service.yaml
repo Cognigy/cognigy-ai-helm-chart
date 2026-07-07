@@ -1,0 +1,22 @@
+{{- if .Values.serviceToolkit.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-toolkit
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-toolkit
+    owner-team: gold
+  {{- if .Values.service.serviceToolkit.annotations }}
+  annotations:
+    {{- toYaml .Values.service.serviceToolkit.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: service-toolkit
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-toolkit
+{{- end }}
