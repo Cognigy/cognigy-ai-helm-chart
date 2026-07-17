@@ -1,0 +1,71 @@
+{{- if and (eq .Values.ingress.enabled true) (eq .Values.serviceToolkit.enabled true) }}
+
+{{- if (eq .Values.ingress.ingresController "traefik") }}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: path-rewrite-toolkit
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+spec:
+  replacePathRegex:
+    regex: ^/toolkit/(.*)
+    replacement: /$1
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-toolkit
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+
+    {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled}}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceapi@kubernetescrd,{{ $.Release.Namespace }}-auth-gateway-forward-auth@kubernetescrd, {{ $.Release.Namespace }}-path-rewrite-toolkit@kubernetescrd"
+        {{- else }}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceapi@kubernetescrd, {{ $.Release.Namespace }}-path-rewrite-toolkit@kubernetescrd"        
+        {{- end }}
+    {{- else }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled}}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-auth-gateway-forward-auth@kubernetescrd, {{ $.Release.Namespace }}-path-rewrite-toolkit@kubernetescrd"
+        {{- else }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-path-rewrite-toolkit@kubernetescrd
+        {{- end }}
+    {{- end }}  
+
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.ingress.serviceApi.tls.enabled) }}
+  {{- if (.Values.ingress.serviceApi.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceApi.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceApi.tls.crt) (.Values.ingress.serviceApi.tls.key) }}
+  tls:
+    - secretName: cognigy-service-api-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.serviceApi.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: service-toolkit
+            port:
+              number: 8000
+        path: /toolkit
+        pathType: Prefix
+{{- end }}

@@ -7,6 +7,9 @@ kind: Deployment
 metadata:
   labels:
     app: efs-provisioner-flow-modules
+    owner-team: sre
+  annotations:
+    "cognigy.com/source-code": "empty"
   name: efs-provisioner-flow-modules
   namespace: {{ $.Release.Namespace | quote }}
 spec:
@@ -18,7 +21,6 @@ spec:
     type: Recreate
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: efs-provisioner-flow-modules
     spec:

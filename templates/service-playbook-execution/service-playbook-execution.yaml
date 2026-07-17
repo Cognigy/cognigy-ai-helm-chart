@@ -9,6 +9,9 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-playbook-execution"
 spec:
   selector:
     matchLabels:
@@ -23,7 +26,7 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.llmGateway.enabled }}
-        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-playbook-execution") }}{{"cognigy-llm-gateway-caller-service-playbook-execution" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "cognigy-llm-gateway-caller-service-playbook-execution").data | sha256sum }}{{ end }}
+        checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-playbook-execution") }}{{"llm-gateway-caller-service-playbook-execution" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-playbook-execution").data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
@@ -82,6 +85,8 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            - name: SERVICE_TOOLKIT_FEATURE_EVAL_PROFILES_ENABLED
+              value: {{ $.Values.productFeature.evalProfiles.enabled | quote }}
             {{- if $.Values.llmGateway.enabled }}
             - name: LLM_GATEWAY_BASE_URL
               value: {{ $.Values.llmGateway.serviceUrl | quote }}
@@ -90,7 +95,7 @@ spec:
             - name: LLM_GATEWAY_SERVICE_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: cognigy-llm-gateway-caller-service-playbook-execution
+                  name: llm-gateway-caller-service-playbook-execution
                   key: secret
             {{- end }}
             {{- with .nodeOptions }}
