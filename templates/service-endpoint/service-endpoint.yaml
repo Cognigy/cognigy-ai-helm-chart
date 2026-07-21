@@ -17,7 +17,10 @@ metadata:
   name: service-endpoint
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: boron
+    owner-team: dubnium
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-endpoint"
 spec:
   selector:
     matchLabels:

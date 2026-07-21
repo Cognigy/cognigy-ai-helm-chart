@@ -166,6 +166,22 @@
 		"mfeExample": {
 			"$ref": "#/$defs/microfrontend",
 			"description": "Example microfrontend"
+		},
+		"mfeProjectSettings": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Project Settings microfrontend"
+		},
+		"mfeToolkit": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Toolkit microfrontend"
+		},
+		"proactiveFollowup": {
+			"type": "object",
+			"description": "Proactive Follow-up feature toggle",
+			"properties": {
+				"enabled": { "type": "boolean" }
+			},
+			"required": ["enabled"]
 		}
 	},
 	"$defs": {

@@ -5,7 +5,10 @@ kind: Job
 metadata:
   name: cognigy-ai-db-init
   namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: sre
   annotations:
+    "cognigy.com/source-code": "empty"
     # This is what defines this resource as a hook. Without these lines, the
     # resource is considered part of the release.
     "helm.sh/hook": pre-install,pre-upgrade
@@ -136,6 +139,13 @@ spec:
               items:
               - key: connection-string
                 path: cognigy-service-collaboration
+{{- end }}
+{{- if .Values.serviceToolkit.enabled }}
+          - secret:
+              name: cognigy-service-toolkit
+              items:
+              - key: connection-string
+                path: cognigy-service-toolkit
 {{- end }}
 {{- if .Values.serviceSentinel.enabled }}
           - secret:

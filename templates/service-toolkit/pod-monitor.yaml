@@ -1,0 +1,20 @@
+{{- if and (eq .Values.podMonitors.enabled true) (eq .Values.serviceToolkit.enabled true) }}
+{{- with .Values.podMonitors }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: prom-cognigy-monitor-cognigy-ai-service-toolkit
+  namespace: {{ .namespace }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+  podMetricsEndpoints:
+    - path: /metrics
+      port: metrics
+  selector:
+    matchLabels:
+      app: service-toolkit
+{{- end }}
+{{- end }}

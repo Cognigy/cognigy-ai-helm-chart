@@ -69,6 +69,11 @@ data:
                   value: {{ $.Values.tracing.environment | quote }}
                 - name: COGNIGY_AI_RELEASE_VERSION
                   value: {{ $.Chart.AppVersion | quote }}
+                # API version passed to the Azure Document Intelligence SDK. Kept
+                # in the chart (not baked into the image) so it can be rolled
+                # forward without a code release when Microsoft retires a version.
+                - name: AZURE_DOCUMENT_INTELLIGENCE_API_VERSION
+                  value: {{ $.Values.knowledgeSearch.globalAzureDocumentIntelligenceConfig.apiVersion | default "2024-11-30" | quote }}
                 {{- if $.Values.knowledgeSearch.globalAzureDocumentIntelligenceConfig.enabled }}
                 - name: AZURE_DOCUMENT_INTELLIGENCE_APIKEY
                   valueFrom:

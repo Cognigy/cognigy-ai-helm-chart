@@ -1,0 +1,149 @@
+{{- if .Values.serviceToolkit.enabled }}
+{{- $serviceToolkit_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceToolkit.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceToolkit.serviceName)) }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
+{{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
+{{- with .Values.serviceToolkit }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-toolkit
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-toolkit.git"
+spec:
+  selector:
+    matchLabels:
+      app: service-toolkit
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: service-toolkit
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceToolkit_dbSecret) }}{{ $serviceToolkit_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceToolkit_dbSecret).data | sha256sum }}{{ end }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
+        checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
+        checksum/jwtPublicKey: {{ if not (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey) }}{{ $jwtPublicKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey).data | sha256sum }}{{ end }}
+        {{- if $.Values.cognigyCommonPodAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
+      containers:
+        - name: service-toolkit
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8000
+            - name: health
+              containerPort: 8001
+            - name: metrics
+              containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: MONGODB_URI_PATH
+              value: /var/run/secrets/mongodbConnectionString
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceToolkit_dbSecret }}
+                  key: connection-string
+            - name: AUTH_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyAuthJwt_secret }}
+                  key: secret
+            - name: HTTP_PORT
+              value: "8000"
+            - name: SERVICE_TOOLKIT_AUTH_MODE
+              value: "production"
+            - name: TRACING_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
+            - name: TRACING_BASE_URL_WITH_PROTOCOL
+              value: {{ $.Values.tracing.sentry.runtime.baseUrl | quote }}
+            - name: TRACING_ERRORS_ENABLED
+              value: {{ $.Values.tracing.sentry.runtime.errorsEnabled | quote }}
+            - name: TRACING_EVENTS_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.eventsSampleRate | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ $.Values.tracing.sentry.runtime.sampleRate | quote }}
+            - name: ENVIRONMENT
+              value: {{ $.Values.tracing.environment | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
+            - name: SERVICE_TOOLKIT_AUTH_PUBLIC_KEY_PATH
+              value: "/var/run/secrets/internal-auth-gateway-jwt-public-key.pem"
+            - name: SERVICE_TOOLKIT_FEATURE_EVAL_PROFILES_ENABLED
+              value: {{ $.Values.productFeature.evalProfiles.enabled | quote }}
+            {{- if $.Values.logRedaction.enabled }}
+            - name: LOG_REDACTION_ENABLED
+              value: "true"
+            {{- end }}
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: mongodb-connection-string
+              mountPath: /var/run/secrets/mongodbConnectionString
+              subPath: mongodbConnectionString
+            - name: rabbitmq-connection-string
+              mountPath: /var/run/secrets/rabbitmqConnectionString
+              subPath: rabbitmqConnectionString
+            - name: auth-gateway-public-key
+              mountPath: /var/run/secrets/internal-auth-gateway-jwt-public-key.pem
+              subPath: internal-auth-gateway-jwt-public-key.pem
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
+            failureThreshold: 3
+            periodSeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8001
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+        - name: mongodb-connection-string
+          secret:
+            secretName: {{ $serviceToolkit_dbSecret }}
+            items:
+              - key: connection-string
+                path: mongodbConnectionString
+        - name: rabbitmq-connection-string
+          secret:
+            secretName: {{ $statefulRabbitMq_secret }}
+            items:
+              - key: connection-string
+                path: rabbitmqConnectionString
+        - name: auth-gateway-public-key
+          secret:
+            secretName: {{ $jwtPublicKey }}
+            defaultMode: 420
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+{{- end }}
+{{- end }}

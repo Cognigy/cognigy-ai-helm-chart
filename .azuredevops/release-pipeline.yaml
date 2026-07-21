@@ -24,14 +24,23 @@ resources:
     ref: main
 
 variables:
-  azureContainerRegistry: "Azure Container Registry Prod (Federated)"
-  chartName: "cognigy.ai"
-  ACRName: "cognigy.azurecr.io"
-  ACRPath: "helm"
-  ${{ if eq(variables['Build.Reason'], 'Manual') }}:
-    why: Manual
-  ${{ else }}:
-    why: CD
+  # Holds the "Cognigy bypass branch protection" GitHub App credentials used to
+  # push to the protected main branch of the public mirror (see the push step).
+  - group: github
+  - name: azureContainerRegistry
+    value: "Azure Container Registry Prod (Federated)"
+  - name: chartName
+    value: "cognigy.ai"
+  - name: ACRName
+    value: "cognigy.azurecr.io"
+  - name: ACRPath
+    value: "helm"
+  - ${{ if eq(variables['Build.Reason'], 'Manual') }}:
+    - name: why
+      value: Manual
+  - ${{ else }}:
+    - name: why
+      value: CD
 
 pool:
   vmImage: ubuntu-24.04
@@ -82,6 +91,41 @@ stages:
             displayName: Checkout Helm Chart Target Repo
 
           - script: |
+              # Fail the job on any error or unset variable. Without this the
+              # script kept exit code 0 even when `git push origin main` was
+              # rejected (e.g. by the GitHub branch-protection ruleset), because
+              # the subsequent tag push succeeded and masked the failure. The
+              # result was a mirror whose tags advanced while `main` went stale.
+              set -euo pipefail
+
+              # --- Mint a short-lived installation token for the "Cognigy bypass
+              # --- branch protection" GitHub App. The org ruleset on the mirror
+              # --- requires a PR for main; this app is a bypass actor on that
+              # --- ruleset, so pushing as the app is allowed. This replaces the
+              # --- personal-PAT auth that the ruleset now rejects.
+              b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+              now="$(date +%s)"
+              header="$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)"
+              payload="$(printf '{"iat":%s,"exp":%s,"iss":"%s"}' "$((now - 60))" "$((now + 540))" "$BYPASS_APP_ID" | b64url)"
+              unsigned="${header}.${payload}"
+              keyfile="$(mktemp)"
+              printf '%s' "$BYPASS_APP_PRIVATE_KEY" > "$keyfile"
+              signature="$(printf '%s' "$unsigned" | openssl dgst -sha256 -sign "$keyfile" | b64url)"
+              rm -f "$keyfile"
+              jwt="${unsigned}.${signature}"
+
+              installationToken="$(curl -sf -X POST \
+                -H "Authorization: Bearer $jwt" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/app/installations/${BYPASS_APP_INSTALLATION_ID}/access_tokens" \
+                | jq -r '.token')"
+
+              if [ -z "$installationToken" ] || [ "$installationToken" = "null" ]; then
+                echo "Failed to obtain GitHub App installation token"; exit 1
+              fi
+              # Mask the token so it is never printed in the build logs.
+              echo "##vso[task.setvariable variable=installationToken;issecret=true]$installationToken"
+
               git config --global user.email "azure-pipeline@cognigy.com"
               git config --global user.name "Azure Pipelines Bot"
 
@@ -101,8 +145,26 @@ stages:
               cd ../cognigy-ai-helm-chart
               git checkout main
               git add -A
-              git commit -m "Adding files for Helm Chart $helmChartVersion"
-              git tag v$helmChartVersion
 
+              if git diff --cached --quiet; then
+                echo "No file changes for $helmChartVersion; skipping commit."
+              else
+                git commit -m "Adding files for Helm Chart $helmChartVersion"
+              fi
+
+              git tag "v$helmChartVersion"
+
+              # Authenticate the push as the bypass GitHub App.
+              git remote set-url origin "https://x-access-token:${installationToken}@github.com/Cognigy/cognigy-ai-helm-chart.git"
+
+              # Push main first so a rejected push fails the pipeline loudly
+              # before the tag push can hide it.
+              echo "Pushing main to GitHub mirror..."
               git push origin main
-              git push origin tags/v$helmChartVersion
+
+              echo "Pushing tag v$helmChartVersion to GitHub mirror..."
+              git push origin "tags/v$helmChartVersion"
+            env:
+              BYPASS_APP_ID: $(BYPASS_BRANCH_PROTECTION_APP_ID)
+              BYPASS_APP_INSTALLATION_ID: $(BYPASS_BRANCH_PROTECTION_INSTALLATION_ID)
+              BYPASS_APP_PRIVATE_KEY: $(BYPASS_BRANCH_PROTECTION_PRIVATE_KEY)

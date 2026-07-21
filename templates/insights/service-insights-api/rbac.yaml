@@ -15,6 +15,12 @@ rules:
 - apiGroups: ["batch"]
   resources: ["jobs", "jobs/status"]
   verbs: ["get", "list", "watch", "create"]
+# list+watch required for informer-style polling: the error handler lists all
+# pods in the namespace to correlate job pods with their parent Job by label,
+# then watches for terminal phase transitions (Failed/Succeeded).
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

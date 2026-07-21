@@ -11,6 +11,8 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-testing.git"
 spec:
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: Forbid
@@ -78,6 +80,8 @@ spec:
                   value: {{ $.Values.tracing.environment | quote }}
                 - name: COGNIGY_AI_RELEASE_VERSION
                   value: {{ $.Chart.AppVersion | quote }}
+                - name: SERVICE_TOOLKIT_FEATURE_EVAL_PROFILES_ENABLED
+                  value: {{ $.Values.productFeature.evalProfiles.enabled | quote }}
                 {{- if .extraEnvVars }}
                 {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
                 {{- end }}
