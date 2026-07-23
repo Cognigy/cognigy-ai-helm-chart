@@ -2663,7 +2663,7 @@ statefulRabbitMq:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-ai:release-14007015f9-1784790340
   replicaCount: 6
   resources:
     requests:
@@ -3887,7 +3887,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-ca29d7e224-1784556489
+  image: cognigy.azurecr.io/service-ui:release-b28ca02b15-1784727131
   replicaCount: 3
   resources:
     requests:
@@ -4034,7 +4034,7 @@ mfeExample:
   priorityClassName: ""
 mfeEndpoints:
   enabled: false
-  image: cognigy.azurecr.io/mfe-endpoints:release-5ffb24973f-1783693407
+  image: cognigy.azurecr.io/mfe-endpoints:release-b28ca02b15-1784727131
   replicaCount: 1
   resources:
     requests:
