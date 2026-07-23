@@ -110,9 +110,6 @@ data:
                 - name: analytics-collector-mongodb-connection-string
                   mountPath: /run/secrets/analyticsCollectorMongodbConnectionString
                   subPath: analyticsCollectorMongodbConnectionString
-                - name: redis-password
-                  mountPath: /var/run/secrets/redis-password.conf
-                  subPath: redis-password.conf
                 {{- if .extraVolumeMounts }}
                 {{- include "common.tplvalues.render" (dict "value" .extraVolumeMounts "context" $) | nindent 16 }}
                 {{- end }}
@@ -135,9 +132,6 @@ data:
                 items:
                   - key: connection-string
                     path: analyticsCollectorMongodbConnectionString
-            - name: redis-password
-              secret:
-                secretName: {{ $redisHa_secret }}
             {{- if .extraVolumes }}
             {{- include "common.tplvalues.render" (dict "value" .extraVolumes "context" $) | nindent 12 }}
             {{- end }}

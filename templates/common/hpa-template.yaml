@@ -34,12 +34,6 @@ metadata:
 spec:
   scaleTargetRef:
     name: {{ $hpa_val.name | quote }}
-  {{- if $hpa_val.keda.pollingInterval }}
-  pollingInterval: {{ $hpa_val.keda.pollingInterval }}
-  {{- end }}
-  {{- if $hpa_val.keda.cooldownPeriod }}
-  cooldownPeriod: {{ $hpa_val.keda.cooldownPeriod }}
-  {{- end }}
   minReplicaCount: {{ $hpa_val.minReplicas }}
   maxReplicaCount: {{ $hpa_val.maxReplicas }}
   triggers:

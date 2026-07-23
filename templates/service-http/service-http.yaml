@@ -29,8 +29,6 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
-      # drain in-flight calls on SIGTERM before SIGKILL (KEDA scale-down safety)
-      terminationGracePeriodSeconds: {{ .terminationGracePeriodSeconds | default 60 }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}

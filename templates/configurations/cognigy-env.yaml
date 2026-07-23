@@ -102,7 +102,6 @@ data:
   {{- if .Values.llmGateway.enabled }}
   FEATURE_ENABLE_LLM_GATEWAY_ROUTING_WHITELIST: {{ .Values.llmGateway.routingWhitelist | join "," | quote }}
   FEATURE_ENABLE_LLM_GATEWAY_LLM_PROVIDERS_WHITELIST: {{ .Values.llmGateway.llmProvidersRoutingWhitelist | join "," | quote }}
-  LLM_GATEWAY_ROUTING_PROVIDERS: {{ .Values.llmGateway.routingProviders | join "," | quote }}
   {{- end }}
 
   {{- if .Values.proactiveFollowup.enabled }}
