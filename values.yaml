@@ -405,7 +405,7 @@ managementUi:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
-  image: cognigy.azurecr.io/management-ui:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/management-ui:release-807eea1f53-1784887883
   replicaCount: 1
   resources:
     limits:
@@ -2663,7 +2663,7 @@ statefulRabbitMq:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-14007015f9-1784790340
+  image: cognigy.azurecr.io/service-ai:release-807eea1f53-1784887883
   replicaCount: 6
   resources:
     requests:
@@ -2771,7 +2771,7 @@ serviceAi:
   # Optional: Service Account name to use for this deployment
   serviceAccountName: ""
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-alexa-management:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -2855,7 +2855,7 @@ serviceAnalyticsReporter:
   tolerations: []
   priorityClassName: ""
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-api:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -2913,7 +2913,7 @@ serviceApi:
     serviceAccountName: ""
 
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-app-session-manager:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3088,7 +3088,7 @@ serviceTesting:
     priorityClassName: ""
 
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-custom-modules:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3104,7 +3104,7 @@ serviceCustomModules:
   tolerations: []
   priorityClassName: ""
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-endpoint:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3121,7 +3121,7 @@ serviceEndpoint:
   priorityClassName: ""
 serviceEndpointVgNightly:
   enabled: false
-  image: cognigy.azurecr.io/service-endpoint:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-endpoint:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3137,7 +3137,7 @@ serviceEndpointVgNightly:
   tolerations: []
   priorityClassName: ""
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-execution:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3165,7 +3165,7 @@ serviceExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-function-execution:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3193,7 +3193,7 @@ serviceFunctionExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-function-scheduler:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3267,7 +3267,7 @@ serviceHandoverInactivity:
             averageUtilization: 70
     behavior: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-http:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3514,7 +3514,7 @@ serviceInsightsUi:
   tolerations: []
   priorityClassName: ""
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-logs:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3548,7 +3548,7 @@ serviceNlpMatcher:
   tolerations: []
   priorityClassName: ""
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-nlp-ner:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3592,7 +3592,7 @@ serviceParser:
   tolerations: []
   priorityClassName: ""
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-playbook-execution:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3611,7 +3611,7 @@ servicePlaybookExecution:
   tolerations: []
   priorityClassName: ""
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-profiles:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3639,7 +3639,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-resources:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3656,7 +3656,7 @@ serviceResources:
   priorityClassName: ""
   serviceAccountName: ""
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-runtime-file-manager:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3684,7 +3684,7 @@ serviceRuntimeFileManager:
             averageUtilization: 70
     behavior: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-security:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3811,7 +3811,7 @@ serviceSecurity:
     priorityClassName: ""
 
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-session-state-manager:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3855,7 +3855,7 @@ serviceStaticFiles:
   tolerations: []
   priorityClassName: ""
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-task-manager:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3871,7 +3871,7 @@ serviceTaskManager:
   tolerations: []
   priorityClassName: ""
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-trainer:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3887,7 +3887,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-b28ca02b15-1784727131
+  image: cognigy.azurecr.io/service-ui:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -3905,7 +3905,7 @@ serviceUi:
   tolerations: []
   priorityClassName: ""
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-webchat:release-807eea1f53-1784887883
   replicaCount: 3
   resources:
     requests:
@@ -4084,7 +4084,7 @@ servicePlatformAgent:
   priorityClassName: ""
 mfeProjectSettings:
   enabled: false
-  image: cognigy.azurecr.io/mfe-project-settings:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/mfe-project-settings:release-807eea1f53-1784887883
   replicaCount: 1
   resources:
     requests:
@@ -4651,7 +4651,7 @@ taskRunKnowledgeExtension:
     concurrencyPolicy: Forbid
 
 taskCreatePackageNfs:
-  image: cognigy.azurecr.io/service-resources:release-62a3c3fcc4-1784200389
+  image: cognigy.azurecr.io/service-resources:release-807eea1f53-1784887883
   resources:
     requests:
       cpu: "1"
