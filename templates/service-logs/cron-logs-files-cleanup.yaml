@@ -1,0 +1,68 @@
+{{- if .Values.productFeature.packageLogs.enabled }}
+{{- with .Values.cronLogsFilesCleanup }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-logs-files-cleanup
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
+    "cognigy.com/source-path": "services/service-logs"
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: {{ .concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .backoffLimit }}
+      parallelism: {{ .parallelism }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          restartPolicy: {{ .restartPolicy }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: cron-logs-files-cleanup
+              # Reuses the service-logs image so the cleanup code always matches
+              # the deployed service version; only the entrypoint differs.
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceLogs.image) }}
+              command: ["node", "/app/build/cronjobs/cleanupLogsFiles.js"]
+              resources: {{- toYaml .resources | nindent 16 }}
+              env:
+                - name: LOGS_FILES_TTL_MINUTES
+                  value: {{ .logsFilesTTLMinutes | quote }}
+                {{- if .extraEnvVars }}
+                {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
+                {{- end }}
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              volumeMounts:
+                - name: logs-files
+                  mountPath: /app/logsFiles
+                  subPath: logs
+          volumes:
+            - name: logs-files
+              persistentVolumeClaim:
+                claimName: {{ $.Values.persistentVolumeClaim.ide.pvcName }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+{{- end }}
+{{- end }}

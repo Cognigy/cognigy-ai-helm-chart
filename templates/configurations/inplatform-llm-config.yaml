@@ -1,0 +1,30 @@
+{{- if .Values.inPlatformLlm.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inplatform-llm-config
+  namespace: {{ $.Release.Namespace | quote }}
+data:
+  # Populates this in-cluster. Must match the IInPlatformLlmConfigMap schema.
+  # Mounted into service-resources and referenced by INPLATFORM_LLM_CONFIG_PATH.
+  #
+  # Schema for each entry under "inPlatformLlm":
+  #   configSetPoolRef — pool name in the llm-gateway ConfigSetPool (must match a pool key)
+  #   useCases         — list of AI use cases this LLM is available for
+  #   orgWhitelist     — "*" for all orgs, or an array of specific organisation IDs
+  #
+  # Example (replace with real values before deploying):
+  # inPlatformLlm.json: |
+  #   {
+  #     "inPlatformLlm": {
+  #       "In-Platform LLM (West Europe)": {
+  #         "configSetPoolRef": "azureGpt4oPool",
+  #         "displayName": "In-Platform LLM",
+  #         "useCases": ["aiAgent", "gptPromptNode", "aiEnhancedOutputs", "sentimentAnalysis", "designTimeGeneration", "intentSentenceGeneration", "flowGeneration", "generateNodeOutput", "lexiconGeneration", "answerExtraction", "gptConversation", "conversationAnalyzer"],
+  #         "orgWhitelist": "*"
+  #       }
+  #     }
+  #   }
+  inPlatformLlm.json: |-
+    {{- dict "inPlatformLlm" .Values.inPlatformLlm.config | toJson | nindent 4 }}
+{{- end }}

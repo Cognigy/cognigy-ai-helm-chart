@@ -175,6 +175,10 @@
 			"$ref": "#/$defs/microfrontend",
 			"description": "Toolkit microfrontend"
 		},
+		"mfeContactProfiles": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Contact Profiles microfrontend"
+		},
 		"proactiveFollowup": {
 			"type": "object",
 			"description": "Proactive Follow-up feature toggle",

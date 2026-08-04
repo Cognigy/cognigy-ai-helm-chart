@@ -113,6 +113,8 @@ spec:
               value: {{ $.Values.migrateFS.enabled | quote }}
             - name: FEATURE_DEPRECATE_OLD_NFS
               value: {{ $.Values.migrateFS.finished | quote }}
+            - name: SERVICE_TOOLKIT_FEATURE_EVAL_PROFILES_ENABLED
+              value: {{ $.Values.productFeature.evalProfiles.enabled | quote }}
             {{- if and $.Values.platformProvidedLLM.whitelist (eq $.Values.platformProvidedLLM.provider "azureOpenAI") }}
             - name: FEATURE_PLATFORM_PROVIDED_LLM_AZURE_API_KEY
               valueFrom:

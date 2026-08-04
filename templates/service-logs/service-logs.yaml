@@ -94,6 +94,10 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- if $.Values.productFeature.packageLogs.enabled }}
+            - name: FEATURE_PACKAGE_LOGS
+              value: "true"
+            {{- end }}
             {{- with .nodeOptions }}
             {{- include "cognigy-ai.common.nodeOptions.render" (dict "value" . "context" $) | nindent 12 }}
             {{- end }}
@@ -110,6 +114,11 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            {{- if $.Values.productFeature.packageLogs.enabled }}
+            - name: logs-files
+              mountPath: /app/logsFiles
+              subPath: logs
+            {{- end }}
             {{- if $.Values.commonConfigs.cognigyRollout }}
             - name: cognigy-rollout
               mountPath: /config/rollout
@@ -142,6 +151,11 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        {{- if $.Values.productFeature.packageLogs.enabled }}
+        - name: logs-files
+          persistentVolumeClaim:
+            claimName: {{ $.Values.persistentVolumeClaim.ide.pvcName }}
+        {{- end }}
         {{- if $.Values.commonConfigs.cognigyRollout }}
         - name: cognigy-rollout
           configMap:

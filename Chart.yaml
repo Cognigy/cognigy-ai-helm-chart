@@ -2,8 +2,8 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 2026.15.2
-appVersion: "2026.15.2"
+version: 2026.16.0
+appVersion: "2026.16.0"
 kubeVersion: "<v1.35.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
@@ -59,3 +59,7 @@ dependencies:
     version: "0.3.0"
     repository: "https://raw.githubusercontent.com/Cognigy/llm-gateway-helm-chart/main"
     condition: llmGatewayApp.enabled
+  - name: handover
+    version: "0.2.1"
+    repository: "oci://cognigy.azurecr.io/charts"
+    condition: handover.enabled

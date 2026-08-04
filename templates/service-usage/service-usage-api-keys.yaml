@@ -1,0 +1,23 @@
+{{- with .Values.serviceUsage }}
+{{- if .enabled }}
+{{- if not .auth.existingSecret }}
+{{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-service-usage-api-keys") }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-usage-api-keys
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  {{- if .auth.apiKey }}
+  api-key: {{ .auth.apiKey | b64enc | quote }}
+  {{- else }}
+  api-key: {{ randAlphaNum 32 | b64enc | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

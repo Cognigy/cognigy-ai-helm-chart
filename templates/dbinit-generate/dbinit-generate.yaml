@@ -233,6 +233,13 @@ spec:
               items:
               - key: connection-string
                 path: cognigy-service-insights-api
+{{- if .Values.serviceUsage.enabled }}
+          - secret:
+              name: cognigy-service-usage
+              items:
+              - key: connection-string
+                path: cognigy-service-usage
+{{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
 {{- end }}
 {{- if and (.Values.mongodb.enabled) (eq .Values.mongodb.scheme "mongodb") (not .Values.mongodb.auth.existingSecret) }}

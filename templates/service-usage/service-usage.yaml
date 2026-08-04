@@ -1,0 +1,199 @@
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $serviceUsage_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceUsage.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceUsage.serviceName)) }}
+{{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $billingConsole_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.billingConsoleApiKey.existingSecret "defaultSecret" "billing-console-secrets") }}
+{{- $serviceUsage_apiKeysSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.serviceUsage.auth.existingSecret "defaultSecret" "cognigy-service-usage-api-keys") }}
+{{- with .Values.serviceUsage }}
+{{- if .enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-usage
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: carbon
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-usage.git"
+    "cognigy.com/source-path": "/"
+spec:
+  selector:
+    matchLabels:
+      app: service-usage
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceUsage.enabled)) }}
+  replicas: {{ .replicaCount }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app: service-usage
+      annotations:
+        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
+        checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceUsage_dbSecret) }}{{ $serviceUsage_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceUsage_dbSecret).data | sha256sum }}{{ end }}
+        checksum/billing-console-secrets: {{ if not (lookup "v1" "Secret" $.Release.Namespace $billingConsole_secret) }}{{ $billingConsole_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $billingConsole_secret).data | sha256sum }}{{ end }}
+        checksum/api-keys: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceUsage_apiKeysSecret) }}{{ $serviceUsage_apiKeysSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceUsage_apiKeysSecret).data | sha256sum }}{{ end }}
+        checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
+        {{- if $.Values.cognigyCommonPodAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector:
+        {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations:
+        {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
+      containers:
+        - name: service-usage
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 3000
+            - name: metrics
+              containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: cognigy-env
+          env:
+            - name: RABBITMQ_ENABLE_RECONNECT
+              value: "true"
+            - name: RABBITMQ_TOKEN_USAGE_EXCHANGE
+              value: {{ .rabbitmq.tokenUsageExchange | quote }}
+            - name: RABBITMQ_TOKEN_USAGE_QUEUE
+              value: {{ .rabbitmq.tokenUsageQueue | quote }}
+            - name: API_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceUsage_apiKeysSecret }}
+                  key: api-key
+            - name: PORT
+              value: "3000"
+            - name: METRICS_ENABLED
+              value: {{ .metrics.enabled | quote }}
+            - name: METRICS_PORT
+              value: {{ .metrics.port | quote }}
+            - name: COGNIGY_AI_RELEASE_VERSION
+              value: {{ $.Chart.AppVersion | quote }}
+            {{- /* Redis */}}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $redisHa_secret }}
+                  key: REDIS_PASSWORD
+            - name: REDIS_SENTINEL_HOST
+              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_HOST }}
+            - name: REDIS_SENTINEL_PORT
+              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_PORT | quote }}
+            - name: REDIS_SENTINEL_MASTER_NAME
+              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_MASTER_NAME }}
+            - name: FEATURE_REDIS_SENTINEL_MODE_ENABLED
+              value: "true"
+            - name: REDIS_ENABLE_RECONNECT
+              value: "true"
+            - name: REDIS_USE_TLS
+              value: {{ $.Values.cognigyEnv.REDIS_USE_TLS | default "false" | quote }}
+            {{- if $.Values.cognigyEnv.REDIS_DEFAULT_TTL }}
+            - name: REDIS_DEFAULT_TTL
+              value: {{ $.Values.cognigyEnv.REDIS_DEFAULT_TTL | quote }}
+            {{- end }}
+            - name: BILLING_CONSOLE_CACHE_TTL
+              value: {{ $.Values.billingConsole.cacheTtl | quote }}
+            {{- /* Billing Console */}}
+            - name: NICE_CXONE_LICENSE_MAP_PATH
+              value: /etc/config/licenses.json
+            - name: BILLING_CONSOLE_BASE_URL
+              value: {{ $.Values.billingConsole.baseUrl | quote }}
+            - name: BILLING_REGION
+              value: {{ $.Values.billingConsole.regionName | quote }}
+            - name: NICE_BILLING_REPORTING_DATE
+              value: {{ $.Values.billingConsole.reportingDate | quote }}
+            - name: BILLING_CONSOLE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $billingConsole_secret }}
+                  key: api-key
+            {{- if .extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: rabbitmq-connection-string
+              mountPath: /var/run/secrets/rabbitmqConnectionString
+              subPath: rabbitmqConnectionString
+            - name: redis-password
+              mountPath: /var/run/secrets/redis-password.conf
+              subPath: redis-password.conf
+            - name: mongodb-connection-string
+              mountPath: /var/run/secrets/mongodbConnectionString
+              subPath: mongodbConnectionString
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            failureThreshold: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 3000
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
+      volumes:
+        - name: rabbitmq-connection-string
+          secret:
+            secretName: {{ $statefulRabbitMq_secret }}
+            items:
+              - key: connection-string
+                path: rabbitmqConnectionString
+        - name: redis-password
+          secret:
+            secretName: {{ $redisHa_secret }}
+        - name: mongodb-connection-string
+          secret:
+            secretName: {{ $serviceUsage_dbSecret }}
+            items:
+              - key: connection-string
+                path: mongodbConnectionString
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-usage
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-usage
+    owner-team: carbon
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+    - name: metrics
+      port: 8002
+      targetPort: metrics
+  selector:
+    app: service-usage
+{{- end }}
+{{- end }}

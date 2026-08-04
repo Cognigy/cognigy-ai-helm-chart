@@ -266,6 +266,10 @@ spec:
                   name: llm-gateway-caller-service-api
                   key: secret
             {{- end }}
+            {{- if $.Values.productFeature.packageLogs.enabled }}
+            - name: FEATURE_PACKAGE_LOGS
+              value: "true"
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -299,6 +303,15 @@ spec:
             - name: ide
               mountPath: /app/resumableUploads
               subPath: resumableUploads
+            {{- end }}
+            {{- if $.Values.productFeature.packageLogs.enabled }}
+            # Reuse the already-mounted `ide` volume for packaged logs (subPath
+            # `logs`). service-api mounts the `ide` PVC for packages/snapshots
+            # too, so a second volume pointing at the same claim wedges the pod
+            # in ContainerCreating — mount another subPath on the same volume.
+            - name: ide
+              mountPath: /app/logsFiles
+              subPath: logs
             {{- end }}
             {{- if $.Values.commonConfigs.cognigyRollout }}
             - name: cognigy-rollout
@@ -349,7 +362,7 @@ spec:
           persistentVolumeClaim:
             claimName: functions
         {{- end }}
-        {{- if $.Values.migrateFS.enabled }}
+        {{- if or $.Values.migrateFS.enabled $.Values.productFeature.packageLogs.enabled }}
         - name: ide
           persistentVolumeClaim:
             claimName: ide

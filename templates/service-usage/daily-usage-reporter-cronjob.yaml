@@ -1,0 +1,103 @@
+{{- if .Values.serviceUsage.jobDailyUsageReporter.enabled }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $serviceUsage_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceUsage.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceUsage.serviceName)) }}
+{{- with .Values.serviceUsage.jobDailyUsageReporter }}
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-usage-reporter
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: carbon
+  annotations:
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-usage.git"
+    "cognigy.com/source-path": "/"
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      parallelism: 1
+      backoffLimit: {{ .backoffLimit }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          restartPolicy: {{ .restartPolicy }}
+          {{- if .affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .priorityClassName }}
+          priorityClassName: {{ .priorityClassName }}
+          {{- end }}
+          containers:
+            - name: daily-usage-reporter
+              image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.serviceUsage.image) }}
+              resources: {{- toYaml .resources | nindent 16 }}
+              command: ["node"]
+              args: ["build/src/bin/billing-report.bootstrap.js"]
+              envFrom:
+                - configMapRef:
+                    name: cognigy-env
+              env:
+                - name: TRACING_ENABLED
+                  value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
+                - name: TRACING_BASE_URL_WITH_PROTOCOL
+                  value: {{ $.Values.tracing.sentry.runtime.baseUrl | quote }}
+                - name: TRACING_ERRORS_ENABLED
+                  value: {{ $.Values.tracing.sentry.runtime.errorsEnabled | quote }}
+                - name: TRACING_EVENTS_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.runtime.eventsSampleRate | quote }}
+                - name: TRACING_SAMPLE_RATE
+                  value: {{ $.Values.tracing.sentry.runtime.sampleRate | quote }}
+                - name: ENVIRONMENT
+                  value: {{ $.Values.tracing.environment | quote }}
+                - name: COGNIGY_AI_RELEASE_VERSION
+                  value: {{ $.Chart.AppVersion | quote }}
+                {{- if .billingServerUrlWithProtocol }}
+                - name: BILLING_SERVER_URL_WITH_PROTOCOL_V2
+                  value: {{ .billingServerUrlWithProtocol | quote }}
+                {{- end }}
+                {{- if .extraEnvVars }}
+                {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
+                {{- end }}
+              volumeMounts:
+                - name: rabbitmq-connection-string
+                  mountPath: /var/run/secrets/rabbitmqConnectionString
+                  subPath: rabbitmqConnectionString
+                - name: mongodb-connection-string
+                  mountPath: /var/run/secrets/mongodbConnectionString
+                  subPath: mongodbConnectionString
+              {{- if .extraVolumeMounts }}
+              {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
+              {{- end }}
+          volumes:
+            - name: rabbitmq-connection-string
+              secret:
+                secretName: {{ $statefulRabbitMq_secret }}
+                items:
+                  - key: connection-string
+                    path: rabbitmqConnectionString
+            - name: mongodb-connection-string
+              secret:
+                secretName: {{ $serviceUsage_dbSecret }}
+                items:
+                  - key: connection-string
+                    path: mongodbConnectionString
+            {{- if .extraVolumes }}
+            {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
+            {{- end }}
+          {{- include "image.pullSecretsCognigy" $ | nindent 10 }}
+{{- end }}
+{{- end }}
