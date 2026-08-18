@@ -1,6 +1,6 @@
 # This is going to be the default data expiration cronjob for the new Insights PostgreSQL cluster
-{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlClusterInsights.enabled) (.Values.insights.dataExpiration.enabled) }}
-{{- $dataExpiration_dbSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights") }}
+{{- if and (include "cognigy-ai.insights.postgresql.enabled" .) (.Values.insights.dataExpiration.enabled) }}
+{{- $dataExpiration_dbSecret := include "cognigy-ai.insights.postgresql.secret" $ }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -41,15 +41,11 @@ spec:
               command: ["sh", "-c", "psql 'postgresql://'${INSIGHTS_POSTGRES_USER}':'${INSIGHTS_POSTGRES_PASSWORD}'@'${INSIGHTS_POSTGRES_DB_HOST}':'${INSIGHTS_POSTGRES_PORT}'/'${INSIGHTS_POSTGRES_DB}'' -c 'SET timezone = '\''UTC'\''; DELETE FROM public.conversations_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.sessions_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.analytics_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.liveagentescalations_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.voicegatewayevents_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.stepevents_v2 WHERE \"expiresAt\" < NOW(); '"]
               env:
               - name: INSIGHTS_POSTGRES_DB_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
-              {{- if $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
-              - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
-              {{- end }}
+                value: {{ include "cognigy-ai.insights.postgresql.primary.host" $ | quote }}
               - name: INSIGHTS_POSTGRES_DB
                 value: {{ $.Values.insights.postgresql.database.name | quote }}
               - name: INSIGHTS_POSTGRES_PORT
-                value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+                value: {{ include "cognigy-ai.insights.postgresql.port" $ | quote }}
               - name: INSIGHTS_POSTGRES_USER
                 valueFrom:
                   secretKeyRef:

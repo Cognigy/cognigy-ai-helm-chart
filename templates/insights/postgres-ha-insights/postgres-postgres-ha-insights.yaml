@@ -1,4 +1,4 @@
-{{- if (not .Values.insights.postgresql.auth.superUser.existingSecret) }}
+{{- if and (eq (include "cognigy-ai.insights.postgresql.provider" .) "operator") (not .Values.insights.postgresql.auth.superUser.existingSecret) }}
 ---
 apiVersion: v1
 kind: Secret

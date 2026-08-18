@@ -2,9 +2,9 @@ apiVersion: v2
 name: cognigy.ai
 description: A Helm chart for Cognigy.AI Enterprise Conversational Automation Platform
 type: application
-version: 2026.16.0
-appVersion: "2026.16.0"
-kubeVersion: "<v1.35.0-0"
+version: 2026.17.0
+appVersion: "2026.17.0"
+kubeVersion: "<v1.36.0-0"
 home: https://cognigy.com
 icon: https://www.cognigy.com/hubfs/Cognigy.svg
 sources:
@@ -23,7 +23,7 @@ dependencies:
     repository: "https://helm.traefik.io/traefik"
     condition: traefikInternal.enabled
   - name: qdrant
-    version: "1.15.4"
+    version: "1.16.3"
     repository: "https://qdrant.to/helm"
     condition: qdrant.enabled
   - name: redis
@@ -51,12 +51,12 @@ dependencies:
     condition: natsInternal.enabled
     alias: natsInternal
   - name: serverless
-    version: "0.18.5"
+    version: "0.18.6"
     repository: "oci://cognigy.azurecr.io/charts"
     condition: serverless.enabled
   - name: llm-gateway-app
     alias: llmGatewayApp
-    version: "0.3.0"
+    version: "0.5.0"
     repository: "https://raw.githubusercontent.com/Cognigy/llm-gateway-helm-chart/main"
     condition: llmGatewayApp.enabled
   - name: handover

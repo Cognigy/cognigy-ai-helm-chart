@@ -1,7 +1,7 @@
 {{- if .Values.serviceInsightsApi.conversationAnalyzer.enabled }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $serviceInsightsApi_mongoDbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceInsightsApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceInsightsApi.serviceName)) }}
-{{- $serviceInsightsApi_dbSecret := ternary (include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights")) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
+{{- $serviceInsightsApi_dbSecret := ternary (include "cognigy-ai.insights.postgresql.secret" $) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
 {{- $analyticsCollectorMongoDb_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 ---
@@ -61,7 +61,7 @@ data:
               env:
                 - name: JOB_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
-                {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+                {{- if and (include "cognigy-ai.insights.postgresql.enabled" $) ($.Values.insights.postgresql.usePartitionedTables) }}
                 - name: INSIGHTS_POSTGRES_DB_USERNAME
                   valueFrom:
                     secretKeyRef:
@@ -73,9 +73,9 @@ data:
                       name: {{ $serviceInsightsApi_dbSecret }}
                       key: password
                 - name: INSIGHTS_POSTGRES_DB_HOST
-                  value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+                  value: {{ include "cognigy-ai.insights.postgresql.primary.host" $ | quote }}
                 - name: INSIGHTS_POSTGRES_DB_PORT
-                  value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+                  value: {{ include "cognigy-ai.insights.postgresql.port" $ | quote }}
                 - name: INSIGHTS_POSTGRES_DB_NAME
                   value: {{ $.Values.insights.postgresql.database.name | quote }}
                 {{- end }}
@@ -201,7 +201,7 @@ data:
                   value: "_TRACE_ID_"
                 - name: PROMOTE_PATH
                   value: "_PROMOTE_PATH_"
-                {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+                {{- if and (include "cognigy-ai.insights.postgresql.enabled" $) ($.Values.insights.postgresql.usePartitionedTables) }}
                 - name: INSIGHTS_POSTGRES_DB_USERNAME
                   valueFrom:
                     secretKeyRef:
@@ -213,9 +213,9 @@ data:
                       name: {{ $serviceInsightsApi_dbSecret }}
                       key: password
                 - name: INSIGHTS_POSTGRES_DB_HOST
-                  value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+                  value: {{ include "cognigy-ai.insights.postgresql.primary.host" $ | quote }}
                 - name: INSIGHTS_POSTGRES_DB_PORT
-                  value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+                  value: {{ include "cognigy-ai.insights.postgresql.port" $ | quote }}
                 - name: INSIGHTS_POSTGRES_DB_NAME
                   value: {{ $.Values.insights.postgresql.database.name | quote }}
                 {{- end }}

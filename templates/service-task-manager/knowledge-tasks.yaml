@@ -53,8 +53,6 @@ data:
               env:
                 - name: JOB_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
-                - name: UNSTRUCTURED_EXTRACTOR_URL
-                  value: "http://unstructured-io/general/v0/general"
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL

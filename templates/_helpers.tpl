@@ -117,6 +117,18 @@ Usage:
     {{- end }}
 {{- end -}}
 
+{{- define "cognigy-ai.common.nodeEnv.render" -}}
+{{- $nodeEnvVars := list -}}
+{{- range $key, $value := .context.Values.cognigyEnv }}
+{{- if hasPrefix "NODE_" $key }}
+{{- $nodeEnvVars = append $nodeEnvVars (dict "name" $key "value" ($value | toString)) }}
+{{- end }}
+{{- end }}
+{{- if $nodeEnvVars }}
+{{- toYaml $nodeEnvVars }}
+{{- end }}
+{{- end -}}
+
 {{- define "cognigy-ai.common.nodeOptions.render" -}}
     {{- $nodeOptions := "" -}}
     {{- if kindIs "map" .value -}}

@@ -1,0 +1,59 @@
+{{- if .Values.ingress.enabled }}
+{{- if (eq .Values.ingress.ingresController "traefik") }}
+# Traefik IngressRoute (CRD) is used here instead of a plain networking.k8s.io Ingress
+# because the public logs paths (/v2.1/projects/{projectId}/logs...) live INSIDE
+# service-api's catch-all "/" route. A standard Ingress prefix cannot isolate a
+# dynamic-middle path, so we carve the exact paths out with a PathRegexp matcher
+# and a higher router priority than service-api. No path rewrite: the internal
+# path equals the external path, so HAL self-link hrefs stay byte-identical.
+#
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: service-logs
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+spec:
+  entryPoints:
+    - {{ if .Values.tls.enabled }}websecure{{ else }}web{{ end }}
+  routes:
+    # `logs(/|$)` anchors "logs" as a whole path segment so ONLY the log endpoints
+    # (/logs, /logs/tail, /logs/{id}) are peeled off to service-logs. A future sibling
+    # like /projects/{id}/logsExport would NOT be captured. Everything else on this
+    # host still falls through to service-api's catch-all.
+    # Traefik gives every router a default priority equal to the character length of
+    # its rule when none is set - service-api's catch-all rule (Host + PathPrefix("/"))
+    # is 56 chars in prod; this router's rule is 97. So this router already wins on
+    # rule length alone, but that margin is incidental and would silently flip if
+    # either rule's text changes later. priority: 1000 makes the win explicit and
+    # permanent - roughly 10x the longest rule length measured above, well clear of
+    # any realistic future edit to either rule, and far below Traefik's reserved
+    # range for its own internal routers (MaxInt32 - 1000).
+    #
+    # Deliberately scoped to v2.0/v2.1 only (not `v2\.\d+`): service-logs' router only
+    # mounts these two versions today. Widening the regex ahead of the code would let
+    # Traefik route a future v2.2+ request here before service-logs can serve it,
+    # 404ing instead of falling through to service-api. Widen this alongside the code
+    # change when a new version is actually added, same as this migration did.
+    - match: Host(`{{ .Values.ingress.serviceApi.host }}`) && PathRegexp(`^/(new/)?v2\.[01]/projects/[^/]+/logs(/|$)`)
+      kind: Rule
+      priority: 1000
+      services:
+        - name: service-logs
+          port: 8000
+      middlewares:
+        {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
+        - name: ipwhitelistserviceapi
+          namespace: {{ $.Release.Namespace }}
+        {{- end }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled }}
+        - name: auth-gateway-forward-auth
+          namespace: {{ $.Release.Namespace }}
+        {{- end }}
+  {{- if .Values.tls.enabled }}
+  # Same host as service-api; Traefik serves the host certificate from its store via SNI.
+  tls: {}
+  {{- end }}
+{{- end }}
+{{- end }}

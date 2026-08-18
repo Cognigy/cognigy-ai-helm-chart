@@ -1,5 +1,11 @@
-{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlClusterInsights.enabled) (.Values.insights.dbMigration.enabled) }}
-{{- $dbMigration_dbSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.superUser.existingSecret .) "defaultSecret" "postgres-postgres-ha-insights") }}
+{{- if and (include "cognigy-ai.insights.postgresql.enabled" .) (.Values.insights.dbMigration.enabled) }}
+{{- $dbMigration_dbSecret := include "cognigy-ai.insights.postgresql.superuser.secret" $ }}
+{{- $postgresHost := "" }}
+{{- if eq (include "cognigy-ai.insights.postgresql.provider" $) "external" }}
+{{- $postgresHost = $.Values.insights.postgresql.external.host }}
+{{- else }}
+{{- $postgresHost = include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) }}
+{{- end }}
 {{- with .Values.insights.dbMigration }}
 ---
 apiVersion: batch/v1
@@ -50,13 +56,9 @@ spec:
               echo "PostgreSQL is ready!"
           env:
             - name: POSTGRES_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
-            {{- if $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
-            - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
-            {{- end }}
+              value: {{ $postgresHost | quote }}
             - name: POSTGRES_PORT
-              value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+              value: {{ include "cognigy-ai.insights.postgresql.port" $ | quote }}
             - name: POSTGRES_DB
               value: {{ $.Values.insights.postgresql.database.name | quote }}
             - name: POSTGRES_USER
@@ -84,13 +86,13 @@ spec:
             - name: INSIGHTS_POSTGRES_DATA_MIGRATION_MODE
               value: {{ .migration.mode | quote }}
             - name: POSTGRES_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
-            {{- if $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
+              value: {{ $postgresHost | quote }}
+            {{- if and (eq (include "cognigy-ai.insights.postgresql.provider" $) "operator") $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
             - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
               value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
             {{- end }}
             - name: POSTGRES_PORT
-              value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+              value: {{ include "cognigy-ai.insights.postgresql.port" $ | quote }}
             - name: POSTGRES_DB
               value: {{ $.Values.insights.postgresql.database.name | quote }}
             {{- if .migration.include }}

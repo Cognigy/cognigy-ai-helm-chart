@@ -4,7 +4,7 @@
 {{- $serviceAnalyticsCollector_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }}
 {{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
 {{- $serviceAnalyticsConversations_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsConversations.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsConversations.serviceName)) }}
-{{- $serviceAnalyticsOdata_dbSecret :=  ternary (include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights")) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
+{{- $serviceAnalyticsOdata_dbSecret := ternary (include "cognigy-ai.insights.postgresql.secret" $) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
 {{- with .Values.serviceAnalyticsOdata }}
 ---
 apiVersion: apps/v1
@@ -33,8 +33,7 @@ spec:
         checksum/service-analytics-collector: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsCollector_dbSecret) }}{{ $serviceAnalyticsCollector_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsCollector_dbSecret).data | sha256sum }}{{ end }}
         checksum/service-security: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret) }}{{ $serviceSecurity_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret).data | sha256sum }}{{ end }}
         checksum/service-analytics-conversation: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsConversations_dbSecret) }}{{ $serviceAnalyticsConversations_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsConversations_dbSecret).data | sha256sum }}{{ end }}
-        # change the check below in all postgres services
-        {{- if $.Values.pgoperator.enabled }}
+        {{- if include "cognigy-ai.insights.postgresql.enabled" $ }}
         checksum/postgres: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsOdata_dbSecret) }}{{ $serviceAnalyticsOdata_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsOdata_dbSecret).data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
@@ -66,18 +65,13 @@ spec:
           env:
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
-            {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+            {{- if and (include "cognigy-ai.insights.postgresql.enabled" $) ($.Values.insights.postgresql.usePartitionedTables) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.insights.postgresql.database.name | quote }}
-            {{- if or $.Values.insights.postgresql.cluster.readReplica.useReadReplica .useReadReplica }}
             - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
-            {{- else }}
-            - name: INSIGHTS_POSTGRES_DB_HOST
-              value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
-            {{- end }}
+              value: {{ include "cognigy-ai.insights.postgresql.host" (dict "context" $ "useReadReplica" $.Values.serviceAnalyticsOdata.useReadReplica) | quote }}
             - name: INSIGHTS_POSTGRES_DB_PORT
-              value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+              value: {{ include "cognigy-ai.insights.postgresql.port" $ | quote }}
             - name: INSIGHTS_POSTGRES_DB_USERNAME
               valueFrom:
                 secretKeyRef:

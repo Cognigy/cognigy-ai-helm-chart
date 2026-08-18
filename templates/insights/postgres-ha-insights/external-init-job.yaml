@@ -1,0 +1,103 @@
+{{- if eq (include "cognigy-ai.insights.postgresql.provider" .) "external" }}
+{{- $appUserSecret := include "cognigy-ai.insights.postgresql.secret" $ }}
+{{- $superUserSecret := include "cognigy-ai.insights.postgresql.superuser.secret" $ }}
+{{- with .Values.insights.postgresql.external.initJob }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: insights-postgres-external-init
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+  annotations:
+    "helm.sh/hook": {{ .helmHook.hook | quote }}
+    "helm.sh/hook-weight": "-3"
+    "helm.sh/hook-delete-policy": {{ .helmHook.deletePolicy | quote }}
+spec:
+  backoffLimit: {{ .backoffLimit | default 0 }}
+  {{- if .ttlSecondsAfterFinished }}
+  ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+  {{- end }}
+  template:
+    metadata:
+      name: insights-postgres-external-init
+    spec:
+      restartPolicy: {{ .restartPolicy | default "Never" }}
+      {{- if .securityContext }}
+      securityContext:
+        {{- toYaml .securityContext | nindent 8 }}
+      {{- end }}
+      {{- if .affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .priorityClassName }}
+      priorityClassName: {{ .priorityClassName }}
+      {{- end }}
+      containers:
+        - name: insights-postgres-external-init
+          image: {{ include "common.image.render" (dict "global" $.Values.global "image" (tpl .image $)) }}
+          resources: {{- toYaml .resources | nindent 12 }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              CONN="postgresql://${SUPERUSER}:${SUPERPASS}@${PGHOST}:${PGPORT}/postgres?sslmode=${SSLMODE}"
+              DB_EXISTS=$(psql "$CONN" -Atc "SELECT 1 FROM pg_database WHERE datname='${DBNAME}'")
+              if [ "$DB_EXISTS" != "1" ]; then
+                psql "$CONN" -c "CREATE DATABASE \"${DBNAME}\""
+              fi
+              psql "$CONN" <<SQL
+              DO \$\$
+              BEGIN
+                IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APPUSER}') THEN
+                  EXECUTE 'CREATE USER "' || '${APPUSER}' || '" WITH ENCRYPTED PASSWORD ''' || '${APPPASS}' || '''';
+                END IF;
+                EXECUTE 'GRANT ALL PRIVILEGES ON DATABASE "' || '${DBNAME}' || '" TO "' || '${APPUSER}' || '"';
+              END \$\$;
+              SQL
+              DBCONN="postgresql://${SUPERUSER}:${SUPERPASS}@${PGHOST}:${PGPORT}/${DBNAME}?sslmode=${SSLMODE}"
+              psql "$DBCONN" <<SQL
+              GRANT USAGE ON SCHEMA public TO "${APPUSER}";
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "${APPUSER}";
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "${APPUSER}";
+              SQL
+          env:
+            - name: PGHOST
+              value: {{ $.Values.insights.postgresql.external.host | quote }}
+            - name: PGPORT
+              value: {{ $.Values.insights.postgresql.external.port | quote }}
+            - name: SSLMODE
+              value: {{ $.Values.insights.postgresql.external.sslmode | quote }}
+            - name: DBNAME
+              value: {{ $.Values.insights.postgresql.database.name | quote }}
+            - name: SUPERUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $superUserSecret }}
+                  key: username
+            - name: SUPERPASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $superUserSecret }}
+                  key: password
+            - name: APPUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appUserSecret }}
+                  key: username
+            - name: APPPASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $appUserSecret }}
+                  key: password
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+{{- end }}
+{{- end }}

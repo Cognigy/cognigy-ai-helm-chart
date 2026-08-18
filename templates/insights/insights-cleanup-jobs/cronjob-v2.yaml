@@ -1,6 +1,6 @@
 # Insights jobDataCleanup v2 CronJob (NodeJS-based)
-{{- if and ($.Values.insights.jobDataCleanup.enabled) ($.Values.pgoperator.enabled) ($.Values.pgoperator.postgresqlClusterInsights.enabled) ($.Values.insights.postgresql.usePartitionedTables) }}
-{{- $pgUserSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights") }}
+{{- if and ($.Values.insights.jobDataCleanup.enabled) (include "cognigy-ai.insights.postgresql.enabled" .) ($.Values.insights.postgresql.usePartitionedTables) }}
+{{- $pgUserSecret := include "cognigy-ai.insights.postgresql.secret" $ }}
 {{- $mongoCollectorSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }}
 {{- $mongoConversationsSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsConversations.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsConversations.serviceName)) }}
 {{- with .Values.insights.jobDataCleanup }}
@@ -53,11 +53,11 @@ spec:
                 - configMapRef:
                     name: cognigy-env
               env:
-                # Postgres connection (v2 cluster)
+                # Postgres connection (v2 cluster or external)
                 - name: POSTGRES_HOST
-                  value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
+                  value: {{ include "cognigy-ai.insights.postgresql.primary.host" $ | quote }}
                 - name: POSTGRES_PORT
-                  value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+                  value: {{ include "cognigy-ai.insights.postgresql.port" $ | quote }}
                 - name: POSTGRES_DB
                   value: {{ $.Values.insights.postgresql.database.name | quote }}
                 - name: POSTGRES_USER
@@ -71,7 +71,7 @@ spec:
                       name: {{ $pgUserSecret }}
                       key: password
                 - name: INSIGHTS_POSTGRES_SSLMODE
-                  value: {{ $.Values.insights.postgresql.cluster.sslmode | default "require" | quote }}
+                  value: {{ include "cognigy-ai.insights.postgresql.sslmode" $ | quote }}
 
                 # Mongo connections (from existing secrets used in the repo)
                 - name: INSIGHTS_COLLECTOR_CONNECTION_STRING

@@ -1,6 +1,7 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceLogs_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceLogs.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceLogs.serviceName)) }}
+{{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
 {{- with .Values.serviceLogs }}
 ---
 apiVersion: apps/v1
@@ -29,6 +30,7 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceLogs_dbSecret) }}{{ $serviceLogs_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceLogs_dbSecret).data | sha256sum }}{{ end }}
+        checksum/jwtPublicKey: {{ if not (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey) }}{{ $jwtPublicKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -62,6 +64,8 @@ spec:
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
+            - name: http
+              containerPort: 8000
             - name: health
               containerPort: 8001
             - name: metrics
@@ -74,6 +78,10 @@ spec:
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
+            - name: API_PORT
+              value: "8000"
+            - name: AUTH_GATEWAY_JWT_PUBLIC_KEY_PATH_AND_FILENAME
+              value: "/var/run/secrets/internal-auth-gateway-jwt-public-key.pem"
             - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
               value: 'true'
             - name: TRACING_ENABLED
@@ -114,6 +122,9 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            - name: auth-gateway-public-key
+              mountPath: /var/run/secrets/internal-auth-gateway-jwt-public-key.pem
+              subPath: internal-auth-gateway-jwt-public-key.pem
             {{- if $.Values.productFeature.packageLogs.enabled }}
             - name: logs-files
               mountPath: /app/logsFiles
@@ -151,6 +162,11 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        # public key to verify short lived JWTs issued by service-auth-gateway
+        - name: auth-gateway-public-key
+          secret:
+            secretName: {{ $jwtPublicKey }}
+            defaultMode: 420
         {{- if $.Values.productFeature.packageLogs.enabled }}
         - name: logs-files
           persistentVolumeClaim:

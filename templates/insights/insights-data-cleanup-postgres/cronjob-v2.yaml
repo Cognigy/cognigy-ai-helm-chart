@@ -1,7 +1,7 @@
 # This is going to be the default data cleanup cronjob for the new Insights PostgreSQL cluster
 {{- /* Legacy PG cleanup v2 gated by its own flags */ -}}
-{{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlClusterInsights.enabled) (.Values.insights.dataCleanup.enabled) }}
-{{- $dataCleanup_dbSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights") }}
+{{- if and (include "cognigy-ai.insights.postgresql.enabled" .) (.Values.insights.dataCleanup.enabled) }}
+{{- $dataCleanup_dbSecret := include "cognigy-ai.insights.postgresql.secret" $ }}
 {{- with .Values.insights.dataCleanup }}
 ---
 apiVersion: batch/v1
@@ -155,17 +155,13 @@ spec:
                 EOSQL
               env:
               - name: INSIGHTS_POSTGRES_DB_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.host "context" $) | quote }}
-              {{- if $.Values.insights.postgresql.cluster.readReplica.useReadReplica }}
-              - name: INSIGHTS_POSTGRES_DB_REPLICA_HOST
-                value: {{ include "common.tplvalues.render" (dict "value" $.Values.insights.postgresql.cluster.readReplica.host "context" $) | quote }}
-              {{- end }}
+                value: {{ include "cognigy-ai.insights.postgresql.primary.host" $ | quote }}
               - name: INSIGHTS_POSTGRES_DB
                 value: {{ $.Values.insights.postgresql.database.name | quote }}
               - name: INSIGHTS_POSTGRES_SSL
-                value: {{ $.Values.insights.postgresql.cluster.sslmode | quote }}
+                value: {{ include "cognigy-ai.insights.postgresql.sslmode" $ | quote }}
               - name: INSIGHTS_POSTGRES_PORT
-                value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+                value: {{ include "cognigy-ai.insights.postgresql.port" $ | quote }}
               - name: INSIGHTS_POSTGRES_USER
                 valueFrom:
                   secretKeyRef:

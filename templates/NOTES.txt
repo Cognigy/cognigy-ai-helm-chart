@@ -1,0 +1,6 @@
+{{- include "cognigy-ai.insights.postgresql.validate" . -}}
+{{- if not .Values.insights.postgresql.provider }}
+WARNING: insights.postgresql.provider is unset. Derived from pgoperator.enabled for backwards
+compat. Set insights.postgresql.provider explicitly ("operator", "external", or "disabled").
+Auto-derive will be removed in 2027.x.
+{{ end -}}

@@ -15,6 +15,7 @@
 {{- $cognigyAutoDialerClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyADClientSecret.existingSecret "defaultSecret" "cognigy-auto-dialer-client-secret") }}
 {{- $sharedSpeechCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.sharedSpeechCredentials.existingSecret "defaultSecret" "vg-shared-speech-credentials") }}
 {{- $serviceCxoneAwsGatewayApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceCxoneAwsGatewayApiSecret.existingSecret "defaultSecret" "service-cxone-aws-gateway-api-secret") }}
+{{- $serviceUsage_apiKeysSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.serviceUsage.auth.existingSecret "defaultSecret" "cognigy-service-usage-api-keys") }}
 {{- with .Values.serviceApi }}
 ---
 apiVersion: apps/v1
@@ -65,6 +66,9 @@ spec:
         {{- end }}
         {{- if $.Values.llmGateway.enabled }}
         checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-api") }}{{"llm-gateway-caller-service-api" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-api").data | sha256sum }}{{ end }}
+        {{- end }}
+        {{- if $.Values.serviceUsage.enabled }}
+        checksum/service-usage-api-keys: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceUsage_apiKeysSecret) }}{{ $serviceUsage_apiKeysSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceUsage_apiKeysSecret).data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
@@ -265,6 +269,13 @@ spec:
                 secretKeyRef:
                   name: llm-gateway-caller-service-api
                   key: secret
+            {{- end }}
+            {{- if $.Values.serviceUsage.enabled }}
+            - name: SERVICE_USAGE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceUsage_apiKeysSecret }}
+                  key: api-key
             {{- end }}
             {{- if $.Values.productFeature.packageLogs.enabled }}
             - name: FEATURE_PACKAGE_LOGS

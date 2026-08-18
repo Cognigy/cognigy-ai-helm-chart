@@ -38,6 +38,18 @@ data:
           },
           "spec": {
             "route": {
+              "matchers": [
+                {
+                  "name": "organisation",
+                  "value": "${organisationId}",
+                  "isRegex": false
+                },
+                {
+                  "name": "managedBy",
+                  "value": "cognigy-ai-ops-center",
+                  "isRegex": false
+                }
+              ],
               "routes": [
                 {
                   "receiver": "receivers-${organisationId}",
@@ -108,6 +120,18 @@ data:
           },
           "spec": {
             "route": {
+              "matchers": [
+                {
+                  "name": "organisation",
+                  "value": "${organisationId}",
+                  "matchType": "="
+                },
+                {
+                  "name": "managedBy",
+                  "value": "cognigy-ai-ops-center",
+                  "matchType": "="
+                }
+              ],
               "routes": [
                 {
                   "receiver": "receivers-${organisationId}",

@@ -1,7 +1,7 @@
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $serviceInsightsApi_dbSecret :=  ternary (include "common.secretName.render" ( dict "existingSecret" (tpl .Values.insights.postgresql.auth.insightsUser.existingSecret .) "defaultSecret" "cognigy-insights-postgres-ha-insights")) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
+{{- $serviceInsightsApi_dbSecret := ternary (include "cognigy-ai.insights.postgresql.secret" $) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
 {{- $serviceInsightsApi_mongoDbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceInsightsApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceInsightsApi.serviceName)) }}
 {{- if .Values.serviceInsightsApi.conversationAnalyzer.enabled }}
 {{- with .Values.serviceInsightsApi.conversationAnalyzer.cronJob }}
@@ -56,13 +56,13 @@ spec:
                 - configMapRef:
                     name: cognigy-env
               env:
-                {{- if and ($.Values.pgoperator.enabled) ($.Values.insights.postgresql.usePartitionedTables) ($.Values.pgoperator.postgresqlClusterInsights.enabled) }}
+                {{- if and (include "cognigy-ai.insights.postgresql.enabled" $) ($.Values.insights.postgresql.usePartitionedTables) }}
                 - name: INSIGHTS_POSTGRES_DB_NAME
                   value: {{ $.Values.insights.postgresql.database.name | quote }}
                 - name: INSIGHTS_POSTGRES_DB_HOST
-                  value: {{ include "cognigy-ai.insights.postgresql.cluster.host" $ | quote }}
+                  value: {{ include "cognigy-ai.insights.postgresql.primary.host" $ | quote }}
                 - name: INSIGHTS_POSTGRES_DB_PORT
-                  value: {{ $.Values.insights.postgresql.cluster.port | quote }}
+                  value: {{ include "cognigy-ai.insights.postgresql.port" $ | quote }}
                 - name: INSIGHTS_POSTGRES_DB_USERNAME
                   valueFrom:
                     secretKeyRef:

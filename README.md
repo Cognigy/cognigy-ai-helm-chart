@@ -143,6 +143,52 @@ serviceAi:
 We recommend to install NLPv2 stack, NLPv1 stack is deprecated. 
 See [Install the NLP V2 Stack](https://docs.cognigy.com/ai/installation/migration/from-nlu-v1-to-v2-migration/#install-the-nlp-v2-stack) for details and an example in `values_prod.yaml` files.
 
+### Using an External Postgres for Insights (RDS / Azure Flexible Server / Aurora)
+
+By default, Insights uses the bundled Zalando `postgres-operator` to provision an in-cluster Postgres cluster. To use a managed Postgres (RDS, Azure Flexible Server, Aurora, etc.) instead, set `insights.postgresql.provider: external` and disable the operator:
+
+**Pre-requisites:**
+- Managed Postgres instance with a superuser/admin account.
+- Network connectivity from the cluster to the Postgres endpoint.
+- Two Kubernetes Secrets pre-created in the release namespace:
+  - **App-user secret** (e.g. `my-insights-app-creds`): keys `username` and `password` — the per-service application user.
+  - **Admin secret** (e.g. `my-insights-admin-creds`): keys `username` and `password` — the admin/master user (RDS master, Azure admin, etc.). Used only by the init job.
+
+**Example values override:**
+```yaml
+pgoperator:
+  enabled: false   # do not deploy the operator pod or CRDs
+
+insights:
+  postgresql:
+    provider: external   # operator | external | disabled
+    usePartitionedTables: true
+    external:
+      host: my-instance.eu-west-1.rds.amazonaws.com
+      port: "5432"
+      sslmode: "require"           # disable | allow | prefer | require | verify-ca | verify-full
+      readReplica:
+        useReadReplica: false      # set true + host to point read queries at a replica
+        host: ""
+    auth:
+      insightsUser:
+        existingSecret: my-insights-app-creds   # Secret with keys: username, password
+      superUser:
+        existingSecret: my-insights-admin-creds # Secret with keys: username, password
+```
+
+**What the chart does:**
+1. A `insights-postgres-external-init` Job (helm hook `pre-install,pre-upgrade`) runs before every install/upgrade. It connects to your Postgres with the admin credentials and idempotently creates the `service_analytics_collector` database and the application user if they do not exist.
+2. All Insights consumers (`service-insights-api`, `service-insights-resources`, `service-insights-forwarder`, `service-analytics-odata`, `service-collector`, cleanup/expiration jobs, migration manager) receive the external host, port, and app-user credentials.
+3. No Zalando CRDs or operator Secrets are rendered.
+
+**Validation:** The chart will fail with a clear error if:
+- `provider: external` is set but `external.host` is empty.
+- `auth.insightsUser.existingSecret` or `auth.superUser.existingSecret` still contains the default Zalando-shaped string (i.e. they were not overridden).
+- `provider: operator` is set while `pgoperator.enabled: false`.
+
+**Backwards compatibility:** If `insights.postgresql.provider` is unset, it is derived from `pgoperator.enabled` (`true` → `operator`, `false` → `disabled`). This auto-derive will be removed in 2027.x — set the provider explicitly.
+
 ### Cognigy.AI Secrets Backup
 During the installation process `dbinit-generate.sh` initialization script generates connection strings for Cognigy.AI microservices to MongoDB, RabbitMQ and Redis backends and stores these connection strings in form of [Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in `cognigy-ai` installation namespace. In case you loose the cluster where Cognigy.AI is running or accidentally delete these secrets, there will be no possibility to connect to the existing databases anymore. 
 

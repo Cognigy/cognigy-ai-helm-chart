@@ -10,7 +10,7 @@
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
 {{- $cognigyNatsInternal_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.natsInternal.natsInternalCredentials.existingSecret "defaultSecret" "cognigy-nats-internal") }}
-{{- $serviceSecurityInternalApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceSecurityInternalApiSecret.existingSecret "defaultSecret" "service-security-internal-api-secret") }}
+{{- $serviceCxoneAwsGatewayApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceCxoneAwsGatewayApiSecret.existingSecret "defaultSecret" "service-cxone-aws-gateway-api-secret") }}
 {{- with .Values.serviceAi }}
 ---
 apiVersion: apps/v1
@@ -57,7 +57,7 @@ spec:
         checksum/cognigy-nats-internal: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyNatsInternal_secret) }}{{ $cognigyNatsInternal_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyNatsInternal_secret).data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.niceCXOne.enabled }}
-        checksum/service-security-internal-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret) }}{{ $serviceSecurityInternalApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurityInternalApiSecret_secret).data | sha256sum }}{{ end }}
+        checksum/service-cxone-aws-gateway-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCxoneAwsGatewayApiSecret_secret) }}{{ $serviceCxoneAwsGatewayApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCxoneAwsGatewayApiSecret_secret).data | sha256sum }}{{ end }}
         {{- end }}
         {{- if $.Values.llmGateway.enabled }}
         checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-ai") }}{{"llm-gateway-caller-service-ai" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-ai").data | sha256sum }}{{ end }}
@@ -69,21 +69,21 @@ spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
-      {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector))}}
+      {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceAi.enabled))}}
       nodeSelector:
         {{- if .nodeSelector }}
           {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
         {{- end }}
-        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) }}
+        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceAi.enabled) }}
           {{- include "common.tplvalues.render" (dict "value" $.Values.hpa.hpaNodeSelector "context" $) | nindent 8 }}
         {{- end }}
       {{- end }}
-      {{- if or (.tolerations) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations))}}
+      {{- if or (.tolerations) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations) ($.Values.hpa.services.serviceAi.enabled))}}
       tolerations: 
         {{- if or (.tolerations) }}
           {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
         {{- end }}
-        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations) }}
+        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations) ($.Values.hpa.services.serviceAi.enabled) }}
           {{- include "common.tplvalues.render" (dict "value" $.Values.hpa.hpaTolerations "context" $) | nindent 8 }}
         {{- end }}
       {{- end }}
@@ -238,12 +238,12 @@ spec:
                   name: {{ $cognigyInsightsCollectorApiKey_secret }}
                   key: secret
             {{- if $.Values.niceCXOne.enabled }}
-            - name: SECURITY_INTERNAL_API_URL
-              value: "http://service-security"
-            - name: SECURITY_INTERNAL_API_KEY
+            - name: CXONE_AWS_GATEWAY_URL
+              value: {{ $.Values.niceCXOne.awsGatewayUrl | default "http://service-cxone-aws-gateway" | quote }}
+            - name: CXONE_AWS_GATEWAY_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ $serviceSecurityInternalApiSecret_secret }}
+                  name: {{ $serviceCxoneAwsGatewayApiSecret_secret }}
                   key: api-key
             - name: CXONE_BASE_URL
               value: {{ $.Values.niceCXOne.cxoneBaseUrl | quote }}
