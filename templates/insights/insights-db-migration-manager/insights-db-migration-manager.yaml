@@ -1,4 +1,4 @@
-{{- if and (include "cognigy-ai.insights.postgresql.enabled" .) (.Values.insights.dbMigration.enabled) }}
+{{- if and (include "cognigy-ai.insights.postgresql.enabled" .) (.Values.insights.dbMigration.enabled) (or (ne (include "cognigy-ai.insights.postgresql.provider" .) "operator") (.Values.pgoperator.postgresqlClusterInsights.enabled)) }}
 {{- $dbMigration_dbSecret := include "cognigy-ai.insights.postgresql.superuser.secret" $ }}
 {{- $postgresHost := "" }}
 {{- if eq (include "cognigy-ai.insights.postgresql.provider" $) "external" }}
