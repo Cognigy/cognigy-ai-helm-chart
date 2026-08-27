@@ -7174,6 +7174,15 @@ redisHa:
         memory: 32Mi
     serviceMonitor:
       enabled: false
+  networkPolicy:
+    ## Allow ingress on the Istio ambient mesh HBONE port. Without this, a
+    ## NetworkPolicy blocks Sentinel/replication traffic once vpc-cni enforces
+    ## NetworkPolicy, because ambient mode tunnels all pod-to-pod traffic through
+    ## ztunnel on this port instead of the real Redis ports.
+    extraIngress:
+      - ports:
+          - port: 15008
+            protocol: TCP
 
 ### Stateful Redis-Persistent installation in high availability (HA) mode ###
 redisPersistentHa:
@@ -7279,6 +7288,15 @@ redisPersistentHa:
         memory: 32Mi
     serviceMonitor:
       enabled: false
+  networkPolicy:
+    ## Allow ingress on the Istio ambient mesh HBONE port. Without this, a
+    ## NetworkPolicy blocks Sentinel/replication traffic once vpc-cni enforces
+    ## NetworkPolicy, because ambient mode tunnels all pod-to-pod traffic through
+    ## ztunnel on this port instead of the real Redis ports.
+    extraIngress:
+      - ports:
+          - port: 15008
+            protocol: TCP
 
 ## Nats message broker for internal use only. No production feature should use this.
 ## It uses only the lightweight nats core, not jetstreams.
