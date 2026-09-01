@@ -120,7 +120,7 @@ spec:
             - name: NICE_CXONE_ASSUME_ROLE_EXTERNAL_ID
               value: {{ $.Values.niceCXOne.cxoneAssumeRoleExternalId | quote }}
             - name: CXONE_AWS_GATEWAY_URL
-              value: {{ $.Values.niceCXOne.awsGatewayUrl | default "http://service-cxone-aws-gateway:8000" | quote }}
+              value: {{ $.Values.niceCXOne.awsGatewayUrl | default "http://service-cxone-aws-gateway" | quote }}
             - name: SECURITY_INTERNAL_API_KEY
               valueFrom:
                 secretKeyRef:

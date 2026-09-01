@@ -51,6 +51,37 @@ spec:
         - name: auth-gateway-forward-auth
           namespace: {{ $.Release.Namespace }}
         {{- end }}
+
+    # The public OpenAPI reference for the logs API.
+    #
+    # A separate route from the rule above, because the two need different
+    # middleware: the API reference must be readable WITHOUT credentials, so
+    # auth-gateway-forward-auth is deliberately absent here. The IP whitelist
+    # still applies. This is the same posture as service-api's own /openapi,
+    # which is public because service-api's catch-all Ingress likewise attaches
+    # only the whitelist (see templates/ingress/service-api.yaml).
+    #
+    # Scope of that exception: these paths serve static, non-tenant documents,
+    # and service-logs mounts the docs router ahead of its own auth middleware
+    # while exposing only four fixed routes, so anything else reaching the
+    # service under this prefix still hits that middleware and 401s. Everything
+    # matched by the rule above continues to require a gateway-issued JWT.
+    #
+    # `openapi(/|$)` anchors the last segment, so /logs/openapi and
+    # /logs/openapi/... match while /logs/openapifoo and bare /logs do not.
+    # priority: 1000 to outrank service-api's Host + PathPrefix("/") catch-all
+    # explicitly, rather than depending on incidental rule length.
+    - match: Host(`{{ .Values.ingress.serviceApi.host }}`) && PathRegexp(`^/(new/)?logs/openapi(/|$)`)
+      kind: Rule
+      priority: 1000
+      services:
+        - name: service-logs
+          port: 8000
+      middlewares:
+        {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
+        - name: ipwhitelistserviceapi
+          namespace: {{ $.Release.Namespace }}
+        {{- end }}
   {{- if .Values.tls.enabled }}
   # Same host as service-api; Traefik serves the host certificate from its store via SNI.
   tls: {}

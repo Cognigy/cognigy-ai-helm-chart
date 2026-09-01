@@ -1,31 +1,33 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceFunctionScheduler_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceFunctionScheduler.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceFunctionScheduler.serviceName)) }}
+{{- $serviceName := "service-function-scheduler" }}
 {{- with .Values.serviceFunctionScheduler }}
+---
+{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "aluminium" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-function-scheduler
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: aluminium
   annotations:
     "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
-    "cognigy.com/source-path": "services/service-function-scheduler"
+    "cognigy.com/source-path": "services/{{$serviceName}}"
 spec:
   selector:
     matchLabels:
-      app: service-function-scheduler
+      app: {{ $serviceName }}
   {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceFunctionScheduler.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:
     metadata:
       labels:
-        app: service-function-scheduler
+        app: {{ $serviceName }}
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceFunctionScheduler_dbSecret) }}{{ $serviceFunctionScheduler_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceFunctionScheduler_dbSecret).data | sha256sum }}{{ end }}
@@ -58,10 +60,11 @@ spec:
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-function-scheduler
+        - name: {{ $serviceName }}
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -84,15 +87,22 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OWNER_DEPLOYMENT
+              value: {{ $serviceName | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           ports:
             - name: metrics
               containerPort: 8002
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -103,6 +113,9 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            - name: cognigy-env-reloadable
+              mountPath: /config/env
+              readOnly: true
           startupProbe:
             httpGet:
               path: /health/startup
@@ -131,7 +144,14 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        - name: cognigy-env-reloadable
+          configMap:
+            name: cognigy-env-reloadable
+            items:
+              - key: cognigy.yaml
+                path: cognigy.yaml
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

@@ -9,29 +9,31 @@
 {{- $cognigyLiveAgentCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.cognigyLiveAgent.existingSecret "defaultSecret" "cognigy-live-agent-credentials") }}
 {{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
 {{- $cognigyNatsInternal_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.natsInternal.natsInternalCredentials.existingSecret "defaultSecret" "cognigy-nats-internal") }}
+{{- $serviceName := "service-endpoint" }}
 {{- with .Values.serviceEndpoint }}
+---
+{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "dubnium" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-endpoint
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: dubnium
   annotations:
     "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
-    "cognigy.com/source-path": "services/service-endpoint"
+    "cognigy.com/source-path": "services/{{$serviceName}}"
 spec:
   selector:
     matchLabels:
-      app: service-endpoint
+      app: {{ $serviceName }}
   replicas: {{ .replicaCount }}
   template:
     metadata:
       labels:
-        app: service-endpoint
+        app: {{ $serviceName }}
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
@@ -62,16 +64,14 @@ spec:
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-endpoint
+        - name: {{ $serviceName }}
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
             - name: metrics
               containerPort: 8002
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           env:
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: FB_VERIFY_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -137,6 +137,16 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OWNER_DEPLOYMENT
+              value: {{ $serviceName | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}			  
@@ -158,6 +168,9 @@ spec:
               mountPath: /var/run/secrets/natsInternalPassword
               subPath: natsInternalPassword
             {{- end }}
+            - name: cognigy-env-reloadable
+              mountPath: /config/env
+              readOnly: true
           startupProbe:
             httpGet:
               path: /health/startup
@@ -197,7 +210,14 @@ spec:
               - key: password
                 path: natsInternalPassword
         {{- end }}
+        - name: cognigy-env-reloadable
+          configMap:
+            name: cognigy-env-reloadable
+            items:
+              - key: cognigy.yaml
+                path: cognigy.yaml
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

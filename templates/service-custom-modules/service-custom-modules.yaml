@@ -1,29 +1,31 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceCustomModules_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceCustomModules.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceCustomModules.serviceName)) }}
+{{- $serviceName := "service-custom-modules" }}
 {{- with .Values.serviceCustomModules }}
+---
+{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "aluminium" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-custom-modules
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: aluminium
   annotations:
     "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
-    "cognigy.com/source-path": "services/service-custom-modules"
+    "cognigy.com/source-path": "services/{{$serviceName}}"
 spec:
   selector:
     matchLabels:
-      app: service-custom-modules
+      app: {{ $serviceName }}
   replicas: {{ .replicaCount }}
   template:
     metadata:
       labels:
-        app: service-custom-modules
+        app: {{ $serviceName }}
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceCustomModules_dbSecret) }}{{ $serviceCustomModules_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceCustomModules_dbSecret).data | sha256sum }}{{ end }}
@@ -44,7 +46,7 @@ spec:
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-custom-modules
+        - name: {{ $serviceName }}
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
@@ -53,6 +55,7 @@ spec:
             - name: metrics
               containerPort: 8002
           env:
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -79,6 +82,16 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OWNER_DEPLOYMENT
+              value: {{ $serviceName | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -105,9 +118,9 @@ spec:
             - name: cognigy-rollout
               mountPath: /config/rollout
             {{- end }}
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
+            - name: cognigy-env-reloadable
+              mountPath: /config/env
+              readOnly: true
           startupProbe:
             httpGet:
               path: /health/startup
@@ -151,7 +164,14 @@ spec:
           configMap:
             name: cognigy-rollout
         {{- end }}
+        - name: cognigy-env-reloadable
+          configMap:
+            name: cognigy-env-reloadable
+            items:
+              - key: cognigy.yaml
+                path: cognigy.yaml
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

@@ -581,6 +581,8 @@ Usage:
   (dict "name" "mfe-project-settings" "pathName" "project-settings" "values" .Values.mfeProjectSettings "team" "boron")
   (dict "name" "mfe-toolkit" "pathName" "toolkit" "values" .Values.mfeToolkit "team" "gold")
   (dict "name" "mfe-contact-profiles" "pathName" "contact-profiles" "values" .Values.mfeContactProfiles "team" "gold")
+  (dict "name" "mfe-packaging" "pathName" "packaging" "values" .Values.mfePackaging "team" "boron")
+  (dict "name" "mfe-login-page" "pathName" "login-page" "values" .Values.mfeLoginPage "team" "boron")
 -}}
 {{- dict "items" $mfes | toJson -}}
 {{- end -}}

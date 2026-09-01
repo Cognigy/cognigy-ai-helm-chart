@@ -179,6 +179,14 @@
 			"$ref": "#/$defs/microfrontend",
 			"description": "Contact Profiles microfrontend"
 		},
+		"mfeLoginPage": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Login Page microfrontend"
+		},
+		"mfePackaging": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Packaging microfrontend"
+		},
 		"proactiveFollowup": {
 			"type": "object",
 			"description": "Proactive Follow-up feature toggle",

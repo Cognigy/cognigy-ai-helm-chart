@@ -23,6 +23,12 @@ resources:
     name: Cognigy/cognigy-ai-helm-chart
     ref: main
 
+parameters:
+  - name: matrix_dry_run
+    displayName: "Dry run: log the Ops Center matrix refresh instead of sending it"
+    type: boolean
+    default: false
+
 variables:
   # Holds the "Cognigy bypass branch protection" GitHub App credentials used to
   # push to the protected main branch of the public mirror (see the push step).
@@ -164,7 +170,56 @@ stages:
 
               echo "Pushing tag v$helmChartVersion to GitHub mirror..."
               git push origin "tags/v$helmChartVersion"
+
+              # Ask ai-ops-center to refresh its compatibility matrix, which
+              # records which cognigy.ai releases each ai-ops-center chart
+              # version coexisted with.
+              #
+              # Deliberately runs LAST, after the mirror push: the matrix must
+              # never claim a release that failed to publish.
+              #
+              # The payload is empty on purpose. The receiving job rebuilds from
+              # both repos' tag lists regardless, so this only means "run now".
+              # That is what keeps the App scoped to `contents: write` on
+              # Cognigy/ai-ops-center-helm-chart. Do NOT switch this to
+              # workflow_dispatch and do NOT request `actions: write`: that
+              # permits triggering any workflow in that repo, and its release.yml
+              # runs with ACR_PASSWORD and publishes charts.
+              # if/else rather than an early exit: this is a shared script block,
+              # so an exit here would silently skip anything appended below it.
+              if [ "$MATRIX_DRY_RUN" = "True" ] || [ "$MATRIX_DRY_RUN" = "true" ]; then
+                echo "DRY RUN - not contacting GitHub. Would POST to"
+                echo "  https://api.github.com/repos/Cognigy/ai-ops-center-helm-chart/dispatches"
+                echo "with body:"
+                echo "  {\"event_type\":\"reconcile-now\"}"
+              else
+                echo "Requesting compatibility matrix refresh in ai-ops-center-helm-chart..."
+                dispatchStatus="$(curl -sS -o /tmp/dispatch-response.txt -w '%{http_code}' \
+                  -X POST \
+                  -H "Authorization: Bearer ${installationToken}" \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "X-GitHub-Api-Version: 2022-11-28" \
+                  https://api.github.com/repos/Cognigy/ai-ops-center-helm-chart/dispatches \
+                  -d '{"event_type":"reconcile-now"}')"
+
+                # 204 No Content is the only success response for this endpoint.
+                # Note it means "accepted", not "the matrix job succeeded" - the
+                # weekly cron in that repo is the backstop for anything that
+                # fails after this point.
+                if [ "$dispatchStatus" != "204" ]; then
+                  echo "Compatibility matrix dispatch failed with HTTP $dispatchStatus:"
+                  cat /tmp/dispatch-response.txt
+                  echo ""
+                  echo "The chart itself published successfully - only the downstream"
+                  echo "matrix refresh failed. If this is noisy for the release owner,"
+                  echo "replace the exit below with a warning and rely on the weekly"
+                  echo "cron in ai-ops-center-helm-chart to catch up."
+                  exit 1
+                fi
+                echo "Compatibility matrix refresh requested."
+              fi
             env:
+              MATRIX_DRY_RUN: ${{ parameters.matrix_dry_run }}
               BYPASS_APP_ID: $(BYPASS_BRANCH_PROTECTION_APP_ID)
               BYPASS_APP_INSTALLATION_ID: $(BYPASS_BRANCH_PROTECTION_INSTALLATION_ID)
               BYPASS_APP_PRIVATE_KEY: $(BYPASS_BRANCH_PROTECTION_PRIVATE_KEY)

@@ -240,6 +240,13 @@ spec:
               - key: connection-string
                 path: cognigy-service-usage
 {{- end }}
+{{- if .Values.dbConnectionString.services.servicePlatformAgent.enabled }}
+          - secret:
+              name: cognigy-service-platform-agent
+              items:
+              - key: connection-string
+                path: cognigy-service-platform-agent
+{{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
 {{- end }}
 {{- if and (.Values.mongodb.enabled) (eq .Values.mongodb.scheme "mongodb") (not .Values.mongodb.auth.existingSecret) }}

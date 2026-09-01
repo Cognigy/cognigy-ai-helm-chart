@@ -42,3 +42,9 @@ es256-private.pem
 es256-public.pem
 
 .serena/
+
+# oh-my-claudecode — per-session, per-user tooling state (agent replay logs, HUD
+# cache, session tracking). Regenerable and machine-local; the replay logs can
+# contain conversation transcript. No leading slash, so this also catches nested
+# state roots the tooling creates when a command runs from a subdirectory.
+.omc/

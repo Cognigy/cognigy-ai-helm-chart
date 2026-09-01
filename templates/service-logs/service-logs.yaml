@@ -12,8 +12,7 @@ metadata:
   labels:
     owner-team: gold
   annotations:
-    "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
-    "cognigy.com/source-path": "services/service-logs"
+    "cognigy.com/source-code": "git@github.com:Cognigy/service-logs.git"
 spec:
   selector:
     matchLabels:

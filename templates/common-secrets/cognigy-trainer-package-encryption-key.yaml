@@ -1,0 +1,15 @@
+{{- if (not .Values.commonSecrets.cognigyTrainerPackageEncryptionKey.existingSecret) }}
+  {{- if not (lookup "v1" "Secret" $.Release.Namespace "cognigy-trainer-package-encryption-key") }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-trainer-package-encryption-key
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  key: "{{ .Values.commonSecrets.cognigyTrainerPackageEncryptionKey.token | b64enc }}"
+  {{- end }}
+{{- end }}

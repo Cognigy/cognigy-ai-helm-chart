@@ -1,6 +1,6 @@
 {{- if .Values.serviceSentinel.enabled }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
-{{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
+{{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
 {{- $opsCenterInternalApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.opsCenterInternalApiSecret.existingSecret "defaultSecret" "ops-center-internal-api-secret") }}
 {{- $serviceSentinel_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSentinel.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSentinel.serviceName)) }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
@@ -26,7 +26,7 @@ spec:
         app: service-sentinel
       annotations:
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSentinel_dbSecret) }}{{ $serviceSentinel_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSentinel_dbSecret).data | sha256sum }}{{ end }}
-        checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
+        checksum/jwtPublicKey: {{ if not (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey) }}{{ $jwtPublicKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey).data | sha256sum }}{{ end }}
         checksum/ops-center-internal-api-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $opsCenterInternalApiSecret_secret) }}{{ $opsCenterInternalApiSecret_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $opsCenterInternalApiSecret_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
@@ -81,11 +81,8 @@ spec:
                 secretKeyRef:
                   name: {{ $statefulRabbitMq_secret }}
                   key: connection-string
-            - name: AUTH_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigyAuthJwt_secret }}
-                  key: secret
+            - name: AUTH_GATEWAY_JWT_PUBLIC_KEY_PATH_AND_FILENAME
+              value: "/var/run/secrets/internal-auth-gateway-jwt-public-key.pem"
             - name: INTERNAL_API_SHARED_KEY
               valueFrom:
                 secretKeyRef:
@@ -146,10 +143,17 @@ spec:
             #
             - name: ai-ops-center-metrics-config-volume
               mountPath: /etc/config
+            - name: auth-gateway-public-key
+              mountPath: /var/run/secrets/internal-auth-gateway-jwt-public-key.pem
+              subPath: internal-auth-gateway-jwt-public-key.pem
       volumes:
         - name: ai-ops-center-metrics-config-volume
           configMap:
             name: {{ default "ai-ops-center-metrics-config" .alternateMetricsConfigmap }}
+        - name: auth-gateway-public-key
+          secret:
+            secretName: {{ $jwtPublicKey }}
+            defaultMode: 420
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
