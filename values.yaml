@@ -3859,7 +3859,10 @@ serviceSecurity:
   # we don't define a separate container image, but simply a different entrypoint in the
   # job definition (spec) of the container.
   jobDailyConversationReporter:
-    enabled: true
+    # Legacy billing pipeline: reports conversations to the Billing-Server and
+    # relies on the service-security SQL database. Disabled ahead of that SQL
+    # database being decommissioned (CGY-35383).
+    enabled: false
     resources:
       requests:
         cpu: "0.2"
@@ -3887,7 +3890,10 @@ serviceSecurity:
   # we don't define a separate container image, but simply a different entrypoint in the
   # job definition (spec) of the container.
   jobDailyConversationReporterV2:
-    enabled: true
+    # Legacy billing pipeline: reports conversations/calls to the Billing-Server
+    # and relies on the service-security SQL database. Disabled ahead of that SQL
+    # database being decommissioned (CGY-35383).
+    enabled: false
     resources:
       requests:
         cpu: "0.2"
@@ -3914,6 +3920,10 @@ serviceSecurity:
     restartPolicy: OnFailure
 
   jobPreAggregateConversations:
+    # Legacy billing pipeline: pre-aggregates conversations into the
+    # service-security SQL database. Disabled ahead of that SQL database being
+    # decommissioned (CGY-35383).
+    enabled: false
     resources:
       requests:
         cpu: "0.2"
@@ -3939,6 +3949,10 @@ serviceSecurity:
     priorityClassName: ""
 
   jobPreAggregateCalls:
+    # Legacy billing pipeline: pre-aggregates calls into the service-security
+    # SQL database. Disabled ahead of that SQL database being decommissioned
+    # (CGY-35383).
+    enabled: false
     resources:
       requests:
         cpu: "0.2"
