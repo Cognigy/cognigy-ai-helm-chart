@@ -3859,7 +3859,9 @@ serviceSecurity:
   # we don't define a separate container image, but simply a different entrypoint in the
   # job definition (spec) of the container.
   jobDailyConversationReporter:
-    enabled: true
+    # Disabled (CGY-35383): the legacy conversation billing reporter is being
+    # decommissioned so that the billing-server SQL database can be retired.
+    enabled: false
     resources:
       requests:
         cpu: "0.2"
@@ -3887,7 +3889,9 @@ serviceSecurity:
   # we don't define a separate container image, but simply a different entrypoint in the
   # job definition (spec) of the container.
   jobDailyConversationReporterV2:
-    enabled: true
+    # Disabled (CGY-35383): the conversation and call billing reporter is being
+    # decommissioned so that the billing-server SQL database can be retired.
+    enabled: false
     resources:
       requests:
         cpu: "0.2"
