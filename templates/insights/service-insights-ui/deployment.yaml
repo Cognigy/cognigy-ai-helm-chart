@@ -46,6 +46,7 @@ spec:
             - name: metrics
               containerPort: 8002
           env:
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.insights.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL

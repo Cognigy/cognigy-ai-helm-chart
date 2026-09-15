@@ -1,3 +1,4 @@
+{{- if .Values.statefulRabbitMq.enabled }}
 {{- $rabbitmq_username := .Values.statefulRabbitMq.auth.username | default "cognigy" -}}
 
 {{- if (not .Values.statefulRabbitMq.auth.existingSecret) }}
@@ -58,4 +59,5 @@ spec:
     - parameter: password
       name: {{ $statefulRabbitMq_secret }}
       key: rabbitmq-password
+{{- end }}
 {{- end }}

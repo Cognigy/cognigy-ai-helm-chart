@@ -1,5 +1,5 @@
 {{- if .Values.serviceSecurity.jobDailyConversationReporterV2.enabled }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
 {{- with .Values.serviceSecurity.jobDailyConversationReporterV2 }}
 
@@ -51,6 +51,7 @@ spec:
                 - configMapRef:
                     name: cognigy-env
               env:
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL

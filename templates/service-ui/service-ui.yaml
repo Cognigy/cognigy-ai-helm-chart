@@ -60,6 +60,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: HOST_VALIDATION_WHITELIST
               {{- if $.Values.ingress.serviceUi.customServiceUrl }}
               value: {{ printf "%s,%s" $.Values.ingress.serviceUi.host $.Values.ingress.serviceUi.customServiceUrl | quote }}

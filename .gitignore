@@ -48,3 +48,5 @@ es256-public.pem
 # contain conversation transcript. No leading slash, so this also catches nested
 # state roots the tooling creates when a command runs from a subdirectory.
 .omc/
+
+.claude/worktrees/

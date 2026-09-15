@@ -47,6 +47,7 @@ spec:
               command: ["node", "/app/build/cronjobs/cleanupLogsFiles.js"]
               resources: {{- toYaml .resources | nindent 16 }}
               env:
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: LOGS_FILES_TTL_MINUTES
                   value: {{ .logsFilesTTLMinutes | quote }}
                 {{- if .extraEnvVars }}

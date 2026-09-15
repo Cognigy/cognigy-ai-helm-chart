@@ -154,6 +154,7 @@ spec:
                   \echo '--- Data cleanup completed ---'
                 EOSQL
               env:
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
               - name: INSIGHTS_POSTGRES_DB_HOST
                 value: {{ include "cognigy-ai.insights.postgresql.primary.host" $ | quote }}
               - name: INSIGHTS_POSTGRES_DB

@@ -9,9 +9,16 @@ data:
   # Mounted into service-resources and referenced by INPLATFORM_LLM_CONFIG_PATH.
   #
   # Schema for each entry under "inPlatformLlm":
-  #   configSetPoolRef — pool name in the llm-gateway ConfigSetPool (must match a pool key)
-  #   useCases         — list of AI use cases this LLM is available for
-  #   orgWhitelist     — "*" for all orgs, or an array of specific organisation IDs
+  #   configSetPoolRef    — pool name in the llm-gateway ConfigSetPool (must match a pool key)
+  #   useCases            — list of AI use cases this LLM is available for
+  #   orgWhitelist        — "*" for all orgs, or an array of specific organisation IDs
+  #   customModelOptions  — (optional) fixed, provider-native custom model options applied to every
+  #                         request against this in-platform LLM (e.g. reasoning effort). Read live by
+  #                         service-ai via RPC — no resync needed after editing this ConfigMap. Shape
+  #                         must match what that provider's gateway mapper expects, e.g.:
+  #                           OpenAI/Azure OpenAI/OpenAI-compatible: {"reasoning_effort": "low|medium|high"}
+  #                           Mistral:                               {"reasoning_effort": "low|medium|high"}
+  #                           Anthropic:                             {"thinking": {"type": "enabled", "budget_tokens": 4096}}
   #
   # Example (replace with real values before deploying):
   # inPlatformLlm.json: |
@@ -21,7 +28,8 @@ data:
   #         "configSetPoolRef": "azureGpt4oPool",
   #         "displayName": "In-Platform LLM",
   #         "useCases": ["aiAgent", "gptPromptNode", "aiEnhancedOutputs", "sentimentAnalysis", "designTimeGeneration", "intentSentenceGeneration", "flowGeneration", "generateNodeOutput", "lexiconGeneration", "answerExtraction", "gptConversation", "conversationAnalyzer"],
-  #         "orgWhitelist": "*"
+  #         "orgWhitelist": "*",
+  #         "customModelOptions": {"reasoning_effort": "medium"}
   #       }
   #     }
   #   }

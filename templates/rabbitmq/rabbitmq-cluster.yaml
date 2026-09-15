@@ -1,0 +1,86 @@
+{{- if and (.Values.rabbitmqOperator.enabled) (.Values.rabbitmqOperator.cluster.enabled) }}
+{{- $rabbitmqCluster_secret := include "common.secretName.render" (dict "existingSecret" .Values.rabbitmqOperator.cluster.auth.existingSecret "defaultSecret" "cognigy-rabbitmq-cluster") }}
+
+---
+{{ include "common.tplvalues.render" (dict "value" .Values.rabbitmqOperator.cluster.manifest "context" $) }}
+---
+
+{{- if .Values.rabbitmqOperator.cluster.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.rabbitmqOperator.cluster.name }}
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  {{- with .Values.rabbitmqOperator.cluster.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ . }}
+  {{- end }}
+  {{- with .Values.rabbitmqOperator.cluster.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ . }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.rabbitmqOperator.cluster.name }}
+      app.kubernetes.io/component: rabbitmq
+{{- end }}
+
+---
+
+apiVersion: rabbitmq.com/v1beta1
+kind: User
+metadata:
+  name: {{ .Values.rabbitmqOperator.cluster.auth.username }}
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  tags:
+  - management
+  rabbitmqClusterReference:
+    name: {{ .Values.rabbitmqOperator.cluster.name }}
+  importCredentialsSecret:
+    name: {{ $rabbitmqCluster_secret }}
+
+---
+
+apiVersion: rabbitmq.com/v1beta1
+kind: Permission
+metadata:
+  name: {{ .Values.rabbitmqOperator.cluster.auth.username }}
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  vhost: "/"
+  user: {{ .Values.rabbitmqOperator.cluster.auth.username }}
+  permissions:
+    write: ".*"
+    configure: ".*"
+    read: ".*"
+  rabbitmqClusterReference:
+    name: {{ .Values.rabbitmqOperator.cluster.name }}
+
+---
+
+{{- if .Values.podMonitors.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: prom-cognigy-monitor-cognigy-ai-rabbitmq-cluster
+  namespace: {{ .Values.podMonitors.namespace }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace | quote }}
+  podMetricsEndpoints:
+    - port: prometheus
+    - port: prometheus
+      path: /metrics/detailed
+      params:
+        family:
+          - queue_coarse_metrics
+          - queue_consumer_count
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.rabbitmqOperator.cluster.name }}
+      app.kubernetes.io/component: rabbitmq
+{{- end }}
+
+---
+{{- end }}

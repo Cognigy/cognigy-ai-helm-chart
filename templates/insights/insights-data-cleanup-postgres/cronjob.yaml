@@ -169,6 +169,7 @@ spec:
                   \echo '--- Data cleanup completed ---'
                 EOSQL
               env:
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
               - name: INSIGHTS_POSTGRES_DB_HOST
                 value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
               {{- if $.Values.cubejs.postgresql.readReplica.useReadReplica }}

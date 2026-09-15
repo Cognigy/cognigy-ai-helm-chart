@@ -67,13 +67,9 @@
 {{- $_ := set $config "AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.agentAssistFrontend.host) }}
 {{- end }}
 
-{{- if and (.Values.servicePlatformAgent.enabled) (not (hasKey .Values.cognigyEnv "PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL")) }}
-  {{- if .Values.ingress.servicePlatformAgent.customServiceUrl }}
-{{- $_ := set $config "PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.servicePlatformAgent.customServiceUrl) }}
-  {{- else }}
-{{- $_ := set $config "PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.servicePlatformAgent.host) }}
-  {{- end }}
-{{- end }}
+{{- /* Platform Agent is deployed from its own chart/release (see the Cognigy/platform-agent repo),
+not from this chart. Point service-ui at it by setting cognigyEnv.PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL
+directly (picked up by the generic passthrough at the top of this file). */ -}}
 
 {{- if .Values.ingress.serviceStaticFiles.customServiceUrl }}
 {{- $_ := set $config "STATIC_FILES_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceStaticFiles.customServiceUrl) }}
@@ -106,12 +102,6 @@
 {{- end }}
 
 {{- $_ := set $config "FEATURE_ENABLE_IN_PLATFORM_LLM" .Values.inPlatformLlm.enabled }}
-
-{{- if .Values.llmGateway.enabled }}
-{{- $_ := set $config "FEATURE_ENABLE_LLM_GATEWAY_ROUTING_WHITELIST" (.Values.llmGateway.routingWhitelist | join ",") }}
-{{- $_ := set $config "FEATURE_ENABLE_LLM_GATEWAY_LLM_PROVIDERS_WHITELIST" (.Values.llmGateway.llmProvidersRoutingWhitelist | join ",") }}
-{{- $_ := set $config "LLM_GATEWAY_ROUTING_PROVIDERS" (.Values.llmGateway.routingProviders | join ",") }}
-{{- end }}
 
 {{- if .Values.proactiveFollowup.enabled }}
 {{- $_ := required "cognigyEnv.PAIA_BASE_URL is required when proactiveFollowup.enabled is true" (index .Values.cognigyEnv "PAIA_BASE_URL") }}

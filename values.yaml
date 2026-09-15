@@ -417,7 +417,7 @@ managementUi:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
-  image: cognigy.azurecr.io/management-ui:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/management-ui:release-348b317af5-1789136993
   replicaCount: 1
   resources:
     limits:
@@ -937,31 +937,13 @@ knowledgeSearch:
     ## "globalAzureDocumentIntelligenceConfig.api-key" and "globalAzureDocumentIntelligenceConfig.endpoint-url" are ignored.
     existingSecret: ""
 
-# LLM Gateway feature routing configuration. Determines which organizations route LLM calls through the gateway.
+# LLM Gateway feature toggle. All routing/migration behavior is controlled via
+# commonConfigs.cognigyRollout["llm-gateway.yaml"] (see below).
 llmGateway:
   # Enable to mount API keys to services that will call the LLM Gateway.
   enabled: false
   ## In-cluster URL of service-llm-gateway.
   serviceUrl: "http://service-llm-gateway:3000"
-  ## Controls which organisations will have their LLM calls executed using the LLM Gateway's API.
-  ## [] = disabled for all orgs, ["*"] = all organisations, or a list of org IDs (e.g. ["org1", "org2"]).
-  routingWhitelist: []
-  ## Controls which organisations will have their LLM calls executed using the LLM Gateway's legacy API.
-  ## [] = disabled for all orgs, ["*"] = all organisations, or a list of org IDs (e.g. ["org1", "org2"]).
-  llmProvidersRoutingWhitelist: []
-  ## Restricts gateway routing to LLMs of these providers, even for whitelisted organisations.
-  ## Prevents providers not yet fully supported by the gateway (e.g. awsBedrock, anthropic, mistral,
-  ## googleGemini) from being silently routed. [] = no provider routed, ["*"] = all providers.
-  routingProviders: [ "azureOpenAI", "openAI", "openAICompatible" ]
-  ## Syncs existing LLMs to LLM Gateway resources for the whitelisted organisations.
-  dataMigration:
-    ## Runs the data migration on service-resources startup.
-    enabled: false
-    ## Bypasses idempotency checks and forces all whitelisted organisation's LLMs to be synced even if they have been synced successfully in the past.
-    forceRemigrate: false
-    ## Controls which organisations' LLMs are migrated.
-    ## [] = disabled for all orgs, ["*"] = all organisations, or a list of org IDs (e.g. ["org1", "org2"]).
-    organisations: []
 
 # Proactive Follow-up
 # Surfaces the Proactive AI Settings section in the project-settings MFE and
@@ -1252,25 +1234,6 @@ ingress:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
-  ## Dedicated hostname for service-platform-agent (browser WebSocket / HTTP API on its own ingress).
-  ## When servicePlatformAgent.enabled is true, cognigy-env sets PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL for service-ui
-  ## (https://customServiceUrl or https://host) unless cognigyEnv.PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL is set.
-  servicePlatformAgent:
-    host: ""
-    customServiceUrl: ""
-    tls:
-      enabled: false
-      existingSecret: ""
-      crt: ""
-      key: ""
-    ipWhiteListMiddleware:
-      enabled: true
-      ipWhiteList:
-        sourceRange:
-          - 0.0.0.0/0
-        ipStrategy:
-          depth: 0
-
 ## Kubernetes service type
 ##
 service:
@@ -1346,8 +1309,6 @@ service:
     annotations: {}
   agentAssistGenesysNotificationsForwarder:
     annotations: {}
-  servicePlatformAgent:
-    annotations: {}
   mfeSimulator:
     annotations: {}
   mfeAiAgentsV2:
@@ -1366,7 +1327,13 @@ service:
     annotations: {}
   mfeContactProfiles:
     annotations: {}
+  mfeProjectResources:
+    annotations: {}
   mfeLoginPage:
+    annotations: {}
+  mfeIntentTrainer:
+    annotations: {}
+  mfeGoals:
     annotations: {}
 
 cognigyEnv:
@@ -1457,6 +1424,10 @@ cognigyEnv:
   FEATURE_INSIGHTS_USE_CUBE_JS_MESSAGES_PREAGGREGATIONS: "false"
   FEATURE_INSIGHTS_USE_CONVERSATIONS_DELETION: "true"
   FEATURE_CONVERSATIONS_ANALYZER_ENABLED: "true"
+
+  # Enable only once the backfill has completed: a NULL lastMessageAt reads as "not in range",
+  # so enabling early silently hides sessions.
+  FEATURE_INSIGHTS_TRANSCRIPT_EXPLORER_FAST_PATH: "false"
 
   # Disable index creation for insights db in the DB_INIT migration script
   INSIGHTS_DBINIT_INDEX_CREATION_DISABLE: "true"
@@ -2583,6 +2554,61 @@ cognigyEnv:
   # They come from a Kubernetes Secret via commonSecrets.cognigyPaiaOauth2Credentials.
 
 commonConfigs:
+  ## Each key of cognigyRollout becomes a file under /config/rollout in every deployment
+  ## that mounts the cognigy-rollout ConfigMap. An empty map renders no ConfigMap at all,
+  ## so every service falls back to its env-var defaults — that is why the shipped
+  ## default is empty and real content belongs in an overlay.
+  ##
+  ## LLM Gateway rollout. This "llm-gateway.yaml" key is the single source of truth for
+  ## LLM Gateway routing, sync and migration behavior — there is no env-var fallback.
+  ## On every dimension an explicit "disabled" entry beats enabled: ["*"], which beats
+  ## "percentage"; the percentage always hashes on the organisation id, never on the
+  ## project, provider or model.
+  # cognigyRollout:
+  #   llm-gateway.yaml: |
+  #     # Config-Set sync: Cognigy -> Gateway. Config Sets are inert until something
+  #     # routes to them, so this axis can be opened ahead of routing.
+  #     sync:
+  #       organisations:
+  #         enabled: []          # start narrow, widen to ["*"]
+  #         disabled: []
+  #       providers:
+  #         enabled: ["azureOpenAI", "openAI", "openAICompatible"]
+  #         disabled: []
+  #     # Routing: execute prompts through the Gateway AI-SDK path.
+  #     # Requires an already synced configSetId on the LLM.
+  #     routing:
+  #       organisations:
+  #         percentage: 0
+  #         enabled: []
+  #         disabled: []
+  #       projects:
+  #         enabled: []
+  #         disabled: []
+  #       providers:
+  #         enabled: ["azureOpenAI", "openAI", "openAICompatible"]
+  #         disabled: []
+  #       models:
+  #         enabled: ["*"]       # narrowing filter; a "gpt-4*" prefix glob is supported
+  #         disabled: []
+  #     # Stage 2: route through the Gateway's legacy llm-providers backend instead.
+  #     legacyViaGateway:
+  #       organisations:
+  #         enabled: []
+  #         disabled: []
+  #     # One-shot startup migration: creates Gateway Config Sets for existing LLMs.
+  #     # Organisation-only allow-list, its own independent axis -- an org can be
+  #     # sync-enabled without (yet) being migration-enabled, so the one-shot backfill
+  #     # can be rolled out on its own schedule. Once an organisation is whitelisted,
+  #     # every provider's LLMs are migrated ("sync" above still governs provider
+  #     # eligibility for the ongoing Config Set). forceRemigrate is a plain boolean --
+  #     # it only ever affects an org already in the "enabled" list below, so it needs
+  #     # no scoping of its own.
+  #     migration:
+  #       organisations:
+  #         enabled: []
+  #         disabled: []
+  #       forceRemigrate: false
   cognigyRollout: {}
 
 ### Configuration for the embedding-models config map ###
@@ -2615,7 +2641,11 @@ vectordbConfig:
     writeConsistencyFactor: 2
 
 ### RabbitMQ Message Broker Configuration ###
+rabbitmq:
+  defaultSecret: "cognigy-rabbitmq"
+
 statefulRabbitMq:
+  enabled: true
   image: cognigy.azurecr.io/rabbitmq:4.2.6-management-alpine
   replicaCount: 1
   resources:
@@ -2739,9 +2769,109 @@ statefulRabbitMq:
   tolerations: []
   priorityClassName: ""
 
+rabbitmqOperator:
+  enabled: false
+  clusterOperator:
+    replicas: 3
+  topologyOperator:
+    replicas: 3
+  cluster:
+    enabled: false
+    config:
+      max_message_size: "63000000"
+    name: rabbitmq-cluster
+    manifest:
+      apiVersion: rabbitmq.com/v1beta1
+      kind: RabbitmqCluster
+      metadata:
+        name: "{{ .Values.rabbitmqOperator.cluster.name }}"
+        namespace: "{{ .Release.Namespace }}"
+      spec:
+        image: cognigy.azurecr.io/rabbitmq:4.2.6-management-alpine
+        imagePullSecrets:
+          - name: cognigy-registry-token
+        replicas: 3
+        rabbitmq:
+          additionalConfig: |-
+            {{- range $k, $v := .Values.rabbitmqOperator.cluster.config }}
+            {{ $k }} = "{{ $v }}"
+            {{- end }}
+          additionalPlugins:
+            - rabbitmq_management
+            - rabbitmq_prometheus
+            - rabbitmq_consistent_hash_exchange
+            - rabbitmq_event_exchange
+        resources:
+          limits:
+            memory: 3Gi
+            cpu: "3"
+          requests:
+            memory: 3Gi
+            cpu: "2"
+        persistence:
+          storage: 25Gi
+          storageClassName: "rabbitmq"
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - rabbitmq-cluster
+                    - key: app.kubernetes.io/component
+                      operator: In
+                      values:
+                        - rabbitmq
+                topologyKey: kubernetes.io/hostname
+        override:
+          statefulSet:
+            spec:
+              template:
+                spec:
+                  # Required by the CRD schema (PodSpec.containers has no omitempty), even though there's
+                  # nothing to override on the containers themselves. An empty list satisfies validation.
+                  containers: []
+                  topologySpreadConstraints:
+                    - maxSkew: 1
+                      topologyKey: "topology.kubernetes.io/zone"
+                      whenUnsatisfiable: ScheduleAnyway
+                      labelSelector:
+                        matchLabels:
+                          app.kubernetes.io/name: rabbitmq-cluster
+                          app.kubernetes.io/component: rabbitmq
+    auth:
+      ## RabbitMQ username. Defaults to "cognigy" if not set.
+      ##
+      username: "cognigy"
+      ## RabbitMQ password. Defaults to base 16 of a random 64 character alphanumeric string if not set.
+      ##
+      password: ""
+      ## The name of an existing secret with RabbitMQ Cluster credentials. Use this on clusters (e.g. ArgoCD-managed)
+      ## where Helm's "lookup" function doesn't work, so the chart can't detect/preserve a previously generated secret.
+      ## The secret must carry the label "rabbitmq.com/topology-operator: \"true\"" (required for the User resource's
+      ## importCredentialsSecret) and contain "username", "password", "connection-string" and "connection-string-api" keys.
+      ##
+      ## Example secret data format:
+      ##
+      ## username: <username>
+      ## password: <password>
+      ## connection-string: amqp://<user>:<password>@rabbitmq-cluster:5672
+      ## connection-string-api: http://<user>:<password>@rabbitmq-cluster:15672/api
+      ##
+      ## NOTE: When it's set, "rabbitmqOperator.cluster.auth.password" is ignored. "rabbitmqOperator.cluster.auth.username"
+      ## is still used to configure the User/Permission resources, so it must match the "username" key in this secret.
+      ##
+      existingSecret: ""
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: ""
+      maxUnavailable: 1
+
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-ai:release-348b317af5-1789136993
   replicaCount: 6
   resources:
     requests:
@@ -2849,7 +2979,7 @@ serviceAi:
   # Optional: Service Account name to use for this deployment
   serviceAccountName: ""
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-alexa-management:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -2865,7 +2995,7 @@ serviceAlexaManagement:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsCollector:
-  image: cognigy.azurecr.io/service-analytics-collector:release-48c749a-1785419059
+  image: cognigy.azurecr.io/service-analytics-collector:release-307e41a-1789048662
   replicaCount: 3
   resources:
     requests:
@@ -2883,7 +3013,7 @@ serviceAnalyticsCollector:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsConversations:
-  image: cognigy.azurecr.io/service-analytics-conversations:release-586173c-1785419049
+  image: cognigy.azurecr.io/service-analytics-conversations:release-bbea2bf-1789049923
   replicaCount: 3
   resources:
     requests:
@@ -2901,7 +3031,7 @@ serviceAnalyticsConversations:
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsOdata:
-  image: cognigy.azurecr.io/service-analytics-odata:release-a64e15a-1786694218
+  image: cognigy.azurecr.io/service-analytics-odata:release-83d716d-1789466237
   replicaCount: 3
   resources:
     requests:
@@ -2922,7 +3052,7 @@ serviceAnalyticsOdata:
   ## Validate in a non-production environment first, and please report any issues you run into.
   useReadReplica: false
 serviceAnalyticsReporter:
-  image: cognigy.azurecr.io/service-analytics-reporter:release-e14a6a0-1787555929
+  image: cognigy.azurecr.io/service-analytics-reporter:release-b3fc895-1789049943
   replicaCount: 3
   resources:
     requests:
@@ -2938,7 +3068,7 @@ serviceAnalyticsReporter:
   tolerations: []
   priorityClassName: ""
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-api:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -2996,7 +3126,7 @@ serviceApi:
     serviceAccountName: ""
 
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-app-session-manager:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3014,7 +3144,7 @@ serviceAppSessionManager:
 
 serviceCollaboration:
   enabled: true
-  image: cognigy.azurecr.io/service-collaboration:release-dfdac73-1787436770
+  image: cognigy.azurecr.io/service-collaboration:release-119ecab-1788343320
   replicaCount: 3
   resources:
     requests:
@@ -3032,7 +3162,7 @@ serviceCollaboration:
 
 serviceToolkit:
   enabled: false
-  image: cognigy.azurecr.io/service-toolkit:release-2856f12-1787319918
+  image: cognigy.azurecr.io/service-toolkit:release-f4b1630-1788174017
   replicaCount: 1
   resources:
     requests:
@@ -3054,7 +3184,7 @@ serviceToolkit:
 #
 serviceSentinel:
   enabled: true
-  image: cognigy.azurecr.io/service-sentinel:release-c6f2e33-1787311811
+  image: cognigy.azurecr.io/service-sentinel:release-e08c14b-1788348784
   replicaCount: 3
   ingress:
     paths:
@@ -3098,7 +3228,7 @@ serviceSentinel:
 #
 serviceTesting:
   enabled: true
-  image: cognigy.azurecr.io/service-testing:release-5eba1dd-1787322272
+  image: cognigy.azurecr.io/service-testing:release-bc7f6d7-1788758025
   replicaCount: 3
   resources:
     requests:
@@ -3171,7 +3301,7 @@ serviceTesting:
     priorityClassName: ""
 
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-custom-modules:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3187,7 +3317,7 @@ serviceCustomModules:
   tolerations: []
   priorityClassName: ""
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-endpoint:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3204,7 +3334,7 @@ serviceEndpoint:
   priorityClassName: ""
 serviceEndpointVgNightly:
   enabled: false
-  image: cognigy.azurecr.io/service-endpoint:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-endpoint:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3220,7 +3350,7 @@ serviceEndpointVgNightly:
   tolerations: []
   priorityClassName: ""
 serviceExecution:
-  image: cognigy.azurecr.io/service-execution:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-execution:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3248,7 +3378,7 @@ serviceExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-function-execution:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3276,7 +3406,7 @@ serviceFunctionExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-function-scheduler:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3304,7 +3434,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-a405348-1787559268
+  image: cognigy.azurecr.io/service-handover:release-f5f64c1-1788783663
   replicaCount: 3
   resources:
     requests:
@@ -3322,7 +3452,7 @@ serviceHandover:
   priorityClassName: ""
 serviceHandoverInactivity:
   enabled: true
-  image: cognigy.azurecr.io/service-handover-inactivity:release-cfcf1f1-1784799469
+  image: cognigy.azurecr.io/service-handover-inactivity:release-5c467b7-1787827484
   replicaCount: 3
   resources:
     requests:
@@ -3350,7 +3480,7 @@ serviceHandoverInactivity:
             averageUtilization: 70
     behavior: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-http:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3378,7 +3508,7 @@ serviceHttp:
             averageUtilization: 70
     behavior: {}
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-e0a0007-1787229259
+  image: cognigy.azurecr.io/service-insights-api:release-cc67466-1789054016
   replicaCount: 3
   serviceAccountName: "service-insights-api"
   resources:
@@ -3485,7 +3615,7 @@ serviceInsightsApi:
       priorityClassName: ""
 serviceInsightsResources:
   enabled: false
-  image: cognigy.azurecr.io/service-insights-resources:release-63473dd-1785416146
+  image: cognigy.azurecr.io/service-insights-resources:release-670bafa-1788168023
   replicaCount: 3
   resources:
     requests:
@@ -3509,7 +3639,7 @@ serviceInsightsResources:
   useReadReplica: false
 serviceInsightsForwarder:
   enabled: false
-  image: cognigy.azurecr.io/service-insights-forwarder:release-49b1d98-1785416179
+  image: cognigy.azurecr.io/service-insights-forwarder:release-131e595-1788168117
   serviceAccountName: ""
   replicaCount: 3
   resources:
@@ -3569,7 +3699,7 @@ serviceInsightsForwarder:
     cxOneGoalTrackingEnabled: false
     cxOneGoalDefinitionEnabled: false
 serviceCollector:
-  image: cognigy.azurecr.io/service-collector:release-20e1fa3-1786955088
+  image: cognigy.azurecr.io/service-collector:release-8ef47b8-1789050879
   replicaCount: 3
   resources:
     requests:
@@ -3594,7 +3724,7 @@ serviceCollector:
   ## Validate in a non-production environment first, and please report any issues you run into.
   useReadReplica: false
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-dd559f3-1787128072
+  image: cognigy.azurecr.io/service-insights-ui:release-136e330-1789049953
   replicaCount: 3
   resources:
     requests:
@@ -3612,7 +3742,7 @@ serviceInsightsUi:
   tolerations: []
   priorityClassName: ""
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:release-d7927c2-1787938349
+  image: cognigy.azurecr.io/service-logs:release-f56e6ef-1788758080
   replicaCount: 3
   resources:
     requests:
@@ -3631,7 +3761,7 @@ serviceLogs:
   priorityClassName: ""
 serviceUsage:
   enabled: false
-  image: cognigy.azurecr.io/service-usage:release-be90e4c-1785488673
+  image: cognigy.azurecr.io/service-usage:release-205c28d-1788167826
   replicaCount: 1
   resources:
     requests:
@@ -3701,7 +3831,7 @@ serviceNlpMatcher:
   tolerations: []
   priorityClassName: ""
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-nlp-ner:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3745,7 +3875,7 @@ serviceParser:
   tolerations: []
   priorityClassName: ""
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-playbook-execution:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3792,7 +3922,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-resources:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3809,7 +3939,7 @@ serviceResources:
   priorityClassName: ""
   serviceAccountName: ""
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-runtime-file-manager:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3837,7 +3967,7 @@ serviceRuntimeFileManager:
             averageUtilization: 70
     behavior: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-security:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3964,7 +4094,7 @@ serviceSecurity:
     priorityClassName: ""
 
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-session-state-manager:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -3992,7 +4122,7 @@ serviceSessionStateManager:
             averageUtilization: 70
     behavior: {}
 serviceStaticFiles:
-  image: cognigy.azurecr.io/service-static-files:release-1e89e59269-1778597093
+  image: cognigy.azurecr.io/service-static-files:release-e2bd9a992e-1788185614
   replicaCount: 3
   resources:
     requests:
@@ -4008,7 +4138,7 @@ serviceStaticFiles:
   tolerations: []
   priorityClassName: ""
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-task-manager:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -4024,7 +4154,7 @@ serviceTaskManager:
   tolerations: []
   priorityClassName: ""
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-trainer:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -4040,7 +4170,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-ui:release-5e9f132f4b-1789392281
   replicaCount: 3
   resources:
     requests:
@@ -4058,7 +4188,7 @@ serviceUi:
   tolerations: []
   priorityClassName: ""
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-webchat:release-348b317af5-1789136993
   replicaCount: 3
   resources:
     requests:
@@ -4075,7 +4205,7 @@ serviceWebchat:
   priorityClassName: ""
 mfeSimulator:
   enabled: false
-  image: cognigy.azurecr.io/mfe-simulator:release-895304c3e1-1787556895
+  image: cognigy.azurecr.io/mfe-simulator:release-60800efdec-1788771115
   replicaCount: 1
   resources:
     requests:
@@ -4091,7 +4221,7 @@ mfeSimulator:
   priorityClassName: ""
 mfeAiAgentsV2:
   enabled: false
-  image: cognigy.azurecr.io/mfe-ai-agents-v2:release-0761e57a9a-1787560214
+  image: cognigy.azurecr.io/mfe-ai-agents-v2:release-348b317af5-1789136993
   replicaCount: 1
   resources:
     requests:
@@ -4107,7 +4237,7 @@ mfeAiAgentsV2:
   priorityClassName: ""
 mfeInteractionPanel:
   enabled: false
-  image: cognigy.azurecr.io/mfe-interaction-panel:release-895304c3e1-1787556895
+  image: cognigy.azurecr.io/mfe-interaction-panel:release-60800efdec-1788771115
   replicaCount: 1
   resources:
     requests:
@@ -4123,7 +4253,7 @@ mfeInteractionPanel:
   priorityClassName: ""
 mfeSidebar:
   enabled: false
-  image: cognigy.azurecr.io/mfe-sidebar:release-f37736ab42-1787311411
+  image: cognigy.azurecr.io/mfe-sidebar:release-3353fb225f-1788451558
   replicaCount: 1
   resources:
     requests:
@@ -4139,7 +4269,7 @@ mfeSidebar:
   priorityClassName: ""
 mfeGlobalToolbar:
   enabled: false
-  image: cognigy.azurecr.io/mfe-global-toolbar:release-895304c3e1-1787556895
+  image: cognigy.azurecr.io/mfe-global-toolbar:release-60800efdec-1788771115
   replicaCount: 1
   resources:
     requests:
@@ -4155,7 +4285,7 @@ mfeGlobalToolbar:
   priorityClassName: ""
 mfeKnowledgeStore:
   enabled: false
-  image: cognigy.azurecr.io/mfe-knowledge-store:release-e6002e9a21-1786098692
+  image: cognigy.azurecr.io/mfe-knowledge-store:release-3353fb225f-1788451558
   replicaCount: 1
   resources:
     requests:
@@ -4171,7 +4301,7 @@ mfeKnowledgeStore:
   priorityClassName: ""
 mfeExample:
   enabled: false
-  image: cognigy.azurecr.io/mfe-example:release-f37736ab42-1787311411
+  image: cognigy.azurecr.io/mfe-example:release-60800efdec-1788771115
   replicaCount: 1
   resources:
     requests:
@@ -4187,7 +4317,7 @@ mfeExample:
   priorityClassName: ""
 mfeEndpoints:
   enabled: false
-  image: cognigy.azurecr.io/mfe-endpoints:release-895304c3e1-1787556895
+  image: cognigy.azurecr.io/mfe-endpoints:release-60800efdec-1788771115
   replicaCount: 1
   resources:
     requests:
@@ -4196,40 +4326,6 @@ mfeEndpoints:
     limits:
       cpu: "100m"
       memory: 64Mi
-  securityContext: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
-  priorityClassName: ""
-mfePlatformAgent:
-  enabled: false
-  image: cognigy.azurecr.io/mfe-platform-agent:release-c947f563ec-1785938635
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: "50m"
-      memory: 32Mi
-    limits:
-      cpu: "100m"
-      memory: 64Mi
-  securityContext: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
-  priorityClassName: ""
-## Dedicated-host realtime API: set enabled and configure ingress.servicePlatformAgent.host (see ingress.servicePlatformAgent above).
-servicePlatformAgent:
-  enabled: false
-  image: cognigy.azurecr.io/service-platform-agent:release-7c6f3a929a-1780606871
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: "100m"
-      memory: 256Mi
-    limits:
-      cpu: "500m"
-      memory: 1Gi
-  extraEnvVars: []
   securityContext: {}
   affinity: {}
   nodeSelector: {}
@@ -4237,7 +4333,7 @@ servicePlatformAgent:
   priorityClassName: ""
 mfeProjectSettings:
   enabled: false
-  image: cognigy.azurecr.io/mfe-project-settings:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/mfe-project-settings:release-348b317af5-1789136993
   replicaCount: 1
   resources:
     requests:
@@ -4253,7 +4349,7 @@ mfeProjectSettings:
   priorityClassName: ""
 mfeToolkit:
   enabled: false
-  image: cognigy.azurecr.io/mfe-toolkit:release-895304c3e1-1787556895
+  image: cognigy.azurecr.io/mfe-toolkit:release-60800efdec-1788771115
   replicaCount: 1
   resources:
     requests:
@@ -4269,7 +4365,7 @@ mfeToolkit:
   priorityClassName: ""
 mfeContactProfiles:
   enabled: false
-  image: cognigy.azurecr.io/mfe-contact-profiles:release-080bc0b998-1787319694
+  image: cognigy.azurecr.io/mfe-contact-profiles:release-60800efdec-1788771115
   replicaCount: 1
   resources:
     requests:
@@ -4285,7 +4381,23 @@ mfeContactProfiles:
   priorityClassName: ""
 mfePackaging:
   enabled: false
-  image: cognigy.azurecr.io/mfe-packaging:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/mfe-packaging:release-348b317af5-1789136993
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "50m"
+      memory: 32Mi
+    limits:
+      cpu: "100m"
+      memory: 64Mi
+  securityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
+mfeProjectResources:
+  enabled: false
+  image: cognigy.azurecr.io/mfe-project-resources:release-348b317af5-1789136993
   replicaCount: 1
   resources:
     requests:
@@ -4302,6 +4414,70 @@ mfePackaging:
 mfeLoginPage:
   enabled: false
   image: cognigy.azurecr.io/mfe-login-page:release-0000000000-0000000000
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "50m"
+      memory: 32Mi
+    limits:
+      cpu: "100m"
+      memory: 64Mi
+  securityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
+mfeNluConnectors:
+  enabled: false
+  image: cognigy.azurecr.io/mfe-nlu-connectors:release-60800efdec-1788771115
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "50m"
+      memory: 32Mi
+    limits:
+      cpu: "100m"
+      memory: 64Mi
+  securityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
+mfeLexicons:
+  enabled: false
+  image: cognigy.azurecr.io/mfe-lexicons:release-60800efdec-1788771115
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "50m"
+      memory: 32Mi
+    limits:
+      cpu: "100m"
+      memory: 64Mi
+  securityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
+mfeGoals:
+  enabled: false
+  image: cognigy.azurecr.io/mfe-goals:release-60800efdec-1788771115
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "50m"
+      memory: 32Mi
+    limits:
+      cpu: "100m"
+      memory: 64Mi
+  securityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
+mfeIntentTrainer:
+  enabled: false
+  image: cognigy.azurecr.io/mfe-intent-trainer:release-60800efdec-1788771115
   replicaCount: 1
   resources:
     requests:
@@ -4615,7 +4791,7 @@ serviceNlpClassifierTrainXx:
   tolerations: []
   priorityClassName: ""
 serviceSearchOrchestrator:
-  image: cognigy.azurecr.io/service-search-orchestrator:release-f0378a6-1787059886
+  image: cognigy.azurecr.io/service-search-orchestrator:release-4493132-1788504288
   replicaCount: 3
   resources:
     requests:
@@ -4635,7 +4811,7 @@ serviceSearchOrchestrator:
 serviceCxoneAwsGateway:
   enabled: false
   ownerTeam: boron
-  image: cognigy.azurecr.io/service-cxone-aws-gateway:release-6410b73-1787059670
+  image: cognigy.azurecr.io/service-cxone-aws-gateway:release-8729ebf-1788167666
   replicaCount: 1
   internalApiIngress:
     enabled: false
@@ -4756,7 +4932,7 @@ jobSyncKnowledgeData:
   priorityClassName: ""
 
 taskProcessKnowledgeSourceFile:
-  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-356eb4a-1787223720
+  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-4251ed9-1788381333
   resources:
     requests:
       cpu: "0.1"
@@ -4776,7 +4952,7 @@ taskProcessKnowledgeSourceFile:
   tolerations: []
   priorityClassName: ""
 taskProcessKnowledgeSourceUrl:
-  image: cognigy.azurecr.io/task-process-knowledge-source-url:release-bce77ff-1787223775
+  image: cognigy.azurecr.io/task-process-knowledge-source-url:release-f9cf804-1788870274
   resources:
     requests:
       cpu: "0.1"
@@ -4795,7 +4971,7 @@ taskProcessKnowledgeSourceUrl:
   tolerations: []
   priorityClassName: ""
 taskIngestKnowledgeChunks:
-  image: cognigy.azurecr.io/task-ingest-knowledge-chunks:release-f799a15-1787056698
+  image: cognigy.azurecr.io/task-ingest-knowledge-chunks:release-a660ff0-1788870269
   resources:
     requests:
       cpu: "0.1"
@@ -4814,7 +4990,7 @@ taskIngestKnowledgeChunks:
   tolerations: []
   priorityClassName: ""
 taskRunKnowledgeExtension:
-  image: cognigy.azurecr.io/task-run-knowledge-extension:release-eaf726f-1786698308
+  image: cognigy.azurecr.io/task-run-knowledge-extension:release-151a7ce-1788365637
   resources:
     requests:
       cpu: "0.1"
@@ -4838,7 +5014,7 @@ taskRunKnowledgeExtension:
     concurrencyPolicy: Forbid
 
 taskCreatePackageNfs:
-  image: cognigy.azurecr.io/service-resources:release-bc80c60291-1787838175
+  image: cognigy.azurecr.io/service-resources:release-348b317af5-1789136993
   resources:
     requests:
       cpu: "1"
@@ -4912,7 +5088,7 @@ jobSyncInPlatformLlms:
   restartPolicy: OnFailure
 
 cronNfsCleanup:
-  image: cognigy.azurecr.io/cron-nfs-cleanup:release-0593290-1786003132
+  image: cognigy.azurecr.io/cron-nfs-cleanup:release-6ecf9f3-1788167291
   resources:
     requests:
       cpu: "0.1"
@@ -4942,7 +5118,7 @@ cronNfsCleanup:
   priorityClassName: ""
 
 cronNfsCleanupTranscripts:
-  image: cognigy.azurecr.io/cron-nfs-cleanup-transcripts:release-895849c-1782816184
+  image: cognigy.azurecr.io/cron-nfs-cleanup-transcripts:release-12b8799-1788167296
   resources:
     requests:
       cpu: "0.1"
@@ -5083,6 +5259,13 @@ sidecarVM4:
 ##
 hpa:
   enabled: false
+  ## Prometheus server address used by KEDA "prometheus" triggers (e.g. the serviceApi in-flight requests trigger).
+  ## Requires a Prometheus instance scraping Traefik metrics (e.g. the Cognigy monitoring stack).
+  ## Empty by default so the prometheus triggers are omitted unless an environment opts in: on a cluster
+  ## without a reachable Prometheus the failing scaler would block HPA scale-down for the affected service.
+  ## Set it per environment, e.g. "http://<prometheus-service>.<namespace>.svc.cluster.local:9090".
+  ##
+  prometheusServerAddress: ""
   ## When set to true, and "hpa.enabled" is true, the "spec.replicas" field will be omitted from the deployment manifest of all the HPA managed services.
   ##
   removeReplicas: true
@@ -5114,8 +5297,8 @@ hpa:
         enabled: true
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "25"
           - type: rabbitmq
             metadata:
@@ -5175,10 +5358,47 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
       name: service-execution
+      minReplicas: 3
+      maxReplicas: 30
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    serviceApi:
+      enabled: true
+      ## enable KEDA for the service
+      ## no memory trigger: baseline RSS is ~the full memory request, so utilization never drops below target and pins replicas at max
+      ## the prometheus trigger scales on average in-flight requests per pod (derived from Traefik request-duration
+      ## counters), covering slow/idle-connection load the cpu trigger misses; KEDA divides the queried total by the
+      ## replica count, so the query must not be divided by pods. Omitted when "hpa.prometheusServerAddress" is empty.
+      keda:
+        enabled: true
+        triggers: |-
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+          {{- if $.Values.hpa.prometheusServerAddress }}
+          - type: prometheus
+            metadata:
+              serverAddress: {{ $.Values.hpa.prometheusServerAddress | quote }}
+              query: sum(rate(traefik_service_request_duration_seconds_sum{service=~".*service-api.*"}[2m]))
+              ## average in-flight requests per pod: a deliberately high bound so the trigger only
+              ## reacts to abnormal connection pile-ups and never to legitimate traffic. Verify it
+              ## against the observed in-flight requests per pod of the environment before tuning.
+              threshold: "30"
+          {{- end }}
+      name: service-api
       minReplicas: 3
       maxReplicas: 30
       metrics:
@@ -5198,8 +5418,8 @@ hpa:
         enabled: true
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
           - type: rabbitmq
             metadata:
@@ -5230,8 +5450,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
       name: service-function-execution
       minReplicas: 3
@@ -5254,8 +5474,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
       minReplicas: 3
       maxReplicas: 30
@@ -5277,8 +5497,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
       minReplicas: 3
       maxReplicas: 30
@@ -5300,8 +5520,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
       minReplicas: 3
       maxReplicas: 30
@@ -5334,8 +5554,8 @@ hpa:
               name: cognigy-rabbitmq
           ## CPU floor: a spike alone can still scale out
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
       minReplicas: 3
       maxReplicas: 30
@@ -5402,8 +5622,8 @@ hpa:
         enabled: true
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
           - type: rabbitmq
             metadata:
@@ -5434,8 +5654,8 @@ hpa:
         enabled: true
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
           - type: rabbitmq
             metadata:
@@ -5465,8 +5685,8 @@ hpa:
         enabled: true
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
           - type: rabbitmq
             metadata:
@@ -5498,8 +5718,8 @@ hpa:
         enabled: true
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
           - type: rabbitmq
             metadata:
@@ -5530,8 +5750,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
       minReplicas: 3
       maxReplicas: 30
@@ -5551,8 +5771,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
       minReplicas: 3
       maxReplicas: 30
@@ -5569,12 +5789,21 @@ hpa:
       enabled: true
       ## enable KEDA for the service
       keda:
-        enabled: false
+        enabled: true
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
+          - type: rabbitmq
+            metadata:
+              protocol: http
+              queueName: runtime-file-manager-queue
+              mode: QueueLength
+              value: "8"
+            authenticationRef:
+              name: cognigy-rabbitmq
+          ## no memory trigger: baseline RSS is ~the full memory request, so utilization never drops below target and pins replicas at max
       minReplicas: 3
       maxReplicas: 30
       metrics:
@@ -5584,7 +5813,9 @@ hpa:
             target:
               type: Utilization
               averageUtilization: 50
-      behavior: {}
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
     serviceSessionStateManager:
       name: service-session-state-manager
       enabled: true
@@ -5593,8 +5824,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "50"
       minReplicas: 3
       maxReplicas: 30
@@ -5614,8 +5845,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5637,8 +5868,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5660,8 +5891,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5683,8 +5914,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5706,8 +5937,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5729,8 +5960,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5752,8 +5983,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5775,8 +6006,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5798,8 +6029,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5821,8 +6052,8 @@ hpa:
         enabled: false
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "60"
       minReplicas: 2
       maxReplicas: 30
@@ -5846,8 +6077,8 @@ hpa:
         cooldownPeriod: 30 # Short cooldown for quick response
         triggers:
           - type: cpu
+            metricType: Utilization
             metadata:
-              type: Utilization
               value: "25" # Scale at 25% CPU (early scaling before throttling)
       name: service-testing
       minReplicas: 3 # Always have 3 pods for load distribution
@@ -5972,6 +6203,13 @@ storageClass:
         awsEBSVolumeType: "gp3"
         reclaimPolicy: Retain
         volumeBindingMode: WaitForFirstConsumer
+      rabbitmq:
+        enabled: true
+        storageClassName: "rabbitmq"
+        provisionerName: "ebs.csi.aws.com"
+        awsEBSVolumeType: "gp3"
+        reclaimPolicy: Retain
+        volumeBindingMode: WaitForFirstConsumer
     ## AWS EFS
     ## ref: https://aws.amazon.com/efs/
     ## ref: https://docs.aws.amazon.com/eks/latest/userguide/efs-csi.html
@@ -6042,6 +6280,14 @@ storageClass:
         storageClassName: "qdrant"
         provisionerName: "disk.csi.azure.com"
         azureStorageAccountType: "StandardSSD_LRS"
+        volumeBindingMode: WaitForFirstConsumer
+        reclaimPolicy: Retain
+        cachingMode: ReadOnly
+      rabbitmq:
+        enabled: true
+        storageClassName: "rabbitmq"
+        provisionerName: "disk.csi.azure.com"
+        azureStorageAccountType: "Premium_LRS"
         volumeBindingMode: WaitForFirstConsumer
         reclaimPolicy: Retain
         cachingMode: ReadOnly
@@ -6180,6 +6426,35 @@ tracing:
       baseUrl: ""
       eventsSampleRate: ""
       sampleRate: ""
+
+  ## OpenTelemetry distributed tracing, exported as OTLP over HTTP/protobuf.
+  ## Disabled by default — enabled per-cluster in Flux.
+  ## The services' bootstrap (shared/observability/otel.ts) treats the presence of
+  ## OTEL_EXPORTER_OTLP_ENDPOINT as its master switch and no-ops without it, so with
+  ## enabled: false no OTEL_* variable is rendered at all and the SDK is never loaded.
+  openTelemetry:
+    enabled: false
+    ## OTLP base URL of the collector; spans are POSTed to <endpoint>/v1/traces.
+    ## HTTP/protobuf, so the port is 4318 (not the gRPC 4317).
+    ## Required when enabled — the render fails rather than deploying untraced pods.
+    endpoint: ""
+    ## OTEL_TRACES_SAMPLER / OTEL_TRACES_SAMPLER_ARG. Both empty ⇒ the SDK default,
+    ## parentbased_always_on. For 1% head sampling:
+    ##   sampler: "parentbased_traceidratio"
+    ##   samplerArg: "0.01"
+    sampler: ""
+    samplerArg: ""
+    ## OTEL_NODE_ENABLED_INSTRUMENTATIONS. Empty ⇒ the curated per-service default
+    ## (http,express,amqplib,ioredis,redis,mongodb,mongoose,grpc,undici,socket.io,openai).
+    enabledInstrumentations: ""
+    ## OTEL_DEBUG_CONSOLE_SPANS — prints every span to stdout. Local dev only.
+    debugConsoleSpans: false
+    ## Extra env entries appended to every service, in standard Kubernetes env form
+    ## (so valueFrom/secretKeyRef work) — e.g. OTEL_PROPAGATORS, or
+    ## OTEL_EXPORTER_OTLP_HEADERS for an authenticated collector.
+    ## Do NOT set OTEL_RESOURCE_ATTRIBUTES here: it silently drops service.version in
+    ## the 8 reloadable-config services. See shared/observability/otel.ts:80-103.
+    extraEnvVars: []
 
 ## Extra objects to deploy with the release. Accepts a list of resource manifests
 ## Example:
@@ -6660,11 +6935,13 @@ insights:
   dbMigration:
     enabled: true
     helmHook:
-      hook: "post-install,post-upgrade"
+      # pre-upgrade, so schema changes land before the deployments roll; post-install covers a
+      # fresh install, where the database only exists once the release is applied.
+      hook: "post-install,pre-upgrade"
       hookWeight: "-3"
       deletePolicy: "before-hook-creation,hook-succeeded"
-    image: "cognigy.azurecr.io/insights-db-migration-manager:release-0bb5f4c-178550\
-      9470"
+    image: "cognigy.azurecr.io/insights-db-migration-manager:release-b842ccf-178905\
+      0753"
     resources:
       requests:
         cpu: "1"
@@ -6683,13 +6960,37 @@ insights:
       exclude: ""
       disableIndexCreation: false
       disableSchemaCriticalError: true
+    serviceAccountName: "insights-db-migration-manager"
+    # Covers the ALTER retry window; the index build and backfill run in their own Jobs.
+    activeDeadlineSeconds: 1800
+    backoffLimit: 0
+    # Runs the registered migrations that declare `autoRun`, one at a time in registry order: the
+    # hook spawns the first pending one and each Job spawns the next when it finishes.
+    oneTimeMigration:
+      enabled: true
+      ttlSecondsAfterFinished: 3600
+      backoffLimit: 0
+      activeDeadlineSeconds: 86400
+      priorityClassName: ""
+      securityContext: {}
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      extraEnvVars: []
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "512Mi"
+        limits:
+          cpu: "1"
+          memory: "1Gi"
     initContainer:
       postgresConnectionTimeout: 300
       retryInterval: 2
   ## Cleanup/Expiration jobs for Insights (NodeJS image)
   jobDataCleanup:
     enabled: true
-    image: "cognigy.azurecr.io/insights-cleanup-jobs:release-0845460-1785419064"
+    image: "cognigy.azurecr.io/insights-cleanup-jobs:release-9259d7f-1789054045"
     schedule: "*/15 * * * *"
     concurrencyPolicy: Forbid
     successfulJobsHistoryLimit: 3
@@ -6779,6 +7080,11 @@ cubejs:
       hook: "post-install,pre-upgrade"
       hookWeight: "-3"
       deletePolicy: "before-hook-creation,hook-succeeded"
+    # The old cluster runs the same registry against its own database, so `sessions` gets the index
+    # and the backfill instead of only the column. Child Jobs are shaped by
+    # insights.dbMigration.oneTimeMigration, differing only in database and MIGRATIONS_PATH.
+    oneTimeMigration:
+      enabled: true
     image: "cognigy.azurecr.io/insights-db-migration-manager:release-e6cd085-177105\
       0975"
     resources:
