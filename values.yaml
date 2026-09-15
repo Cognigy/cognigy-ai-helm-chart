@@ -1780,6 +1780,17 @@ cognigyEnv:
   # COGNIGY_VOICE_GATEWAY_APP_BASE_URL_WITH_PROTOCOL:
   # COGNIGY_VOICE_GATEWAY_WEB_BASE_URL_WITH_PROTOCOL:
 
+  # C26 master whitelist — turns on the full bundle of C26 UI features
+  # (Sidebar, Global Toolbar, Unified Layout, Color Palette, AI Agents v2 and
+  # Custom Builder Tools) for the organisations it covers, read by service-ui.
+  # Comma-separated list of organisation IDs, or "*" to enable it for every
+  # organisation in the environment.
+  # An org covered here gets every C26 feature turned on unless that feature has
+  # its own explicit FEATURE_ENABLE_* value set (a feature-specific value still
+  # wins). Leave unset to fall back to each feature's own flag / default.
+  # Example: FEATURE_ENABLE_C26_MASTER_WHITELIST: "*"
+  # FEATURE_ENABLE_C26_MASTER_WHITELIST:
+
   # Max waiting time for AI responses in the VG2 client. Default is null (no timeout applied)
   # ENDPOINT_VG2_TIMEOUT_FOR_AI_RESPONSES_IN_SECONDS: "30"
 
