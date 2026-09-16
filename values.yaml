@@ -6940,8 +6940,8 @@ insights:
       hook: "post-install,pre-upgrade"
       hookWeight: "-3"
       deletePolicy: "before-hook-creation,hook-succeeded"
-    image: "cognigy.azurecr.io/insights-db-migration-manager:release-b842ccf-178905\
-      0753"
+    image: "cognigy.azurecr.io/insights-db-migration-manager:release-358448e-178956\
+      9023"
     resources:
       requests:
         cpu: "1"
