@@ -72,7 +72,6 @@ spec:
                 --eval 'const deleteQueriesConversations = deleteConversationRecords.map(doc => {doc.timestamp = {$lte: doc.requestedAt}; delete doc.requestedAt; if (doc.contactIds) {const hashedIds = doc.contactIds.map(id => hashMd5(id)); doc.contactId = {$in: [...doc.contactIds, ...hashedIds]}; delete doc.contactIds;}; if (doc.projectIds) {doc.projectId = Array.isArray(doc.projectIds) ? {$in: doc.projectIds} : doc.projectIds; delete doc.projectIds;}; return doc; })' \
                 --eval 'if (deleteQueriesConversations.length) { print("Deleting conversations data"); printjson(db.conversations.deleteMany({$or: deleteQueriesConversations})); }'
               env:
-                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: INSIGHTS_COLLECTOR_CONNECTION_STRING
                   valueFrom:
                     secretKeyRef:

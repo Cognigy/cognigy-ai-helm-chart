@@ -36,20 +36,7 @@ spec:
         - name: management-ui
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
-          startupProbe:
-            httpGet:
-              path: /health/startup
-              port: 8001
-          livenessProbe:
-            httpGet:
-              path: /health/liveness
-              port: 8001
-            failureThreshold: 3
-            initialDelaySeconds: 90
-            periodSeconds: 60
-            timeoutSeconds: 10
           env:
-            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: HOST_VALIDATION_WHITELIST
               value: {{ $.Values.managementUi.ingress.host  | quote }}
             {{- if .extraEnvVars }}

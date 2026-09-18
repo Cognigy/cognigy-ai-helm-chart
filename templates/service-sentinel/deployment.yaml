@@ -3,7 +3,7 @@
 {{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
 {{- $opsCenterInternalApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.opsCenterInternalApiSecret.existingSecret "defaultSecret" "ops-center-internal-api-secret") }}
 {{- $serviceSentinel_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSentinel.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSentinel.serviceName)) }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- with .Values.serviceSentinel }}
 ---
 apiVersion: apps/v1
@@ -69,7 +69,6 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
           env:
-            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: NODE_ENV
               value: "{{ $.Values.cognigyEnv.NODE_ENV }}"
             - name: DATABASE_SERVER_CONNECTION_STRING
@@ -164,7 +163,7 @@ spec:
 {{- if .Values.serviceSentinel.enabled }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceSentinel_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSentinel.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSentinel.serviceName)) }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- with .Values.serviceSentinel }}
 ---
 apiVersion: apps/v1
@@ -230,7 +229,6 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
           env:
-            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: NODE_ENV
               value: "{{ $.Values.cognigyEnv.NODE_ENV }}"
             - name: DATABASE_SERVER_CONNECTION_STRING

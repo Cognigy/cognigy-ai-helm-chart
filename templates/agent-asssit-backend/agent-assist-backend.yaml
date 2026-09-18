@@ -1,7 +1,7 @@
 {{- if $.Values.cognigyAgentAssist.enabled }}
 {{- $cognigyServiceHandoverApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceHandoverApiAccessToken.existingSecret "defaultSecret" "cognigy-service-handover-api-access-token") }}
 {{- $cognigyServiceEndpointApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceEndpointApiAccessToken.existingSecret "defaultSecret" "cognigy-service-endpoint-api-access-token") }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $agentAssistBackend_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.agentAssistBackend.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.agentAssistBackend.serviceName)) }}
 {{- $agentAssistBackendApiAccessToken_secret := include "agentAssistCredentials.secretName.render" $ }}
@@ -56,7 +56,6 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: ACCESS_TOKEN_SECRET
               valueFrom:
                 secretKeyRef:

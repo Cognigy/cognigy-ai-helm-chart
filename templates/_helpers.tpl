@@ -575,18 +575,14 @@ Usage:
   (dict "name" "mfe-sidebar" "pathName" "sidebar" "values" .Values.mfeSidebar "team" "aluminium")
   (dict "name" "mfe-global-toolbar" "pathName" "global-toolbar" "values" .Values.mfeGlobalToolbar "team" "aluminium")
   (dict "name" "mfe-knowledge-store" "pathName" "knowledge-store" "values" .Values.mfeKnowledgeStore "team" "carbon")
+  (dict "name" "mfe-platform-agent" "pathName" "platform-agent" "values" .Values.mfePlatformAgent "team" "aluminium")
   (dict "name" "mfe-endpoints" "pathName" "endpoints" "values" .Values.mfeEndpoints "team" "dubnium")
   (dict "name" "mfe-example" "pathName" "example" "values" .Values.mfeExample "team" "aluminium")
   (dict "name" "mfe-project-settings" "pathName" "project-settings" "values" .Values.mfeProjectSettings "team" "boron")
   (dict "name" "mfe-toolkit" "pathName" "toolkit" "values" .Values.mfeToolkit "team" "gold")
   (dict "name" "mfe-contact-profiles" "pathName" "contact-profiles" "values" .Values.mfeContactProfiles "team" "gold")
   (dict "name" "mfe-packaging" "pathName" "packaging" "values" .Values.mfePackaging "team" "boron")
-  (dict "name" "mfe-project-resources" "pathName" "project-resources" "values" .Values.mfeProjectResources "team" "alloy")
   (dict "name" "mfe-login-page" "pathName" "login-page" "values" .Values.mfeLoginPage "team" "boron")
-  (dict "name" "mfe-nlu-connectors" "pathName" "nlu-connectors" "values" .Values.mfeNluConnectors "team" "carbon")
-  (dict "name" "mfe-lexicons" "pathName" "lexicons" "values" .Values.mfeLexicons "team" "carbon")
-  (dict "name" "mfe-intent-trainer" "pathName" "intent-trainer" "values" .Values.mfeIntentTrainer "team" "carbon")
-  (dict "name" "mfe-goals" "pathName" "goals" "values" .Values.mfeGoals "team" "gold")
 -}}
 {{- dict "items" $mfes | toJson -}}
 {{- end -}}

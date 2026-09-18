@@ -1,4 +1,3 @@
-{{- if .Values.statefulRabbitMq.enabled }}
 ---
 apiVersion: v1
 kind: Secret
@@ -22,4 +21,3 @@ data:
       {{- $allPlugins = concat $requiredPlugins .Values.statefulRabbitMq.additionalPlugins -}}
     {{- end -}}
     {{- printf "[%s]." (join "," $allPlugins) | b64enc | nindent 4 }}
-{{- end }}

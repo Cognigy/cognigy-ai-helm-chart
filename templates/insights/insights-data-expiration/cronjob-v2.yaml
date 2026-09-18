@@ -40,7 +40,6 @@ spec:
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.insights.postgresql.image) }}
               command: ["sh", "-c", "psql 'postgresql://'${INSIGHTS_POSTGRES_USER}':'${INSIGHTS_POSTGRES_PASSWORD}'@'${INSIGHTS_POSTGRES_DB_HOST}':'${INSIGHTS_POSTGRES_PORT}'/'${INSIGHTS_POSTGRES_DB}'' -c 'SET timezone = '\''UTC'\''; DELETE FROM public.conversations_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.sessions_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.analytics_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.liveagentescalations_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.voicegatewayevents_v2 WHERE \"expiresAt\" < NOW(); DELETE FROM public.stepevents_v2 WHERE \"expiresAt\" < NOW(); '"]
               env:
-                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
               - name: INSIGHTS_POSTGRES_DB_HOST
                 value: {{ include "cognigy-ai.insights.postgresql.primary.host" $ | quote }}
               - name: INSIGHTS_POSTGRES_DB

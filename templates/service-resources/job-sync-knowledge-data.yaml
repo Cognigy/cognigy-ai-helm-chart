@@ -1,6 +1,6 @@
 {{- if and (.Values.jobSyncKnowledgeData.enabled) (.Values.knowledgeSearch.enabled) }}
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- with .Values.jobSyncKnowledgeData }}
 ---
@@ -46,7 +46,6 @@ spec:
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
               resources: {{- toYaml .resources | nindent 16 }}
               env:
-                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: REDIS_ENABLE_RECONNECT
                   value: "true"
                 - name: RABBITMQ_ENABLE_RECONNECT

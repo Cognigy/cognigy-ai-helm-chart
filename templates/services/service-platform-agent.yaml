@@ -1,0 +1,30 @@
+{{- if .Values.servicePlatformAgent.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-platform-agent
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: service-platform-agent
+    owner-team: team-x
+  annotations:
+    # Sticky sessions keep long-lived websocket clients on one pod when scaled.
+    traefik.ingress.kubernetes.io/affinity: "true"
+    traefik.ingress.kubernetes.io/session-secure: "true"
+    traefik.ingress.kubernetes.io/session-same-site: "none"
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: "none"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.httponly: "true"
+    {{- if .Values.service.servicePlatformAgent.annotations }}
+      {{- toYaml .Values.service.servicePlatformAgent.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: service-platform-agent
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: service-platform-agent
+{{- end }}

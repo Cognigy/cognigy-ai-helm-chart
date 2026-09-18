@@ -53,7 +53,6 @@ spec:
                 - configMapRef:
                     name: cognigy-env
               env:
-                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 # Postgres connection
                 - name: POSTGRES_HOST
                   value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}

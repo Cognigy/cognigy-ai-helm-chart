@@ -1,5 +1,5 @@
 {{- if .Values.serviceInsightsApi.conversationAnalyzer.enabled }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $serviceInsightsApi_mongoDbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceInsightsApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceInsightsApi.serviceName)) }}
 {{- $serviceInsightsApi_dbSecret := ternary (include "cognigy-ai.insights.postgresql.secret" $) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
 {{- $analyticsCollectorMongoDb_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }}
@@ -59,7 +59,6 @@ data:
               command: ["node", "build/jobs/bulkAnalysis/index.js"]
               resources: {{- toYaml .resources | nindent 16 }}
               env:
-                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: JOB_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
                 {{- if and (include "cognigy-ai.insights.postgresql.enabled" $) ($.Values.insights.postgresql.usePartitionedTables) }}
@@ -190,7 +189,6 @@ data:
               command: ["node", "build/jobs/promoteSuggestedTopic/index.js"]
               resources: {{- toYaml .resources | nindent 16 }}
               env:
-                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: PROMOTE_TASK_ID
                   value: "_TASK_ID_"
                 - name: PROMOTE_PROJECT_ID

@@ -20,23 +20,11 @@ metadata:
   labels:
     owner-team: gold
 spec:
-  {{- if .activeDeadlineSeconds }}
-  activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
-  {{- end }}
-  backoffLimit: {{ .backoffLimit | default 0 }}
   template:
     metadata:
       name: insights-db-migration-manager
     spec:
       restartPolicy: Never
-      {{/*
-        Same predicate as rbac.yaml, which only creates this ServiceAccount when oneTimeMigration
-        is enabled. Referencing it unconditionally hangs the release: the job-controller rejects
-        every pod with `error looking up service account`.
-      */}}
-      {{- if and .serviceAccountName .oneTimeMigration.enabled }}
-      serviceAccountName: {{ .serviceAccountName }}
-      {{- end }}
       {{- if .securityContext }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
@@ -95,7 +83,6 @@ spec:
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
-            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: INSIGHTS_POSTGRES_DATA_MIGRATION_MODE
               value: {{ .migration.mode | quote }}
             - name: POSTGRES_HOST
@@ -120,14 +107,6 @@ spec:
               value: {{ .migration.disableSchemaCriticalError | quote }}
             - name: INSIGHTS_DBINIT_INDEX_CREATION_DISABLE
               value: {{ .migration.disableIndexCreation | quote }}
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            {{- if .oneTimeMigration.enabled }}
-            - name: INSIGHTS_ENABLE_ONE_TIME_MIGRATION
-              value: "true"
-            {{- end }}
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -141,17 +120,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: cognigy-env
-          {{- if .oneTimeMigration.enabled }}
-          volumeMounts:
-            - name: migration-job-config
-              mountPath: /etc/insights/migration-job
-          {{- end }}
-      {{- if .oneTimeMigration.enabled }}
-      volumes:
-        - name: migration-job-config
-          configMap:
-            name: insights-migration-job-config
-      {{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
 {{- end }}
 {{- end }}

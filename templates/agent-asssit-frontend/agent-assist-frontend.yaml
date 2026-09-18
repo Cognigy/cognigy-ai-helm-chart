@@ -47,7 +47,6 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: APP_ACCESS_TOKEN_SECRET
               valueFrom:
                 secretKeyRef:

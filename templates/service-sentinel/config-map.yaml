@@ -460,8 +460,8 @@ data:
                             "description": "Shows the number of custom Flow Nodes (from Extensions) being executed per minute.",
                             "queryConfig": {
                                 "identifier": "extension_processing_count",
-                                "queryTemplate": "sum(increase(ai_ops_center_service_ai_extension_processing_time_count${filters}[1m])) or sum(increase(cognigy_execution_extension_processing_time_count${filters}[1m]))",
-                                "metric": "sum(increase(ai_ops_center_service_ai_extension_processing_time_count{organisationId='63babf6e92add771923e87b7'}[1m])) or sum(increase(cognigy_execution_extension_processing_time_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                                "queryTemplate": "sum(increase(cognigy_execution_extension_processing_time_count${filters}[1m]))",
+                                "metric": "sum(increase(cognigy_execution_extension_processing_time_count{organisationId='63babf6e92add771923e87b7'}[1m]))",
                                 "isPositiveTrend": true,
                                 "isPreviewModeEnabled": false
                             },
@@ -484,8 +484,8 @@ data:
                             "description": "The time it took to run the code of a custom Flow Node (Extension).",
                             "queryConfig": {
                                 "identifier": "extension_processing_time",
-                                "queryTemplate": "sum by (le)(increase(ai_ops_center_service_ai_extension_processing_time_bucket${filters}[1m])) or sum by (le)(increase(cognigy_execution_extension_processing_time_bucket${filters}[1m]))",
-                                "metric": "sum by (le)(increase(ai_ops_center_service_ai_extension_processing_time_bucket{organisationId='63babf6e92add771923e87b7'}[1m])) or sum by (le)(increase(cognigy_execution_extension_processing_time_bucket{organisationId='63babf6e92add771923e87b7'}[1m]))",
+                                "queryTemplate": "sum by (le)(increase(cognigy_execution_extension_processing_time_bucket${filters}[1m]))",
+                                "metric": "sum by (le)(increase(cognigy_execution_extension_processing_time_bucket{organisationId='63babf6e92add771923e87b7'}[1m]))",
                                 "isPositiveTrend": true,
                                 "isPreviewModeEnabled": false
                             },

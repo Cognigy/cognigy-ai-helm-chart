@@ -1,5 +1,5 @@
 {{- if .Values.serviceHandoverInactivity.enabled }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
 {{- $serviceHandoverInactivity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceHandoverInactivity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceHandoverInactivity.serviceName)) }}
 {{- with .Values.serviceHandoverInactivity }}
 ---
@@ -63,7 +63,6 @@ spec:
             - name: metrics
               containerPort: 8002
           env:
-            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
             - name: COGNIGY_AI_RELEASE_VERSION

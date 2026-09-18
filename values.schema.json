@@ -187,26 +187,6 @@
 			"$ref": "#/$defs/microfrontend",
 			"description": "Packaging microfrontend"
 		},
-		"mfeProjectResources": {
-			"$ref": "#/$defs/microfrontend",
-			"description": "Project Resources microfrontend"
-		},
-		"mfeNluConnectors": {
-			"$ref": "#/$defs/microfrontend",
-			"description": "NLU Connectors microfrontend"
-		},
-		"mfeLexicons": {
-			"$ref": "#/$defs/microfrontend",
-			"description": "Lexicons microfrontend"
-		},
-		"mfeGoals": {
-			"$ref": "#/$defs/microfrontend",
-			"description": "Goals microfrontend"
-		},
-		"mfeIntentTrainer": {
-			"$ref": "#/$defs/microfrontend",
-			"description": "Intent Trainer microfrontend"
-		},
 		"proactiveFollowup": {
 			"type": "object",
 			"description": "Proactive Follow-up feature toggle",
