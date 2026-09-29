@@ -3,12 +3,13 @@
 {{- $cognigyCollaborationJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyCollaborationJwt.existingSecret "defaultSecret" "cognigy-collaboration-jwt") }}
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
 {{- $cognigyJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyJwt.existingSecret "defaultSecret" "cognigy-jwt") }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $redisPersistentHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisPersistentHa.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- $serviceApi_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceApi.serviceName)) }}
 {{- $cognigySmtpOauth2Credentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.smtpOAuth2.auth.existingSecret "defaultSecret" "cognigy-smtp-oauth2-credentials") }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
+{{- $cognigyServiceCopilotApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceCopilotApiAccessToken.existingSecret "defaultSecret" "cognigy-service-copilot-api-access-token") }}
 {{- $cognigyOauthClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyOauthClientSecret.existingSecret "defaultSecret" "cognigy-oauth-client-secret") }}
 {{- $cognigyVoicegatewayClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyVoicegatewayClientSecret.existingSecret "defaultSecret" "cognigy-voicegateway-client-secret") }}
 {{- $vgWebappDefaultLoginCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.vgWebappDefaultLoginCredentials.existingSecret "defaultSecret" "cognigy-vg-webapp-default-login-creds") }}
@@ -17,29 +18,33 @@
 {{- $serviceCxoneAwsGatewayApiSecret_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.serviceCxoneAwsGatewayApiSecret.existingSecret "defaultSecret" "service-cxone-aws-gateway-api-secret") }}
 {{- $cxoneOidcClient_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.niceCXOne.oidcClient.existingSecret "defaultSecret" "cognigy-nice-cxone-oidc-client") }}
 {{- $serviceUsage_apiKeysSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.serviceUsage.auth.existingSecret "defaultSecret" "cognigy-service-usage-api-keys") }}
+{{- $serviceName := "service-api" }}
 {{- with .Values.serviceApi }}
+---
+{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "ownerTeam" "boron" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-api
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
   annotations:
     "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
-    "cognigy.com/source-path": "services/service-api"
+    "cognigy.com/source-path": "services/{{ $serviceName }}"
 spec:
   selector:
     matchLabels:
-      app: service-api
+      app: {{ $serviceName }}
+  {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceApi.enabled)) }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   template:
     metadata:
       labels:
-        app: service-api
+        app: {{ $serviceName }}
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
@@ -48,6 +53,9 @@ spec:
         checksum/cognigy-smtp-oauth2-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret) }}{{ $cognigySmtpOauth2Credentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySmtpOauth2Credentials_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.knowledgeSearch.enabled }}
         checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
+        {{- end }}
+        {{- if $.Values.copilot.enabled }}
+        checksum/cognigy-service-copilot-api-access-token: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceCopilotApiAccessToken_secret) }}{{ $cognigyServiceCopilotApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceCopilotApiAccessToken_secret).data | sha256sum }}{{ end }}
         {{- end }}
         checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-testing-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret) }}{{ $cognigyTestingJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret).data | sha256sum }}{{ end }}
@@ -76,23 +84,33 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
-      {{- if .serviceAccountName }}
-      serviceAccountName: {{ .serviceAccountName }}
-      {{- end }}
+      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
-      {{- if .nodeSelector }}
-      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+      {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceApi.enabled))}}
+      nodeSelector:
+        {{- if .nodeSelector }}
+          {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceApi.enabled) }}
+          {{- include "common.tplvalues.render" (dict "value" $.Values.hpa.hpaNodeSelector "context" $) | nindent 8 }}
+        {{- end }}
       {{- end }}
-      {{- if .tolerations }}
-      tolerations: {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+      {{- if or (.tolerations) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations) ($.Values.hpa.services.serviceApi.enabled)) }}
+      tolerations:
+        {{- if .tolerations }}
+          {{- include "common.tplvalues.render" (dict "value" .tolerations "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if and ($.Values.hpa.enabled) ($.Values.hpa.useHpaTolerations) ($.Values.hpa.services.serviceApi.enabled) }}
+          {{- include "common.tplvalues.render" (dict "value" $.Values.hpa.hpaTolerations "context" $) | nindent 8 }}
+        {{- end }}
       {{- end }}
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-api
+        - name: {{ $serviceName }}
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
@@ -100,10 +118,9 @@ spec:
               containerPort: 8001
             - name: metrics
               containerPort: 8002
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           env:
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -254,6 +271,13 @@ spec:
                     name: {{ $cognigySearchOrchestratorApiKey }}
                     key: api-key
             {{- end }}
+            {{- if $.Values.copilot.enabled }}
+            - name: SERVICE_COPILOT_API_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyServiceCopilotApiAccessToken_secret }}
+                  key: api-access-token
+            {{- end }}
             {{- if $.Values.logRedaction.enabled }}
             - name: LOG_REDACTION_ENABLED
               value: "true"
@@ -293,6 +317,16 @@ spec:
             - name: FEATURE_PACKAGE_LOGS
               value: "true"
             {{- end }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OWNER_DEPLOYMENT
+              value: {{ $serviceName | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -340,6 +374,9 @@ spec:
             - name: cognigy-rollout
               mountPath: /config/rollout
             {{- end }}
+            - name: cognigy-env-reloadable
+              mountPath: /config/env
+              readOnly: true
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -347,6 +384,13 @@ spec:
             httpGet:
               path: /health/startup
               port: 8001
+          readinessProbe:
+            httpGet:
+              path: /health/startup
+              port: 8001
+            periodSeconds: 10
+            failureThreshold: 2
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /health/liveness
@@ -395,6 +439,12 @@ spec:
           configMap:
             name: cognigy-rollout
         {{- end }}
+        - name: cognigy-env-reloadable
+          configMap:
+            name: cognigy-env-reloadable
+            items:
+              - key: cognigy.yaml
+                path: cognigy.yaml
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

@@ -60,6 +60,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: HOST_VALIDATION_WHITELIST
               {{- if $.Values.ingress.serviceUi.customServiceUrl }}
               value: {{ printf "%s,%s" $.Values.ingress.serviceUi.host $.Values.ingress.serviceUi.customServiceUrl | quote }}
@@ -71,6 +72,10 @@ spec:
               value: {{ $.Values.niceCXOne.enabled | quote }}
             - name: CXONE_BASE_URL
               value: {{ $.Values.niceCXOne.cxoneBaseUrl | quote }}
+            {{- end }}
+            {{- if (($.Values.niceCXOne).webhookEndpoint).enabled }}
+            - name: FEATURE_ENABLE_NICE_CXONE_WEBHOOK_ENDPOINT
+              value: "true"
             {{- end }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}

@@ -1,4 +1,4 @@
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $redisPersistentHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisPersistentHa.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
@@ -89,6 +89,7 @@ spec:
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -109,6 +110,10 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
+            {{- if (($.Values.niceCXOne).webhookEndpoint).enabled }}
+            - name: FEATURE_ENABLE_NICE_CXONE_WEBHOOK_ENDPOINT
+              value: "true"
+            {{- end }}
             - name: FEATURE_USE_NEW_NFS
               value: {{ $.Values.migrateFS.enabled | quote }}
             - name: FEATURE_DEPRECATE_OLD_NFS
@@ -148,13 +153,9 @@ spec:
                 secretKeyRef:
                   name: llm-gateway-caller-service-resources
                   key: secret
-            - name: LLM_CONFIG_MIGRATION_ENABLED
-              value: {{ $.Values.llmGateway.dataMigration.enabled | quote }}
-            - name: LLM_CONFIG_MIGRATION_FORCE_REMIGRATE
-              value: {{ $.Values.llmGateway.dataMigration.forceRemigrate | quote }}
-            - name: LLM_CONFIG_MIGRATION_ORGANISATIONS
-              value: {{ join "," $.Values.llmGateway.dataMigration.organisations | quote }}
             {{- end }}
+            - name: INPLATFORM_LLM_CONFIG_PATH
+              value: /etc/cognigy/inplatform-llm/inPlatformLlm.json
             {{- if $.Values.proactiveFollowup.enabled }}
             - name: PAIA_OAUTH2_CLIENT_ID
               valueFrom:
@@ -223,6 +224,9 @@ spec:
             - name: cognigy-rollout
               mountPath: /config/rollout
             {{- end }}
+            - name: inplatform-llm-config
+              mountPath: /etc/cognigy/inplatform-llm
+              readOnly: true
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -289,6 +293,10 @@ spec:
           configMap:
             name: cognigy-rollout
         {{- end }}
+        - name: inplatform-llm-config
+          configMap:
+            name: inplatform-llm-config
+            optional: true
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

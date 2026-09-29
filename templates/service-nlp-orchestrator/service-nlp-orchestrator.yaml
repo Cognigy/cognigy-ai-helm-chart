@@ -1,5 +1,5 @@
 {{- if .Values.serviceNlpOrchestrator.enabled }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- with .Values.serviceNlpOrchestrator }}
 ---
@@ -90,18 +90,22 @@ spec:
             httpGet:
               path: /health/startup
               port: 8001
+            timeoutSeconds: {{ .startupProbe.timeoutSeconds | default 5 }}
+            periodSeconds: {{ .startupProbe.periodSeconds | default 10 }}
+            failureThreshold: {{ .startupProbe.failureThreshold | default 30 }}
           livenessProbe:
             httpGet:
               path: /health/liveness
               port: 8001
-            failureThreshold: 1
-            initialDelaySeconds: 120
-            periodSeconds: 60
-            timeoutSeconds: 60
+            failureThreshold: {{ .livenessProbe.failureThreshold | default 1 }}
+            initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds | default 120 }}
+            periodSeconds: {{ .livenessProbe.periodSeconds | default 60 }}
+            timeoutSeconds: {{ .livenessProbe.timeoutSeconds | default 60 }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
           env:
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: LANGUAGES_TO_RUN
               value: ar-AE,bn-IN,da-DK,de-DE,en-US,en-IN,en-GB,en-CA,en-AU,es-ES,fi-FI,fr-FR,ge-GE,hi-IN,it-IT,ja-JP,ko-KR,nl-NL,nn-NO,pl-PL,pt-PT,pt-BR,ru-RU,sv-SE,ta-IN,th-TH,tr-TR,vi-VN,zh-CN
             - name: LOCALES_CONFIG

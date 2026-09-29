@@ -1,4 +1,4 @@
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $serviceUsage_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceUsage.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceUsage.serviceName)) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $billingConsole_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.billingConsoleApiKey.existingSecret "defaultSecret" "billing-console-secrets") }}
@@ -65,6 +65,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_TOKEN_USAGE_EXCHANGE

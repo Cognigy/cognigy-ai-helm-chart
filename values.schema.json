@@ -187,6 +187,38 @@
 			"$ref": "#/$defs/microfrontend",
 			"description": "Packaging microfrontend"
 		},
+		"mfeProjectResources": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Project Resources microfrontend"
+		},
+		"mfeSnapshots": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Snapshots microfrontend"
+		},
+		"mfeNluConnectors": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "NLU Connectors microfrontend"
+		},
+		"mfeLexicons": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Lexicons microfrontend"
+		},
+		"mfeGoals": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Goals microfrontend"
+		},
+		"mfeIntentTrainer": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Intent Trainer microfrontend"
+		},
+		"mfeProjectOverview": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Project Overview microfrontend"
+		},
+		"mfeLogs": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Logs microfrontend"
+		},
 		"proactiveFollowup": {
 			"type": "object",
 			"description": "Proactive Follow-up feature toggle",
@@ -194,9 +226,63 @@
 				"enabled": { "type": "boolean" }
 			},
 			"required": ["enabled"]
+		},
+		"inPlatformLlm": {
+			"type": "object",
+			"description": "In-Platform LLM feature toggle and config, rendered into the inplatform-llm-config ConfigMap read by service-resources",
+			"properties": {
+				"enabled": { "type": "boolean" },
+				"config": {
+					"type": "object"
+				}
+			},
+			"required": ["enabled"],
+			"allOf": [
+				{
+					"if": {
+						"properties": { "enabled": { "const": true } }
+					},
+					"then": {
+						"properties": {
+							"config": {
+								"type": "object",
+								"minProperties": 1,
+								"additionalProperties": { "$ref": "#/$defs/inPlatformLlmEntry" }
+							}
+						},
+						"required": ["config"]
+					}
+				}
+			]
 		}
 	},
 	"$defs": {
+		"inPlatformLlmEntry": {
+			"type": "object",
+			"description": "One in-platform LLM entry, must match shared/interfaces/IInPlatformLlmConfigMap.ts inPlatformLlmEntrySchema",
+			"properties": {
+				"configSetPoolRef": { "type": "string", "minLength": 1 },
+				"useCases": {
+					"type": "array",
+					"items": { "type": "string" },
+					"minItems": 1
+				},
+				"defaultUseCases": {
+					"type": "array",
+					"items": { "type": "string" },
+					"minItems": 1
+				},
+				"orgWhitelist": {
+					"oneOf": [
+						{ "type": "string", "enum": ["*"] },
+						{ "type": "array", "items": { "type": "string" } }
+					]
+				},
+				"displayName": { "type": "string" },
+				"customModelOptions": { "type": "object" }
+			},
+			"required": ["configSetPoolRef", "orgWhitelist"]
+		},
 		"microfrontend": {
 			"type": "object",
 			"properties": {

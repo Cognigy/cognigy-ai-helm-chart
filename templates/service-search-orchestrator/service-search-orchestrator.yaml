@@ -1,6 +1,6 @@
 {{- if .Values.knowledgeSearch.enabled }}
 {{- with .Values.serviceSearchOrchestrator }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $cognigySearchOrchestratorApiKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySearchOrchestratorApiKey.existingSecret "defaultSecret" "cognigy-search-orchestrator-api-key") }}
 {{- $cognigyQdrantApiKey := "qdrant-apikey" }}
@@ -90,10 +90,15 @@ spec:
               mountPath: /vector-db-config/qdrant/collection/config.json
               subPath: qdrant-collection-config
             {{- end }}
+            {{- if $.Values.commonConfigs.cognigyRollout }}
+            - name: cognigy-rollout
+              mountPath: /config/rollout
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: cognigy-env
           env:
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             - name: SEARCH_ORCHESTRATOR_API_KEY
@@ -139,6 +144,11 @@ spec:
         - name: vector-db-config
           configMap:
             name: vector-db-config
+        {{- end }}
+        {{- if $.Values.commonConfigs.cognigyRollout }}
+        - name: cognigy-rollout
+          configMap:
+            name: cognigy-rollout
         {{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:

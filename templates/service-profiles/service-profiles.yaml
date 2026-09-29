@@ -1,6 +1,7 @@
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceProfiles_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceProfiles.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceProfiles.serviceName)) }}
+{{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
 {{- with .Values.serviceProfiles }}
 ---
 apiVersion: apps/v1
@@ -26,6 +27,7 @@ spec:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceProfiles_dbSecret) }}{{ $serviceProfiles_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceProfiles_dbSecret).data | sha256sum }}{{ end }}
+        checksum/jwtPublicKey: {{ if not (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey) }}{{ $jwtPublicKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $jwtPublicKey).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
@@ -61,6 +63,7 @@ spec:
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -79,14 +82,23 @@ spec:
               value: {{ $.Values.tracing.environment | quote }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
+            - name: API_PORT
+              value: "8000"
+            - name: AUTH_GATEWAY_JWT_PUBLIC_KEY_PATH_AND_FILENAME
+              value: "/var/run/secrets/internal-auth-gateway-jwt-public-key.pem"
             {{- if $.Values.logRedaction.enabled }}
             - name: LOG_REDACTION_ENABLED
               value: "true"
+            {{- end }}
+            {{- with .nodeOptions }}
+            {{- include "cognigy-ai.common.nodeOptions.render" (dict "value" . "context" $) | nindent 12 }}
             {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           ports:
+            - name: http
+              containerPort: 8000
             - name: metrics
               containerPort: 8002
           envFrom:
@@ -102,6 +114,9 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            - name: auth-gateway-public-key
+              mountPath: /var/run/secrets/internal-auth-gateway-jwt-public-key.pem
+              subPath: internal-auth-gateway-jwt-public-key.pem
           startupProbe:
             httpGet:
               path: /health/startup
@@ -130,6 +145,10 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        - name: auth-gateway-public-key
+          secret:
+            secretName: {{ $jwtPublicKey }}
+            defaultMode: 420
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

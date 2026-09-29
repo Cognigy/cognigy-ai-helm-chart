@@ -1,6 +1,6 @@
 {{- if .Values.knowledgeSearch.enabled }}
 {{- $serviceResources_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceResources.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceResources.serviceName)) }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $azureDocumentIntelligence_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.knowledgeSearch.globalAzureDocumentIntelligenceConfig.existingSecret "defaultSecret" "cognigy-azure-ai-document-intelligence-credentials") }}
 ---
@@ -51,6 +51,7 @@ data:
                 - configMapRef:
                     name: cognigy-env
               env:
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: JOB_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
                 - name: TRACING_ENABLED
@@ -156,6 +157,7 @@ data:
                 - configMapRef:
                     name: cognigy-env
               env:
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: JOB_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
                 - name: TRACING_ENABLED
@@ -240,6 +242,7 @@ data:
                 - configMapRef:
                     name: cognigy-env
               env:
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: JOB_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
                 - name: TRACING_ENABLED
@@ -350,6 +353,7 @@ data:
                 - configMapRef:
                     name: cognigy-env
               env:
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: IMPORT_TASK_ARGUMENTS
                   value: "_JOB_ARGUMENTS_"
                 - name: TRACING_ENABLED

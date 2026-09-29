@@ -1,0 +1,75 @@
+{{/*
+  Either chain may need to spawn Jobs, and they share one ServiceAccount in this namespace: a cluster
+  running Insights v2 code against the old Postgres has the v2 manager gated off, so keying this on
+  the v2 chain alone left the old-cluster job unable to spawn anything.
+*/}}
+{{- $v2Spawns := and (include "cognigy-ai.insights.postgresql.enabled" .) (.Values.insights.dbMigration.enabled) (.Values.insights.dbMigration.oneTimeMigration.enabled) -}}
+{{- $v1Spawns := and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlCluster.enabled) (.Values.cubejs.dbMigration.enabled) (.Values.cubejs.dbMigration.oneTimeMigration.enabled) -}}
+{{- if and (or $v2Spawns $v1Spawns) (.Values.insights.dbMigration.serviceAccountName) }}
+{{- with .Values.insights.dbMigration }}
+{{/*
+  Hooks, not plain resources: Helm applies pre-upgrade hooks before the regular manifests, so a
+  plain ServiceAccount would not exist when the Job is created and every pod would be rejected
+  with `error looking up service account`. hook-weight is below the Job's so RBAC lands first.
+
+  Never `hook-succeeded` in the delete policy — the parent Job spawns child Jobs that outlive it
+  and keep using this ServiceAccount.
+*/}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .serviceAccountName }}
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/hook": {{ .helmHook.hook | quote }}
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+  labels:
+    owner-team: gold
+{{- include "image.pullSecretsCognigy" $ | nindent 0 }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: insights-db-migration-manager-jobs
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/hook": {{ .helmHook.hook | quote }}
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+  labels:
+    owner-team: gold
+rules:
+# Exactly what the spawner calls: listNamespacedJob to refuse to start alongside a Job that is still
+# active, and createNamespacedJob to spawn one. No `delete` — Job names are unique per run, so
+# nothing is removed to free a name and finished Jobs are reaped by their own
+# ttlSecondsAfterFinished. No `get`/`watch` and no jobs/status: the previous delete-then-recreate
+# path read a Job by name and polled for its disappearance, and nothing does that now.
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["list", "create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: insights-db-migration-manager-jobs
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/hook": {{ .helmHook.hook | quote }}
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+  labels:
+    owner-team: gold
+subjects:
+- kind: ServiceAccount
+  name: {{ .serviceAccountName }}
+  namespace: {{ $.Release.Namespace | quote }}
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: insights-db-migration-manager-jobs
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- end }}

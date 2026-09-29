@@ -1,0 +1,65 @@
+{{- if .Values.ingress.enabled }}
+
+#
+# Routes the authenticated private-link path of the runtime file manager
+# through the auth-gateway (Traefik forwardAuth middleware), while the
+# public download and upload routes stay on the unauthenticated ingress.
+#
+# See templates/middleware/authGateway.yaml
+#
+# See: https://cognigy.visualstudio.com/Cognigy.AI/_git/cognigy?path=/services/service-api/src/authGateway/README.md&_a=preview
+# for more information on how the auth-gateway works.
+#
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-runtime-file-manager-private
+  namespace: {{ $.Release.Namespace | quote }}
+
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+
+    {{- if .Values.ingress.serviceRuntimeFileManager.ipWhiteListMiddleware.enabled }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceruntimefilemanager@kubernetescrd,{{ $.Release.Namespace }}-auth-gateway-forward-auth@kubernetescrd"
+        {{- else }}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceruntimefilemanager@kubernetescrd"
+        {{- end }}
+    {{- else }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-auth-gateway-forward-auth@kubernetescrd"
+        {{- end }}
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.ingress.serviceRuntimeFileManager.tls.enabled) }}
+  {{- if (.Values.ingress.serviceRuntimeFileManager.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceRuntimeFileManager.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceRuntimeFileManager.tls.crt) (.Values.ingress.serviceRuntimeFileManager.tls.key) }}
+  tls:
+    - secretName: cognigy-service-runtime-file-manager-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceRuntimeFileManager.tls is required!" .Values.ingress.serviceRuntimeFileManager.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceRuntimeFileManager.tls is required!" .Values.ingress.serviceRuntimeFileManager.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceRuntimeFileManager.tls is required!" .Values.ingress.serviceRuntimeFileManager.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.serviceRuntimeFileManager.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: service-runtime-file-manager
+            port:
+              number: 8000
+        path: /v2.0/files/private
+        pathType: Prefix
+{{- end }}

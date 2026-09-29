@@ -42,6 +42,7 @@ spec:
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
               resources: {{- toYaml .resources | nindent 16 }}
               env:
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: MAX_SNAPSHOT_AGE
                   value: {{ .maxSnapshotAge | quote }}
                 - name: MAX_PACKAGE_AGE

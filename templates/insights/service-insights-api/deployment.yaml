@@ -1,5 +1,5 @@
 {{- $cognigyInsightsJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInsightsJwt.existingSecret "defaultSecret" "cognigy-insights-jwt") }}
-{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" "cognigy-rabbitmq") }}
+{{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceInsightsApi_dbSecret := ternary (include "cognigy-ai.insights.postgresql.secret" $) (include "cubejs.postgresql.password.existingSecret" $) $.Values.insights.postgresql.usePartitionedTables }}
 {{- $serviceInsightsApi_mongoDbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceInsightsApi.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceInsightsApi.serviceName)) }}
@@ -61,6 +61,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             {{- if and (include "cognigy-ai.insights.postgresql.enabled" $) ($.Values.insights.postgresql.usePartitionedTables) }}
             - name: INSIGHTS_POSTGRES_DB_NAME
               value: {{ $.Values.insights.postgresql.database.name | quote }}
@@ -114,7 +115,7 @@ spec:
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.insights.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
-              value: {{ $.Values.tracing.sentry.insights.baseUrl | quote }}      
+              value: {{ $.Values.tracing.sentry.insights.baseUrl | quote }}
             - name: TRACING_ERRORS_ENABLED
               value: {{ $.Values.tracing.sentry.insights.errorsEnabled | quote }}
             - name: TRACING_EVENTS_SAMPLE_RATE
@@ -148,6 +149,17 @@ spec:
             - name: ANALYZER_DISPATCH_INTERVAL_MS
               value: {{ $.Values.serviceInsightsApi.conversationAnalyzer.dispatchIntervalMs | default 30000 | quote }}
             {{- end }}
+            {{- if $.Values.llmGateway.enabled }}
+            - name: LLM_GATEWAY_BASE_URL
+              value: {{ $.Values.llmGateway.serviceUrl | quote }}
+            - name: LLM_GATEWAY_SERVICE_ID
+              value: "service-insights-api"
+            - name: LLM_GATEWAY_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: llm-gateway-caller-service-insights-api
+                  key: secret
+            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -164,6 +176,10 @@ spec:
             {{- if $.Values.serviceInsightsApi.conversationAnalyzer.enabled }}
             - name: analyzer-job-config
               mountPath: /var/run/config/analyzer-jobs
+            {{- end }}
+            {{- if $.Values.commonConfigs.cognigyRollout }}
+            - name: cognigy-rollout
+              mountPath: /config/rollout
             {{- end }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
@@ -200,6 +216,11 @@ spec:
         - name: analyzer-job-config
           configMap:
             name: analyzer-job-config
+        {{- end }}
+        {{- if $.Values.commonConfigs.cognigyRollout }}
+        - name: cognigy-rollout
+          configMap:
+            name: cognigy-rollout
         {{- end }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}

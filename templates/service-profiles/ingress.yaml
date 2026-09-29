@@ -1,0 +1,59 @@
+{{- if .Values.ingress.enabled }}
+{{- if (eq .Values.ingress.ingresController "traefik") }}
+---
+# Public OpenAPI ingress; intentionally no auth-gateway forward-auth middleware.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service-profiles-openapi
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+  annotations:
+    {{- if .Values.tls.enabled }}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    {{- else }}
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- end }}
+    traefik.ingress.kubernetes.io/router.priority: "1000"
+
+    {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ $.Release.Namespace }}-ipwhitelistserviceapi@kubernetescrd"
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  {{- if (.Values.ingress.serviceApi.tls.enabled) }}
+  {{- if (.Values.ingress.serviceApi.tls.existingSecret) }}
+  tls:
+    - secretName: {{ .Values.ingress.serviceApi.tls.existingSecret | quote }}
+  {{- else if and (.Values.ingress.serviceApi.tls.crt) (.Values.ingress.serviceApi.tls.key) }}
+  tls:
+    - secretName: cognigy-service-api-tls
+  {{- else }}
+    {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.crt }}
+    {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.key }}
+    {{ required "A valid value for .Values.ingress.serviceApi.tls is required!" .Values.ingress.serviceApi.tls.existingSecret }}
+  {{- end }}
+  {{- else }}
+  {{- include "tlsCertificate.secretName.render" $ | nindent 2 }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.serviceApi.host }}
+    http:
+      paths:
+      - path: /profiles/openapi
+        pathType: Prefix
+        backend:
+          service:
+            name: service-profiles
+            port:
+              number: 8000
+      - path: /new/profiles/openapi
+        pathType: Prefix
+        backend:
+          service:
+            name: service-profiles
+            port:
+              number: 8000
+{{- end }}
+{{- end }}
