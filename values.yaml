@@ -3944,7 +3944,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-65e1d4a919-1790238615
+  image: cognigy.azurecr.io/service-resources:release-ed77d496fd-1791296766
   replicaCount: 3
   resources:
     requests:
@@ -4164,7 +4164,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-7510600436-1790244059
+  image: cognigy.azurecr.io/service-ui:release-8ba3fdadcb-1791289978
   replicaCount: 3
   resources:
     requests:
@@ -5058,7 +5058,7 @@ taskRunKnowledgeExtension:
     concurrencyPolicy: Forbid
 
 taskCreatePackageNfs:
-  image: cognigy.azurecr.io/service-resources:release-65e1d4a919-1790238615
+  image: cognigy.azurecr.io/service-resources:release-ed77d496fd-1791296766
   resources:
     requests:
       cpu: "1"
