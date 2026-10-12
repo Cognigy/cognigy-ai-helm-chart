@@ -1,6 +1,7 @@
 {{- if .Values.serviceUsage.jobDailyUsageReporter.enabled }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $serviceUsage_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceUsage.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceUsage.serviceName)) }}
+{{- $cognigyBillingSigningKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyBillingSigningKey.existingSecret "defaultSecret" "cognigy-billing-signing-key") }}
 {{- with .Values.serviceUsage.jobDailyUsageReporter }}
 
 apiVersion: batch/v1
@@ -70,6 +71,10 @@ spec:
                 - name: BILLING_SERVER_URL_WITH_PROTOCOL_V2
                   value: {{ .billingServerUrlWithProtocol | quote }}
                 {{- end }}
+                {{- if $.Values.commonSecrets.cognigyBillingSigningKey.existingSecret }}
+                - name: BILLING_PRIVATE_KEY_PATH
+                  value: /var/run/secrets/billing-signing-key.pem
+                {{- end }}
                 {{- if .extraEnvVars }}
                 {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
                 {{- end }}
@@ -80,6 +85,11 @@ spec:
                 - name: mongodb-connection-string
                   mountPath: /var/run/secrets/mongodbConnectionString
                   subPath: mongodbConnectionString
+                {{- if $.Values.commonSecrets.cognigyBillingSigningKey.existingSecret }}
+                - name: billing-signing-key
+                  mountPath: /var/run/secrets/billing-signing-key.pem
+                  subPath: key.pem
+                {{- end }}
               {{- if .extraVolumeMounts }}
               {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
               {{- end }}
@@ -96,6 +106,14 @@ spec:
                 items:
                   - key: connection-string
                     path: mongodbConnectionString
+            {{- if $.Values.commonSecrets.cognigyBillingSigningKey.existingSecret }}
+            - name: billing-signing-key
+              secret:
+                secretName: {{ $cognigyBillingSigningKey_secret }}
+                items:
+                  - key: key.pem
+                    path: key.pem
+            {{- end }}
             {{- if .extraVolumes }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
             {{- end }}

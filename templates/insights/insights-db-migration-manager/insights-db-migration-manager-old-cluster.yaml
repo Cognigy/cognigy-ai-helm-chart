@@ -15,11 +15,20 @@ metadata:
   labels:
     owner-team: gold
 spec:
+  {{- if .activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+  {{- end }}
+  backoffLimit: {{ .backoffLimit | default 0 }}
   template:
     metadata:
       name: insights-db-migration-manager-old-cluster
     spec:
       restartPolicy: Never
+      {{/*
+        Same predicate as rbac.yaml, which only creates this ServiceAccount when oneTimeMigration
+        is enabled. Referencing it unconditionally hangs the release: the job-controller rejects
+        every pod with `error looking up service account`.
+      */}}
       {{- if and .oneTimeMigration.enabled $.Values.insights.dbMigration.serviceAccountName }}
       serviceAccountName: {{ $.Values.insights.dbMigration.serviceAccountName }}
       {{- end }}
@@ -78,6 +87,7 @@ spec:
               cpu: "50m"
       containers:
         - name: insights-db-migration-manager
+          # image and the ServiceAccount above are shared with the v2 tree.
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.insights.dbMigration.image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
@@ -86,12 +96,18 @@ spec:
               value: {{ .migration.mode | quote }}
             - name: MIGRATIONS_PATH
               value: {{ .migration.migrationsPath | quote }}
+            - name: INSIGHTS_DB_SCHEMA_VARIANT
+              value: {{ .migration.schemaVariant | quote }}
             - name: POSTGRES_HOST
               value: {{ include "common.tplvalues.render" (dict "value" $.Values.cubejs.postgresql.host "context" $) | quote }}
             - name: POSTGRES_PORT
               value: {{ $.Values.cubejs.postgresql.port | quote }}
             - name: POSTGRES_DB
               value: {{ $.Values.cubejs.postgresql.database | quote }}
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             {{- if .migration.include }}
             - name: INSIGHTS_INCLUDE_MIGRATION_NAME
               value: {{ .migration.include | quote }}

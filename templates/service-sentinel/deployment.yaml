@@ -133,6 +133,8 @@ spec:
               value: "604800" # 7 days in seconds
             - name: DEFAULT_KUBE_PROM_STACK_CRD_CONFIG_VERSION
               value: "{{ $.Values.productFeature.opsCenter.defaultKubePromStackCrdConfigVersion }}"
+            - name: SERVICE_SENTINEL_CORS_WHITELIST
+              value: {{ $.Values.cognigyEnv.SERVICE_SENTINEL_CORS_WHITELIST | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
