@@ -2924,7 +2924,7 @@ rabbitmqOperator:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-fc7b48de8b-1791799109
+  image: cognigy.azurecr.io/service-ai:release-7ce5798a68-1792071086
   replicaCount: 6
   resources:
     requests:
@@ -3121,7 +3121,7 @@ serviceAnalyticsReporter:
   tolerations: []
   priorityClassName: ""
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-fc7b48de8b-1791799109
+  image: cognigy.azurecr.io/service-api:release-7ce5798a68-1792071086
   replicaCount: 3
   resources:
     requests:
@@ -3900,7 +3900,7 @@ serviceParser:
   tolerations: []
   priorityClassName: ""
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:release-fc7b48de8b-1791799109
+  image: cognigy.azurecr.io/service-playbook-execution:release-7ce5798a68-1792071086
   replicaCount: 3
   resources:
     requests:
@@ -3954,7 +3954,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-fc7b48de8b-1791799109
+  image: cognigy.azurecr.io/service-resources:release-7ce5798a68-1792071086
   replicaCount: 3
   resources:
     requests:
@@ -5062,7 +5062,7 @@ taskRunKnowledgeExtension:
     concurrencyPolicy: Forbid
 
 taskCreatePackageNfs:
-  image: cognigy.azurecr.io/service-resources:release-fc7b48de8b-1791799109
+  image: cognigy.azurecr.io/service-resources:release-7ce5798a68-1792071086
   resources:
     requests:
       cpu: "1"
