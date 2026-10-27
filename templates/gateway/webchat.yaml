@@ -1,0 +1,61 @@
+{{- if (.Values.ingress.serviceWebchat.tls.enabled) }}
+{{- if not (.Values.ingress.serviceWebchat.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceWebchat.tls.crt) (.Values.ingress.serviceWebchat.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-webchat-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.ingress.serviceWebchat.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceWebchat.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceWebchat.tls is required!" .Values.ingress.serviceWebchat.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceWebchat.tls is required!" .Values.ingress.serviceWebchat.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceWebchat.tls is required!" .Values.ingress.serviceWebchat.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if and .Values.traefik.enabled .Values.ingress.enabled .Values.ingress.gatewayApi.enabled }}
+#
+# Gateway for the webchat subdomain (ingress.serviceWebchat.host).
+# All HTTPRoutes served on this subdomain attach to this Gateway.
+#
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: webchat
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  gatewayClassName: {{ .Values.traefik.gatewayClass.name }}
+  listeners:
+    {{- if .Values.tls.enabled }}
+    - name: https
+      port: {{ .Values.traefik.ports.websecure.port }}
+      protocol: HTTPS
+      {{- with .Values.ingress.serviceWebchat.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            {{- if .Values.ingress.serviceWebchat.tls.enabled }}
+            name: {{ include "common.secretName.render" (dict "existingSecret" .Values.ingress.serviceWebchat.tls.existingSecret "defaultSecret" "cognigy-service-webchat-tls") | quote }}
+            {{- else }}
+            name: {{ tpl (include "common.secretName.render" (dict "existingSecret" .Values.tls.existingSecret "defaultSecret" "cognigy-traefik")) $ | quote }}
+            {{- end }}
+    {{- else }}
+    - name: http
+      port: {{ .Values.traefik.ports.web.port }}
+      protocol: HTTP
+      {{- with .Values.ingress.serviceWebchat.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+    {{- end }}
+{{- end }}

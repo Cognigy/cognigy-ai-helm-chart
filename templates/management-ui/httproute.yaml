@@ -1,0 +1,26 @@
+{{- if and .Values.ingress.gatewayApi.enabled .Values.managementUi.enabled .Values.managementUi.ingress.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: management-ui
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  parentRefs:
+    - name: management-ui
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        {{- if .Values.managementUi.ingress.ipWhiteListMiddleware.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: ipwhitelistmanagementui
+        {{- end }}
+      backendRefs:
+        - name: management-ui
+          port: 8000
+{{- end }}

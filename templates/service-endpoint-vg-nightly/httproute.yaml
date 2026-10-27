@@ -1,0 +1,44 @@
+{{- if and .Values.ingress.enabled .Values.ingress.gatewayApi.enabled .Values.serviceEndpointVgNightly.enabled }}
+# Sticky sessions are configured on the TraefikService, as the Gateway provider ignores Service annotations
+apiVersion: traefik.io/v1alpha1
+kind: TraefikService
+metadata:
+  name: service-endpoint-vg-nightly
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  weighted:
+    services:
+      - name: service-endpoint-vg-nightly
+        port: 8000
+        sticky:
+          cookie:
+            secure: true
+            sameSite: none
+            httpOnly: true
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-endpoint-vg-nightly
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  parentRefs:
+    - name: endpoint-vg-nightly
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        {{- if .Values.ingress.serviceEndpointVgNightly.ipWhiteListMiddleware.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: ipwhitelistserviceendpointvgnightly
+        {{- end }}
+      backendRefs:
+        - group: traefik.io
+          kind: TraefikService
+          name: service-endpoint-vg-nightly
+{{- end }}

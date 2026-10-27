@@ -1,30 +1,4 @@
-
-{{- if (.Values.ingress.serviceAnalyticsOdata.tls.enabled) }}
-{{- if not (.Values.ingress.serviceAnalyticsOdata.tls.existingSecret) }}
-{{- if and (.Values.ingress.serviceAnalyticsOdata.tls.crt) (.Values.ingress.serviceAnalyticsOdata.tls.key) }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: cognigy-service-analytics-odata-tls
-  namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
-type: kubernetes.io/tls
-data:
-  # your base64 encoded tls certificate
-  tls.crt: {{ .Values.ingress.serviceAnalyticsOdata.tls.crt | b64enc | quote }}
-  # your base64 encoded private key
-  tls.key: {{ .Values.ingress.serviceAnalyticsOdata.tls.key | b64enc | quote }}
-{{- else }}
-  {{ required "A valid value for .Values.ingress.serviceAnalyticsOdata.tls is required!" .Values.ingress.serviceAnalyticsOdata.tls.crt }}
-  {{ required "A valid value for .Values.ingress.serviceAnalyticsOdata.tls is required!" .Values.ingress.serviceAnalyticsOdata.tls.key }}
-  {{ required "A valid value for .Values.ingress.serviceAnalyticsOdata.tls is required!" .Values.ingress.serviceAnalyticsOdata.tls.existingSecret }}
-{{- end }}
-{{- end }}
-{{- end }}
-
----
-{{- if .Values.ingress.enabled }}
+{{- if and .Values.ingress.enabled (not .Values.ingress.gatewayApi.enabled) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
