@@ -247,6 +247,13 @@ spec:
               - key: connection-string
                 path: cognigy-service-platform-agent
 {{- end }}
+{{- if .Values.dbConnectionString.services.copilot.enabled }}
+          - secret:
+              name: cognigy-copilot
+              items:
+              - key: connection-string
+                path: cognigy-copilot
+{{- end }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
 {{- end }}
 {{- if and (.Values.mongodb.enabled) (eq .Values.mongodb.scheme "mongodb") (not .Values.mongodb.auth.existingSecret) }}

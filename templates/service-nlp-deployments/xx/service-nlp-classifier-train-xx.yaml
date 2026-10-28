@@ -72,8 +72,9 @@ spec:
             httpGet:
               path: /health/startup
               port: 8001
-            failureThreshold: 3
-            periodSeconds: 10
+            timeoutSeconds: {{ .startupProbe.timeoutSeconds | default 5 }}
+            periodSeconds: {{ .startupProbe.periodSeconds | default 10 }}
+            failureThreshold: {{ .startupProbe.failureThreshold | default 10 }}
             initialDelaySeconds: 90
           livenessProbe:
             httpGet:

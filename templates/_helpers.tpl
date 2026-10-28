@@ -570,7 +570,6 @@ Usage:
 {{- define "mfe.list" -}}
 {{- $mfes := list
   (dict "name" "mfe-simulator" "pathName" "simulator" "values" .Values.mfeSimulator "team" "gold")
-  (dict "name" "mfe-ai-agents-v2" "pathName" "ai-agents-v2" "values" .Values.mfeAiAgentsV2 "team" "boron")
   (dict "name" "mfe-interaction-panel" "pathName" "interaction-panel" "values" .Values.mfeInteractionPanel "team" "aluminium")
   (dict "name" "mfe-sidebar" "pathName" "sidebar" "values" .Values.mfeSidebar "team" "aluminium")
   (dict "name" "mfe-global-toolbar" "pathName" "global-toolbar" "values" .Values.mfeGlobalToolbar "team" "aluminium")
@@ -590,6 +589,7 @@ Usage:
   (dict "name" "mfe-goals" "pathName" "goals" "values" .Values.mfeGoals "team" "gold")
   (dict "name" "mfe-project-overview" "pathName" "project-overview" "values" .Values.mfeProjectOverview "team" "boron")
   (dict "name" "mfe-logs" "pathName" "logs" "values" .Values.mfeLogs "team" "gold")
+  (dict "name" "mfe-playbooks" "pathName" "playbooks" "values" .Values.mfePlaybooks "team" "gold")
 -}}
 {{- dict "items" $mfes | toJson -}}
 {{- end -}}

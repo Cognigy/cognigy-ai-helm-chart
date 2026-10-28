@@ -54,9 +54,7 @@ spec:
         {{- if $.Values.knowledgeSearch.enabled }}
         checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
         {{- end }}
-        {{- if $.Values.copilot.enabled }}
         checksum/cognigy-service-copilot-api-access-token: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceCopilotApiAccessToken_secret) }}{{ $cognigyServiceCopilotApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceCopilotApiAccessToken_secret).data | sha256sum }}{{ end }}
-        {{- end }}
         checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-testing-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret) }}{{ $cognigyTestingJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-collaboration-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret) }}{{ $cognigyCollaborationJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret).data | sha256sum }}{{ end }}
@@ -142,6 +140,10 @@ spec:
                 secretKeyRef:
                   name: {{ $cxoneOidcClient_secret }}
                   key: client-secret
+            {{- end }}
+            {{- if (($.Values.niceCXOne).webhookEndpoint).enabled }}
+            - name: FEATURE_ENABLE_NICE_CXONE_WEBHOOK_ENDPOINT
+              value: "true"
             {{- end }}
             - name: HOST_VALIDATION_WHITELIST
               {{- if $.Values.ingress.serviceApi.customServiceUrl }}
@@ -271,13 +273,11 @@ spec:
                     name: {{ $cognigySearchOrchestratorApiKey }}
                     key: api-key
             {{- end }}
-            {{- if $.Values.copilot.enabled }}
             - name: SERVICE_COPILOT_API_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ $cognigyServiceCopilotApiAccessToken_secret }}
                   key: api-access-token
-            {{- end }}
             {{- if $.Values.logRedaction.enabled }}
             - name: LOG_REDACTION_ENABLED
               value: "true"

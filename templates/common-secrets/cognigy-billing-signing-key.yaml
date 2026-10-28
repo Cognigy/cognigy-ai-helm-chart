@@ -1,0 +1,13 @@
+{{- if (not .Values.commonSecrets.cognigyBillingSigningKey.existingSecret) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-billing-signing-key
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  key.pem: "{{ .Values.commonSecrets.cognigyBillingSigningKey.token | default "" | b64enc }}"
+{{- end }}

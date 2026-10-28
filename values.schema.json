@@ -114,6 +114,25 @@
 				}
 			]
 		},
+		"serviceProfiles": {
+			"type": "object",
+			"properties": {
+				"ingress": {
+					"type": "object",
+					"properties": {
+						"api": {
+							"type": "object",
+							"properties": {
+								"enabled": {
+									"description": "Create the profiles API ingress; disable to use the service-api catchall",
+									"type": "boolean"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
 		"efs": {
 			"type": "object",
 			"properties": {
@@ -138,10 +157,6 @@
 		"mfeSimulator": {
 			"$ref": "#/$defs/microfrontend",
 			"description": "Simulator microfrontend"
-		},
-		"mfeAiAgentsV2": {
-			"$ref": "#/$defs/microfrontend",
-			"description": "AI Agents V2 microfrontend"
 		},
 		"mfeInteractionPanel": {
 			"$ref": "#/$defs/microfrontend",
@@ -218,6 +233,10 @@
 		"mfeLogs": {
 			"$ref": "#/$defs/microfrontend",
 			"description": "Logs microfrontend"
+		},
+		"mfePlaybooks": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Playbooks microfrontend"
 		},
 		"proactiveFollowup": {
 			"type": "object",
@@ -346,7 +365,6 @@
 		"serviceCollector",
 		"serviceCustomModules",
 		"serviceEndpoint",
-		"serviceExecution",
 		"serviceFunctionExecution",
 		"serviceFunctionScheduler",
 		"serviceHandover",
