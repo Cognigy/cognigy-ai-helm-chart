@@ -1,7 +1,7 @@
 # We are using the ingress configuration "serviceApi" from values.yaml
 # as both service-api and service-cxone-aws-gateway both share the same host and
 # use path based routing.
-{{- if and (.Values.ingress.enabled) (.Values.niceCXOne.enabled) (.Values.serviceCxoneAwsGateway.internalApiIngress.enabled) (not .Values.ingress.gatewayApi.enabled) }}
+{{- if and (.Values.ingress.enabled) (.Values.niceCXOne.enabled) (.Values.serviceCxoneAwsGateway.internalApiIngress.enabled) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

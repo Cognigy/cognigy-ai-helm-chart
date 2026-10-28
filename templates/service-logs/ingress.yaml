@@ -1,4 +1,4 @@
-{{- if and .Values.ingress.enabled (not .Values.ingress.gatewayApi.enabled) }}
+{{- if .Values.ingress.enabled }}
 {{- if (eq .Values.ingress.ingresController "traefik") }}
 # Traefik IngressRoute (CRD) is used here instead of a plain networking.k8s.io Ingress
 # because the public logs paths (/v2.1/projects/{projectId}/logs...) live INSIDE

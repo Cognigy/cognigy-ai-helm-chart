@@ -65,19 +65,13 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_TOKEN_USAGE_EXCHANGE
               value: {{ .rabbitmq.tokenUsageExchange | quote }}
             - name: RABBITMQ_TOKEN_USAGE_QUEUE
               value: {{ .rabbitmq.tokenUsageQueue | quote }}
-            - name: RABBITMQ_USAGE_COUNTER_EXCHANGE
-              value: {{ .rabbitmq.usageCounterExchange | quote }}
-            - name: RABBITMQ_CONVERSATION_COUNTER_QUEUE
-              value: {{ .rabbitmq.conversationCounterQueue | quote }}
-            - name: RABBITMQ_CALL_COUNTER_QUEUE
-              value: {{ .rabbitmq.callCounterQueue | quote }}
             - name: API_KEYS
               valueFrom:
                 secretKeyRef:
@@ -98,41 +92,37 @@ spec:
                   name: {{ $redisHa_secret }}
                   key: REDIS_PASSWORD
             - name: REDIS_SENTINEL_HOST
-              value: {{ include "cognigy-common.cognigyEnv.value" (dict "context" $ "key" "REDIS_SENTINEL_HOST") }}
+              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_HOST }}
             - name: REDIS_SENTINEL_PORT
-              value: {{ include "cognigy-common.cognigyEnv.value" (dict "context" $ "key" "REDIS_SENTINEL_PORT") | quote }}
+              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_PORT | quote }}
             - name: REDIS_SENTINEL_MASTER_NAME
-              value: {{ include "cognigy-common.cognigyEnv.value" (dict "context" $ "key" "REDIS_SENTINEL_MASTER_NAME") }}
+              value: {{ $.Values.cognigyEnv.REDIS_SENTINEL_MASTER_NAME }}
             - name: FEATURE_REDIS_SENTINEL_MODE_ENABLED
               value: "true"
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: REDIS_USE_TLS
-              value: {{ include "cognigy-common.cognigyEnv.value" (dict "context" $ "key" "REDIS_USE_TLS") | default "false" | quote }}
-            {{- if include "cognigy-common.cognigyEnv.value" (dict "context" $ "key" "REDIS_DEFAULT_TTL") }}
+              value: {{ $.Values.cognigyEnv.REDIS_USE_TLS | default "false" | quote }}
+            {{- if $.Values.cognigyEnv.REDIS_DEFAULT_TTL }}
             - name: REDIS_DEFAULT_TTL
-              value: {{ include "cognigy-common.cognigyEnv.value" (dict "context" $ "key" "REDIS_DEFAULT_TTL") | quote }}
+              value: {{ $.Values.cognigyEnv.REDIS_DEFAULT_TTL | quote }}
             {{- end }}
             - name: BILLING_CONSOLE_CACHE_TTL
               value: {{ $.Values.billingConsole.cacheTtl | quote }}
-            {{- /* Billing Console — optional; the service falls back to default prices when the API key is unset. */}}
+            {{- /* Billing Console */}}
             - name: NICE_CXONE_LICENSE_MAP_PATH
               value: /etc/config/licenses.json
-            {{- if $.Values.billingConsole.baseUrl }}
             - name: BILLING_CONSOLE_BASE_URL
               value: {{ $.Values.billingConsole.baseUrl | quote }}
-            {{- end }}
             - name: BILLING_REGION
               value: {{ $.Values.billingConsole.regionName | quote }}
             - name: NICE_BILLING_REPORTING_DATE
               value: {{ $.Values.billingConsole.reportingDate | quote }}
-            {{- if or $.Values.commonSecrets.billingConsoleApiKey.existingSecret $.Values.commonSecrets.billingConsoleApiKey.token }}
             - name: BILLING_CONSOLE_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ $billingConsole_secret }}
                   key: api-key
-            {{- end }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

@@ -1,8 +1,10 @@
 {{- if and (.Values.pgoperator.enabled) (.Values.pgoperator.postgresqlCluster.enabled) (.Values.cubejs.dbMigration.enabled) (.Values.cubejs.dbMigration.oneTimeMigration.enabled) (.Values.insights.dbMigration.serviceAccountName) }}
 {{- $dbMigration_dbSecret := include "common.secretName.render" ( dict "existingSecret" (tpl .Values.cubejs.dbMigration.auth.superUser.existingSecret .) "defaultSecret" (printf "postgres.%s.credentials.postgresql.acid.zalan.do" (tpl .Values.cubejs.postgresql.cluster .))) }}
 {{/*
-  Child Job spec for one-time data migrations against the legacy (old-cluster) Postgres.
-  Placeholders substituted at spawn time: _NAME_, _MIGRATION_NAME_, _DB_SCHEMA_VARIANT_.
+  Child Job spec for one-time data migrations against the old cluster. Identical in shape to
+  insights-migration-job-config, differing only in the database it targets and MIGRATIONS_PATH.
+  Pod shaping is shared with insights.dbMigration.oneTimeMigration deliberately: two copies would
+  drift. Placeholders substituted at spawn time: _NAME_, _MIGRATION_NAME_.
 */}}
 ---
 apiVersion: v1
@@ -22,7 +24,7 @@ metadata:
     owner-team: gold
 data:
   oneTimeMigration.yaml: |
-    {{- with .Values.cubejs.dbMigration.oneTimeMigration }}
+    {{- with .Values.insights.dbMigration.oneTimeMigration }}
     apiVersion: batch/v1
     kind: Job
     metadata:
@@ -45,7 +47,6 @@ data:
             job-type: one-time-migration
         spec:
           restartPolicy: Never
-          # Shared with the v2 chain.
           serviceAccountName: {{ $.Values.insights.dbMigration.serviceAccountName }}
           {{- if .securityContext }}
           securityContext: {{- include "common.tplvalues.render" (dict "value" .securityContext "context" $) | nindent 12 }}
@@ -64,7 +65,6 @@ data:
           {{- end }}
           containers:
             - name: one-time-migration
-              # Same image as the v2 chain.
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" $.Values.insights.dbMigration.image) }}
               resources: {{- toYaml .resources | nindent 16 }}
               env:
@@ -75,10 +75,6 @@ data:
                   value: "disabled"
                 - name: INSIGHTS_ENABLE_ONE_TIME_MIGRATION
                   value: "true"
-                - name: INSIGHTS_DISABLE_PARTMAN_MAINTENANCE
-                  value: {{ $.Values.cubejs.dbMigration.migration.disablePartmanMaintenance | quote }}
-                - name: INSIGHTS_DB_SCHEMA_VARIANT
-                  value: "_DB_SCHEMA_VARIANT_"
                 - name: POD_NAMESPACE
                   valueFrom:
                     fieldRef:

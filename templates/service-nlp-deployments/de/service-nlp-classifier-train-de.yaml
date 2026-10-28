@@ -72,9 +72,7 @@ spec:
             httpGet:
               path: /health/startup
               port: 8001
-            timeoutSeconds: {{ .startupProbe.timeoutSeconds | default 5 }}
-            periodSeconds: {{ .startupProbe.periodSeconds | default 10 }}
-            failureThreshold: {{ .startupProbe.failureThreshold | default 10 }}
+            failureThreshold: 3
             initialDelaySeconds: 10
           livenessProbe:
             httpGet:
@@ -88,7 +86,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: LANGUAGES_TO_RUN
               value: de-DE
             - name: TRAIN

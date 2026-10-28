@@ -1,4 +1,4 @@
-{{- if and .Values.ingress.enabled (not .Values.ingress.gatewayApi.enabled) }}
+{{- if .Values.ingress.enabled }}
 
 #
 # Routes the authenticated private-link path of the runtime file manager

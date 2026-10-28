@@ -1,4 +1,27 @@
-{{- if and .Values.ingress.enabled (not .Values.ingress.gatewayApi.enabled) }}
+{{- if (.Values.ingress.serviceUi.tls.enabled) }}
+{{- if not (.Values.ingress.serviceUi.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceUi.tls.crt) (.Values.ingress.serviceUi.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-ui-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.ingress.serviceUi.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceUi.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceUi.tls is required!" .Values.ingress.serviceUi.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceUi.tls is required!" .Values.ingress.serviceUi.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceUi.tls is required!" .Values.ingress.serviceUi.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

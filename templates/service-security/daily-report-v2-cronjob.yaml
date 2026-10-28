@@ -1,7 +1,6 @@
 {{- if .Values.serviceSecurity.jobDailyConversationReporterV2.enabled }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
-{{- $cognigyBillingSigningKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyBillingSigningKey.existingSecret "defaultSecret" "cognigy-billing-signing-key") }}
 {{- with .Values.serviceSecurity.jobDailyConversationReporterV2 }}
 
 apiVersion: batch/v1
@@ -52,7 +51,7 @@ spec:
                 - configMapRef:
                     name: cognigy-env
               env:
-                {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 16 }}
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL
@@ -67,10 +66,6 @@ spec:
                   value: {{ $.Values.tracing.environment | quote }}
                 - name: COGNIGY_AI_RELEASE_VERSION
                   value: {{ $.Chart.AppVersion | quote }}
-                {{- if $.Values.commonSecrets.cognigyBillingSigningKey.existingSecret }}
-                - name: BILLING_PRIVATE_KEY_PATH
-                  value: /var/run/secrets/billing-signing-key.pem
-                {{- end }}
                 {{- if .extraEnvVars }}
                 {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 16 }}
                 {{- end }}
@@ -81,11 +76,6 @@ spec:
                 - name: mongodb-connection-string
                   mountPath: /var/run/secrets/mongodbConnectionString
                   subPath: mongodbConnectionString
-                {{- if $.Values.commonSecrets.cognigyBillingSigningKey.existingSecret }}
-                - name: billing-signing-key
-                  mountPath: /var/run/secrets/billing-signing-key.pem
-                  subPath: key.pem
-                {{- end }}
               {{- if .extraVolumeMounts }}
               {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 16 }}
               {{- end }}
@@ -102,14 +92,6 @@ spec:
                 items:
                   - key: connection-string
                     path: mongodbConnectionString
-            {{- if $.Values.commonSecrets.cognigyBillingSigningKey.existingSecret }}
-            - name: billing-signing-key
-              secret:
-                secretName: {{ $cognigyBillingSigningKey_secret }}
-                items:
-                  - key: key.pem
-                    path: key.pem
-            {{- end }}
             {{- if .extraVolumes }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 12 }}
             {{- end }}

@@ -1,4 +1,3 @@
-{{- $cognigyConnectionFieldsEncryptionKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret "defaultSecret" "cognigy-connection-fields-encryption-key") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceSecurity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceSecurity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceSecurity.serviceName)) }}
@@ -28,9 +27,6 @@ spec:
     metadata:
       annotations:
         checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
-        {{- if or $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token }}
-        checksum/cognigy-connection-fields-encryption-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyConnectionFieldsEncryptionKey_secret) }}{{ $cognigyConnectionFieldsEncryptionKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyConnectionFieldsEncryptionKey_secret).data | sha256sum }}{{ end }}
-        {{- end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret) }}{{ $serviceSecurity_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceSecurity_dbSecret).data | sha256sum }}{{ end }}
@@ -75,14 +71,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- if or $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token }}
-            - name: CONNECTION_FIELDS_ENCRYPTION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigyConnectionFieldsEncryptionKey_secret }}
-                  key: key
-            {{- end }}
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT

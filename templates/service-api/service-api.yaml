@@ -1,4 +1,3 @@
-{{- $cognigyConnectionFieldsEncryptionKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret "defaultSecret" "cognigy-connection-fields-encryption-key") }}
 {{- $cognigyTestingJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyTestingJwt.existingSecret "defaultSecret" "cognigy-testing-jwt") }}
 {{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
 {{- $cognigyCollaborationJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyCollaborationJwt.existingSecret "defaultSecret" "cognigy-collaboration-jwt") }}
@@ -47,9 +46,6 @@ spec:
         app: {{ $serviceName }}
       annotations:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        {{- if or $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token }}
-        checksum/cognigy-connection-fields-encryption-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyConnectionFieldsEncryptionKey_secret) }}{{ $cognigyConnectionFieldsEncryptionKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyConnectionFieldsEncryptionKey_secret).data | sha256sum }}{{ end }}
-        {{- end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
         checksum/management-ui: {{ if not (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))) }}{{ include (print $.Template.BasePath "/common-secrets/cognigy-management-ui-creds.yaml") $ | sha256sum }}{{ else }}{{ range $key, $value := (lookup "v1" "Secret" $.Release.Namespace (printf "%s" (include "managementUiCredentials.secretName.render" $ ))).data }}{{ $value | sha256sum }}{{ end }}{{ end }}
@@ -58,7 +54,9 @@ spec:
         {{- if $.Values.knowledgeSearch.enabled }}
         checksum/cognigy-search-orchestrator-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey) }}{{ $cognigySearchOrchestratorApiKey | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySearchOrchestratorApiKey).data | sha256sum }}{{ end }}
         {{- end }}
+        {{- if $.Values.copilot.enabled }}
         checksum/cognigy-service-copilot-api-access-token: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceCopilotApiAccessToken_secret) }}{{ $cognigyServiceCopilotApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceCopilotApiAccessToken_secret).data | sha256sum }}{{ end }}
+        {{- end }}
         checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-testing-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret) }}{{ $cognigyTestingJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyTestingJwt_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-collaboration-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret) }}{{ $cognigyCollaborationJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyCollaborationJwt_secret).data | sha256sum }}{{ end }}
@@ -121,15 +119,8 @@ spec:
             - name: metrics
               containerPort: 8002
           env:
-            {{- if or $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token }}
-            - name: CONNECTION_FIELDS_ENCRYPTION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigyConnectionFieldsEncryptionKey_secret }}
-                  key: key
-            {{- end }}
             {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -151,10 +142,6 @@ spec:
                 secretKeyRef:
                   name: {{ $cxoneOidcClient_secret }}
                   key: client-secret
-            {{- end }}
-            {{- if (($.Values.niceCXOne).webhookEndpoint).enabled }}
-            - name: FEATURE_ENABLE_NICE_CXONE_WEBHOOK_ENDPOINT
-              value: "true"
             {{- end }}
             - name: HOST_VALIDATION_WHITELIST
               {{- if $.Values.ingress.serviceApi.customServiceUrl }}
@@ -284,11 +271,13 @@ spec:
                     name: {{ $cognigySearchOrchestratorApiKey }}
                     key: api-key
             {{- end }}
+            {{- if $.Values.copilot.enabled }}
             - name: SERVICE_COPILOT_API_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ $cognigyServiceCopilotApiAccessToken_secret }}
                   key: api-access-token
+            {{- end }}
             {{- if $.Values.logRedaction.enabled }}
             - name: LOG_REDACTION_ENABLED
               value: "true"
@@ -391,14 +380,10 @@ spec:
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
-          {{- $startupProbe := .startupProbe | default dict }}
           startupProbe:
             httpGet:
               path: /health/startup
               port: 8001
-            timeoutSeconds: {{ $startupProbe.timeoutSeconds | default 1 }}
-            periodSeconds: {{ $startupProbe.periodSeconds | default 10 }}
-            failureThreshold: {{ $startupProbe.failureThreshold | default 6 }}
           readinessProbe:
             httpGet:
               path: /health/startup

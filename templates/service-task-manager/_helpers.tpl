@@ -31,7 +31,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: JOB_ARGUMENTS
               value: "_JOB_ARGUMENTS_"
             - name: TRACING_ENABLED
@@ -58,10 +58,6 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
-            {{- if $.Values.commonConfigs.cognigyRollout }}
-            - name: cognigy-rollout
-              mountPath: /config/rollout
-            {{- end }}
             {{- if $.Values.migrateFS.enabled }}
             - name: runtime
               mountPath: /app/node_modules/_EXTENSION_ID_
@@ -84,11 +80,6 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
-        {{- if $.Values.commonConfigs.cognigyRollout }}
-        - name: cognigy-rollout
-          configMap:
-            name: cognigy-rollout
-        {{- end }}
         {{- if $.Values.migrateFS.enabled }}
         - name: runtime
           persistentVolumeClaim:
