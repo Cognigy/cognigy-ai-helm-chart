@@ -1,0 +1,13 @@
+{{- if and (not .Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret) .Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-connection-fields-encryption-key
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  key: "{{ .Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token | b64enc }}"
+{{- end }}

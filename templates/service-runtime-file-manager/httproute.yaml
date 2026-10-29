@@ -1,0 +1,60 @@
+{{- if and .Values.ingress.enabled .Values.ingress.gatewayApi.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-runtime-file-manager
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  parentRefs:
+    - name: runtime-file-manager
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        {{- if .Values.ingress.serviceRuntimeFileManager.ipWhiteListMiddleware.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: ipwhitelistserviceruntimefilemanager
+        {{- end }}
+      backendRefs:
+        - name: service-runtime-file-manager
+          port: 8000
+---
+# The authenticated private-link path goes through the auth-gateway, the public download and upload routes don't
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-runtime-file-manager-private
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  parentRefs:
+    - name: runtime-file-manager
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v2.0/files/private
+      # Filters are applied in the listed order
+      filters:
+        {{- if .Values.ingress.serviceRuntimeFileManager.ipWhiteListMiddleware.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: ipwhitelistserviceruntimefilemanager
+        {{- end }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: auth-gateway-forward-auth
+        {{- end }}
+      backendRefs:
+        - name: service-runtime-file-manager
+          port: 8000
+{{- end }}

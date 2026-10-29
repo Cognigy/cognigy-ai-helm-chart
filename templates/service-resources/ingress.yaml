@@ -1,5 +1,5 @@
 # We are using the DNS name of "serviceAPI" as the "host"
-{{- if .Values.ingress.enabled }}
+{{- if and .Values.ingress.enabled (not .Values.ingress.gatewayApi.enabled) }}
 
 #
 # This ingress is using the new auth-gateway (if configured).

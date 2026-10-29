@@ -194,6 +194,10 @@
 			"$ref": "#/$defs/microfrontend",
 			"description": "Contact Profiles microfrontend"
 		},
+		"mfeConnections": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Connections microfrontend"
+		},
 		"mfeLoginPage": {
 			"$ref": "#/$defs/microfrontend",
 			"description": "Login Page microfrontend"
@@ -238,6 +242,10 @@
 			"$ref": "#/$defs/microfrontend",
 			"description": "Playbooks microfrontend"
 		},
+		"mfeFunctions": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Functions microfrontend"
+		},
 		"proactiveFollowup": {
 			"type": "object",
 			"description": "Proactive Follow-up feature toggle",
@@ -251,11 +259,19 @@
 			"description": "In-Platform LLM feature toggle and config, rendered into the inplatform-llm-config ConfigMap read by service-resources",
 			"properties": {
 				"enabled": { "type": "boolean" },
+				"internal": {
+					"type": "object",
+					"description": "Platform-internal in-platform LLMs (e.g. Ask AI); sets FEATURE_ENABLE_IN_PLATFORM_LLM_INTERNAL; independent of inPlatformLlm.enabled",
+					"properties": {
+						"enabled": { "type": "boolean" }
+					},
+					"required": ["enabled"]
+				},
 				"config": {
 					"type": "object"
 				}
 			},
-			"required": ["enabled"],
+			"required": ["enabled", "internal"],
 			"allOf": [
 				{
 					"if": {
@@ -298,7 +314,9 @@
 					]
 				},
 				"displayName": { "type": "string" },
-				"customModelOptions": { "type": "object" }
+				"description": { "type": "string" },
+				"customModelOptions": { "type": "object" },
+				"internal": { "type": "boolean" }
 			},
 			"required": ["configSetPoolRef", "orgWhitelist"]
 		},

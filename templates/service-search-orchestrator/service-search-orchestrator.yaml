@@ -98,7 +98,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
             - name: COGNIGY_AI_RELEASE_VERSION
               value: {{ $.Chart.AppVersion | quote }}
             - name: SEARCH_ORCHESTRATOR_API_KEY

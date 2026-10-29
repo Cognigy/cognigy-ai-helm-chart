@@ -1,0 +1,63 @@
+{{- if (.Values.ingress.serviceInsightsApi.tls.enabled) }}
+{{- if not (.Values.ingress.serviceInsightsApi.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceInsightsApi.tls.crt) (.Values.ingress.serviceInsightsApi.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-insights-api-tls
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.ingress.serviceInsightsApi.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceInsightsApi.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceInsightsApi.tls is required!" .Values.ingress.serviceInsightsApi.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceInsightsApi.tls is required!" .Values.ingress.serviceInsightsApi.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceInsightsApi.tls is required!" .Values.ingress.serviceInsightsApi.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if and .Values.traefik.enabled .Values.ingress.enabled .Values.ingress.gatewayApi.enabled }}
+#
+# Gateway for the insights API subdomain (ingress.serviceInsightsApi.host).
+# All HTTPRoutes served on this subdomain attach to this Gateway.
+#
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: insights-api
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  gatewayClassName: {{ .Values.traefik.gatewayClass.name }}
+  listeners:
+    {{- if .Values.tls.enabled }}
+    - name: https
+      port: {{ .Values.traefik.ports.websecure.port }}
+      protocol: HTTPS
+      {{- with .Values.ingress.serviceInsightsApi.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            {{- if .Values.ingress.serviceInsightsApi.tls.enabled }}
+            name: {{ include "common.secretName.render" (dict "existingSecret" .Values.ingress.serviceInsightsApi.tls.existingSecret "defaultSecret" "cognigy-service-insights-api-tls") | quote }}
+            {{- else }}
+            name: {{ tpl (include "common.secretName.render" (dict "existingSecret" .Values.tls.existingSecret "defaultSecret" "cognigy-traefik")) $ | quote }}
+            {{- end }}
+    {{- else }}
+    - name: http
+      port: {{ .Values.traefik.ports.web.port }}
+      protocol: HTTP
+      {{- with .Values.ingress.serviceInsightsApi.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+    {{- end }}
+{{- end }}

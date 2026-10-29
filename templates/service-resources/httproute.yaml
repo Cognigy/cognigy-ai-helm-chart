@@ -1,0 +1,43 @@
+{{- if and .Values.ingress.enabled .Values.ingress.gatewayApi.enabled }}
+#
+# This route is using the new auth-gateway (if configured).
+# It references the auth-gateway (Traefik middleware) via an ExtensionRef filter.
+#
+# See templates/middlewares/authGateway.yaml
+#
+# See: https://cognigy.visualstudio.com/Cognigy.AI/_git/cognigy?path=/services/service-api/src/authGateway/README.md&_a=preview
+# for more information on how the auth-gateway works.
+#
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-resources
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  parentRefs:
+    - name: api
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1/tools/descriptors # redirects all calls to "/v1/tools/descriptors" to service-resources new HTTP interface
+      # Filters are applied in the listed order
+      filters:
+        {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: ipwhitelistserviceapi
+        {{- end }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: auth-gateway-forward-auth
+        {{- end }}
+      backendRefs:
+        - name: service-resources
+          port: 8000
+{{- end }}

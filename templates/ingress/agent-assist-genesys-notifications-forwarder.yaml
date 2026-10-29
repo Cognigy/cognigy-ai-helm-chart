@@ -1,7 +1,7 @@
 # We are using the ingress Configuration "agentAsssitBackend" from values.yaml
 # as both agent-assist-backend and agent-assist-genesys-notifications-forwarder both share the same host and
 # uses the path based routting.
-{{- if and (.Values.cognigyAgentAssist.enabled) (.Values.ingress.enabled) }}
+{{- if and (.Values.cognigyAgentAssist.enabled) (.Values.ingress.enabled) (not .Values.ingress.gatewayApi.enabled) }}
 {{- if .Values.cognigyAgentAssist.enableGenesysNotificationsForwarder }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
