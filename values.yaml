@@ -6418,7 +6418,7 @@ clamd:
   maxScanSize: 300M
   maxFileSize: 100M
   tcpAddr: 0.0.0.0
-  image: cognigy.azurecr.io/clamav:1.5.2
+  image: cognigy.azurecr.io/clamav:1.5.4
   replicaCount: 1
   resources:
     limits:
