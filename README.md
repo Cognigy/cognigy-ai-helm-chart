@@ -190,7 +190,7 @@ insights:
 **Backwards compatibility:** If `insights.postgresql.provider` is unset, it is derived from `pgoperator.enabled` (`true` → `operator`, `false` → `disabled`). This auto-derive will be removed in 2027.x — set the provider explicitly.
 
 ### Cognigy.AI Secrets Backup
-During the installation process the chart generates connection strings for Cognigy.AI microservices to MongoDB, RabbitMQ and Redis backends and stores these connection strings in form of [Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in `cognigy-ai` installation namespace. In case you loose the cluster where Cognigy.AI is running or accidentally delete these secrets, there will be no possibility to connect to the existing databases anymore. 
+During the installation process `dbinit-generate.sh` initialization script generates connection strings for Cognigy.AI microservices to MongoDB, RabbitMQ and Redis backends and stores these connection strings in form of [Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in `cognigy-ai` installation namespace. In case you loose the cluster where Cognigy.AI is running or accidentally delete these secrets, there will be no possibility to connect to the existing databases anymore. 
 
 **Thus, it is crucial to make a consistent backup of the secrets in `cognigy-ai` namespace and to store them securely**. Execute this [script](scripts/backup_cognigy_ai_secrets.sh) to perform a backup of secrets. Set `LIVE_AGENT_ENABLED=true` in case Live Agent product is installed alongside with Cognigy.AI. Store the folder with the secrets securely as it contains sensitive data.
 

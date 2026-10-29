@@ -1,5 +1,4 @@
-{{- /* Only create this Secret when a token is given. An empty one would block the SealedSecret of the same name. */ -}}
-{{- if and (not .Values.commonSecrets.cognigyBillingSigningKey.existingSecret) .Values.commonSecrets.cognigyBillingSigningKey.token }}
+{{- if (not .Values.commonSecrets.cognigyBillingSigningKey.existingSecret) }}
 ---
 apiVersion: v1
 kind: Secret

@@ -1,5 +1,4 @@
-{{- /* Rendered for the customer-facing feature or for platform-internal LLMs (Ask AI), which work without the customer-facing feature. */}}
-{{- if or .Values.inPlatformLlm.enabled .Values.inPlatformLlm.internal.enabled }}
+{{- if .Values.inPlatformLlm.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -19,7 +18,6 @@ data:
   #                         default model for on new/migrated projects. Falls back to `useCases`
   #                         (and its own modelGroup-based default) when omitted.
   #   orgWhitelist        — "*" for all orgs, or an array of specific organisation IDs
-  #   description         — (optional) description of the LLM; synced onto the LLM object, empty when omitted
   #   customModelOptions  — (optional) fixed, provider-native custom model options applied to every
   #                         request against this in-platform LLM (e.g. reasoning effort). Read live by
   #                         service-ai via RPC — no resync needed after editing this ConfigMap. Shape

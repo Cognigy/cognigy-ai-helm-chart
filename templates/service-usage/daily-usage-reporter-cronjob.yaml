@@ -52,7 +52,7 @@ spec:
                 - configMapRef:
                     name: cognigy-env
               env:
-                {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 16 }}
+                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
                 - name: TRACING_ENABLED
                   value: {{ $.Values.tracing.sentry.runtime.enabled | quote }}
                 - name: TRACING_BASE_URL_WITH_PROTOCOL
@@ -71,12 +71,6 @@ spec:
                 - name: BILLING_SERVER_URL_WITH_PROTOCOL_V2
                   value: {{ .billingServerUrlWithProtocol | quote }}
                 {{- end }}
-                - name: IN_PLATFORM_LLM_INPUT_TOKEN_ALLOWANCE_PER_CONVERSATION
-                  value: {{ .inPlatformLlmInputTokenAllowancePerConversation | quote }}
-                - name: IN_PLATFORM_LLM_OUTPUT_TOKEN_ALLOWANCE_PER_CONVERSATION
-                  value: {{ .inPlatformLlmOutputTokenAllowancePerConversation | quote }}
-                - name: IN_PLATFORM_LLM_TESTING_MONTHLY_FREE_QUOTA
-                  value: {{ .inPlatformLlmTestingMonthlyFreeQuota | quote }}
                 {{- if $.Values.commonSecrets.cognigyBillingSigningKey.existingSecret }}
                 - name: BILLING_PRIVATE_KEY_PATH
                   value: /var/run/secrets/billing-signing-key.pem

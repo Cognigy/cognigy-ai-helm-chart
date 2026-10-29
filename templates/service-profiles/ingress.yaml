@@ -3,7 +3,7 @@
   The OpenAPI ingress below remains separate and is intentionally unaffected.
 */}}
 {{- if and .Values.ingress.enabled .Values.serviceProfiles.ingress.api.enabled }}
-{{- if and (eq .Values.ingress.ingresController "traefik") (not .Values.ingress.gatewayApi.enabled) }}
+{{- if (eq .Values.ingress.ingresController "traefik") }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -83,7 +83,7 @@ spec:
 {{- end }}
 
 {{- if .Values.ingress.enabled }}
-{{- if and (eq .Values.ingress.ingresController "traefik") (not .Values.ingress.gatewayApi.enabled) }}
+{{- if (eq .Values.ingress.ingresController "traefik") }}
 ---
 # Public OpenAPI ingress; intentionally no auth-gateway forward-auth middleware.
 apiVersion: networking.k8s.io/v1

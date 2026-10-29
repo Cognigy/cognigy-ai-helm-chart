@@ -1,4 +1,3 @@
-{{- $cognigyConnectionFieldsEncryptionKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret "defaultSecret" "cognigy-connection-fields-encryption-key") }}
 {{- $cognigyServiceEndpointApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceEndpointApiAccessToken.existingSecret "defaultSecret" "cognigy-service-endpoint-api-access-token") }}
 {{- $cognigyFacebook_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyFacebook.existingSecret "defaultSecret" "cognigy-facebook") }}
 {{- $cognigyRceCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyRceCredentials.existingSecret "defaultSecret" "cognigy-rce-credentials") }}
@@ -36,9 +35,6 @@ spec:
         app: {{ $serviceName }}
       annotations:
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
-        {{- if or $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token }}
-        checksum/cognigy-connection-fields-encryption-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyConnectionFieldsEncryptionKey_secret) }}{{ $cognigyConnectionFieldsEncryptionKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyConnectionFieldsEncryptionKey_secret).data | sha256sum }}{{ end }}
-        {{- end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret) }}{{ $cognigyServiceEndpointApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyServiceEndpointApiAccessToken_secret).data | sha256sum }}{{ end }}
@@ -75,14 +71,7 @@ spec:
             - name: metrics
               containerPort: 8002
           env:
-            {{- if or $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token }}
-            - name: CONNECTION_FIELDS_ENCRYPTION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $cognigyConnectionFieldsEncryptionKey_secret }}
-                  key: key
-            {{- end }}
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: FB_VERIFY_TOKEN
               valueFrom:

@@ -95,7 +95,7 @@ spec:
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: INSIGHTS_POSTGRES_DATA_MIGRATION_MODE
               value: {{ .migration.mode | quote }}
             - name: POSTGRES_HOST

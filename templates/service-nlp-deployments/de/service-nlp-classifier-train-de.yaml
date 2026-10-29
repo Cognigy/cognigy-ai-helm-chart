@@ -88,7 +88,7 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: LANGUAGES_TO_RUN
               value: de-DE
             - name: TRAIN

@@ -1,4 +1,4 @@
-{{- if and .Values.ingress.enabled (not .Values.ingress.gatewayApi.enabled) }}
+{{- if .Values.ingress.enabled }}
 {{- range $mfeConfig := (include "mfe.list" $ | fromJson).items }}
 {{- if and $mfeConfig.values $mfeConfig.values.enabled }}
 ---

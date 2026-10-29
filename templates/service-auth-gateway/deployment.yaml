@@ -68,7 +68,7 @@ spec:
           #     containerPort: 8002
           env:
             {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT

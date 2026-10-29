@@ -136,9 +136,9 @@ spec:
             - configMapRef:
                 name: cognigy-env
           env:
-            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
             - name: LANGUAGES_TO_RUN
-              value: {{ $.Values.serviceNlpClassifierScoreKo.languages }}
+              value: ko-KR
             - name: SCORE
               value: 'true'
             - name: DEFAULT_EMBEDDING_MODEL

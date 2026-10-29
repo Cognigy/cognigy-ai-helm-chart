@@ -1,4 +1,27 @@
-{{- if and (.Values.ingress.enabled) (.Values.serviceEndpointVgNightly.enabled) (not .Values.ingress.gatewayApi.enabled) }}
+{{- if and (.Values.serviceEndpointVgNightly.enabled) (.Values.ingress.serviceEndpointVgNightly.tls.enabled) }}
+{{- if not (.Values.ingress.serviceEndpointVgNightly.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceEndpointVgNightly.tls.crt) (.Values.ingress.serviceEndpointVgNightly.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-endpoint-vg-nightly-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # Your base64 encoded TLS certificate
+  tls.crt: {{ .Values.ingress.serviceEndpointVgNightly.tls.crt | b64enc | quote }}
+  # Your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceEndpointVgNightly.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if and (.Values.ingress.enabled) (.Values.serviceEndpointVgNightly.enabled) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

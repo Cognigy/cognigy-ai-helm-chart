@@ -1,69 +1,333 @@
 {{- if .Values.mongodb.enabled }}
-{{- $secrets := list
-  "cognigy-service-ai"
-  "cognigy-service-alexa-management"
-  "cognigy-service-analytics-collector"
-  "cognigy-service-analytics-conversation"
-  "cognigy-service-api"
-  "cognigy-service-app-session-manager"
-  "cognigy-service-custom-modules"
-  "cognigy-service-function-scheduler"
-  "cognigy-service-handover"
-  "cognigy-service-handover-inactivity"
-  "cognigy-service-logs"
-  "cognigy-service-nlp"
-  "cognigy-service-profiles"
-  "cognigy-service-resources"
-  "cognigy-service-runtime-file-manager"
-  "cognigy-service-security"
-  "cognigy-service-task-manager"
-  "cognigy-service-trainer"
-  "cognigy-agent-assist"
-  "cognigy-service-insights-api"
-}}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cognigy-ai-db-init
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: sre
+  annotations:
+    "cognigy.com/source-code": "empty"
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-3"
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
+spec:
+  template:
+    metadata:
+      name: cognigy-ai-db-init
+    spec:
+      restartPolicy: Never
+      {{- if .Values.mongodb.dbinit.securityContext }}
+      securityContext:
+        {{- toYaml .Values.mongodb.dbinit.securityContext | nindent 8 }}
+      {{- end }}
+      {{- if .Values.mongodb.dbinit.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.mongodb.dbinit.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.mongodb.dbinit.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.mongodb.dbinit.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.mongodb.dbinit.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.mongodb.dbinit.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.mongodb.dbinit.priorityClassName }}
+      priorityClassName: {{ .Values.mongodb.dbinit.priorityClassName }}
+      {{- end }}
+      containers:
+      - name: cognigy-ai-db-init
+        image: {{ include "common.image.render" (dict "global" $.Values.global "image" .Values.mongodb.dbinit.image) }}
+        command: ["/bin/bash"]
+        {{- if eq .Values.mongodb.scheme "mongodb+srv" }}
+        args: ["/cognigy-ai-dbinit/dbinit-generate/dbinit-generate-atlas.sh"]
+        {{- else }}
+        args: ["/cognigy-ai-dbinit/dbinit-generate/dbinit-generate.sh"]
+        {{- end }}
+        volumeMounts:
+        - name: dbinit-generate
+          mountPath: /cognigy-ai-dbinit/dbinit-generate
+        - name: mongodb-connection-strings
+          mountPath: "/cognigy-ai-dbinit/mongodb-connection-strings"
+          readOnly: true
+        env:
+          {{- if eq .Values.mongodb.scheme "mongodb+srv" }}
+          - name: MONGODB_ATLAS_PUBLIC_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbAtlasCredentials.secretName.render" $ | indent 1 }}
+                key: apikeypublic
+          - name: MONGODB_ATLAS_PRIVATE_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbAtlasCredentials.secretName.render" $ | indent 1 }}
+                key: apikeyprivate
+          - name: MONGODB_ATLAS_PROJECT_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbAtlasCredentials.secretName.render" $ | indent 1 }}
+                key: projectid
+          - name: MONGODB_ATLAS_CLUSTER_NAME
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbAtlasCredentials.secretName.render" $ | indent 1 }}
+                key: clustername
+          {{- else }}
+          - name: MONGODB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbCredentials.secretName.render" $ | indent 1 }}
+                key: username
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{- include "mongodbCredentials.secretName.render" $ | indent 1 }}
+                key: password
+          - name: MONGODB_HOSTS
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-connection-hosts
+                key: hosts
+          {{- end}} 
+      volumes:
+      - name: dbinit-generate
+        configMap:
+          name: dbinit-generate
+
+      - name: mongodb-connection-strings
+        projected:
+          sources:
+          - secret:
+              name: cognigy-service-ai
+              items:
+              - key: connection-string
+                path: cognigy-service-ai
+          - secret:
+              name: cognigy-service-alexa-management
+              items:
+              - key: connection-string
+                path: cognigy-service-alexa-management
+          - secret:
+              name: cognigy-service-analytics-collector
+              items:
+              - key: connection-string
+                path: cognigy-service-analytics-collector
+          - secret:
+              name: cognigy-service-analytics-conversation
+              items:
+              - key: connection-string
+                path: cognigy-service-analytics-conversation
+          - secret:
+              name: cognigy-service-api
+              items:
+              - key: connection-string
+                path: cognigy-service-api
+          - secret:
+              name: cognigy-service-app-session-manager
+              items:
+              - key: connection-string
+                path: cognigy-service-app-session-manager
+          - secret:
+              name: cognigy-service-custom-modules
+              items:
+              - key: connection-string
+                path: cognigy-service-custom-modules
 {{- if .Values.serviceCollaboration.enabled }}
-{{- $secrets = append $secrets "cognigy-service-collaboration" }}
+          - secret:
+              name: cognigy-service-collaboration
+              items:
+              - key: connection-string
+                path: cognigy-service-collaboration
 {{- end }}
 {{- if .Values.serviceToolkit.enabled }}
-{{- $secrets = append $secrets "cognigy-service-toolkit" }}
+          - secret:
+              name: cognigy-service-toolkit
+              items:
+              - key: connection-string
+                path: cognigy-service-toolkit
 {{- end }}
 {{- if .Values.serviceSentinel.enabled }}
-{{- $secrets = append $secrets "cognigy-service-sentinel" }}
+          - secret:
+              name: cognigy-service-sentinel
+              items:
+              - key: connection-string
+                path: cognigy-service-sentinel
 {{- end }}
 {{- if .Values.serviceTesting.enabled }}
-{{- $secrets = append $secrets "cognigy-service-testing" }}
+          - secret:
+              name: cognigy-service-testing
+              items:
+              - key: connection-string
+                path: cognigy-service-testing
 {{- end }}
 {{- if .Values.dbConnectionString.services.serviceTestingBilling.enabled }}
-{{- $secrets = append $secrets "cognigy-service-testing-billing" }}
+          - secret:
+              name: cognigy-service-testing-billing
+              items:
+              - key: connection-string
+                path: cognigy-service-testing-billing
 {{- end }}
+          - secret:
+              name: cognigy-service-function-scheduler
+              items:
+              - key: connection-string
+                path: cognigy-service-function-scheduler
+          - secret:
+              name: cognigy-service-handover
+              items:
+              - key: connection-string
+                path: cognigy-service-handover
+          - secret:
+              name: cognigy-service-handover-inactivity
+              items:
+              - key: connection-string
+                path: cognigy-service-handover-inactivity
+          - secret:
+              name: cognigy-service-logs
+              items:
+              - key: connection-string
+                path: cognigy-service-logs
+          - secret:
+              name: cognigy-service-nlp
+              items:
+              - key: connection-string
+                path: cognigy-service-nlp
+          - secret:
+              name: cognigy-service-profiles
+              items:
+              - key: connection-string
+                path: cognigy-service-profiles
+          - secret:
+              name: cognigy-service-resources
+              items:
+              - key: connection-string
+                path: cognigy-service-resources
+          - secret:
+              name: cognigy-service-runtime-file-manager
+              items:
+              - key: connection-string
+                path: cognigy-service-runtime-file-manager
+          - secret:
+              name: cognigy-service-security
+              items:
+              - key: connection-string
+                path: cognigy-service-security
+          - secret:
+              name: cognigy-service-task-manager
+              items:
+              - key: connection-string
+                path: cognigy-service-task-manager
+          - secret:
+              name: cognigy-service-trainer
+              items:
+              - key: connection-string
+                path: cognigy-service-trainer
+          - secret:
+              name: cognigy-agent-assist
+              items:
+              - key: connection-string
+                path: cognigy-agent-assist
+          - secret:
+              name: cognigy-service-insights-api
+              items:
+              - key: connection-string
+                path: cognigy-service-insights-api
 {{- if .Values.serviceUsage.enabled }}
-{{- $secrets = append $secrets "cognigy-service-usage" }}
+          - secret:
+              name: cognigy-service-usage
+              items:
+              - key: connection-string
+                path: cognigy-service-usage
 {{- end }}
 {{- if .Values.dbConnectionString.services.servicePlatformAgent.enabled }}
-{{- $secrets = append $secrets "cognigy-service-platform-agent" }}
+          - secret:
+              name: cognigy-service-platform-agent
+              items:
+              - key: connection-string
+                path: cognigy-service-platform-agent
 {{- end }}
 {{- if .Values.dbConnectionString.services.copilot.enabled }}
-{{- $secrets = append $secrets "cognigy-copilot" }}
+          - secret:
+              name: cognigy-copilot
+              items:
+              - key: connection-string
+                path: cognigy-copilot
 {{- end }}
-
-{{- /* The billing user may only append simulation runs and maintain their pre-aggregation. */ -}}
-{{- $customRoles := dict "cognigy-service-testing-billing" (list (dict
-  "role" "billingAppendOnly"
-  "privileges" (list
-    (dict "resource" (dict "collection" "billingsimulationruns") "actions" (list "insert" "find" "listIndexes" "collStats" "indexStats" "createCollection"))
-    (dict "resource" (dict "collection" "preAggregateBillingSimulationRuns") "actions" (list "find" "insert" "update" "createIndex" "dropIndex" "listIndexes" "collStats" "indexStats"))
-    (dict "resource" (dict "collection" "") "actions" (list "createCollection" "listCollections" "find"))
-  )
-)) }}
-
-{{- include "cognigy-common.mongodb.dbinit" (dict
-  "context" $
-  "name" "cognigy-ai"
-  "image" (include "common.image.render" (dict "global" $.Values.global "image" .Values.mongodb.dbinit.image))
-  "imagePullSecrets" (include "image.pullSecretsCognigy" $ | fromYaml).imagePullSecrets
-  "secrets" $secrets
-  "customRoles" $customRoles
-  "labels" (dict "owner-team" "sre")
-  "annotations" (dict "cognigy.com/source-code" "empty")
-) }}
+      {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+{{- end }}
+{{- if and (.Values.mongodb.enabled) (eq .Values.mongodb.scheme "mongodb") (not .Values.mongodb.auth.existingSecret) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-connection-creds
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
+type: Opaque
+data:
+  username: "{{- .Values.mongodb.auth.rootUser | b64enc }}"
+  password: "{{- .Values.mongodb.auth.rootPassword | b64enc }}"
+{{- end }}
+{{- if and (.Values.mongodb.enabled) (eq .Values.mongodb.scheme "mongodb+srv") (not .Values.mongodb.auth.atlas.existingSecret) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-atlas-creds
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
+type: Opaque
+data:
+  apikeypublic: "{{- .Values.mongodb.auth.atlas.publicAPIKey | b64enc }}"
+  apikeyprivate: "{{- .Values.mongodb.auth.atlas.privateAPIKey | b64enc }}"
+  projectid: "{{- .Values.mongodb.auth.atlas.projectId | b64enc }}"
+  clustername: "{{- .Values.mongodb.auth.atlas.clusterName | b64enc }}"
+{{- end }}
+{{- if .Values.mongodb.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-connection-hosts
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
+type: Opaque
+data:
+  hosts: "{{- .Values.mongodb.hosts | b64enc }}"
+{{- end }}
+{{- if .Values.mongodb.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbinit-generate
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without these lines, the
+    # resource is considered part of the release.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": {{ .Values.mongodb.dbinit.helmHook.deletePolicy }}
+data:
+{{- if eq .Values.mongodb.scheme "mongodb+srv" }}
+{{ (.Files.Glob "scripts/dbinit-generate-atlas.sh").AsConfig | indent 2 }}
+{{- else }}
+{{ (.Files.Glob "scripts/dbinit-generate.sh").AsConfig | indent 2 }}
+{{- end }}
 {{- end }}
