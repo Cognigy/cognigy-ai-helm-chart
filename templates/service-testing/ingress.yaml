@@ -20,6 +20,7 @@ spec:
     replacement: /$1
 {{- end }}
 ---
+{{- if not .Values.ingress.gatewayApi.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -73,4 +74,5 @@ spec:
               number: 8000
         path: /testing
         pathType: Prefix
+{{- end }}
 {{- end }}

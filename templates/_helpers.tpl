@@ -119,9 +119,9 @@ Usage:
 
 {{- define "cognigy-ai.common.nodeEnv.render" -}}
 {{- $nodeEnvVars := list -}}
-{{- range $key, $value := .context.Values.cognigyEnv }}
+{{- range $key, $_ := .context.Values.cognigyEnv }}
 {{- if hasPrefix "NODE_" $key }}
-{{- $nodeEnvVars = append $nodeEnvVars (dict "name" $key "value" ($value | toString)) }}
+{{- $nodeEnvVars = append $nodeEnvVars (dict "name" $key "value" (include "cognigy-common.cognigyEnv.value" (dict "context" $.context "key" $key))) }}
 {{- end }}
 {{- end }}
 {{- if $nodeEnvVars }}
@@ -162,36 +162,6 @@ Return the proper Management Ui Credentials Secret Name
   {{- end -}}
 
   {{- printf "%s" (tpl $managementUiCredentialsName $) -}}
-{{- end -}}
-
-{{/*
-Return the proper mongodb credentials Secret Name
-*/}}
-{{- define "mongodbCredentials.secretName.render" -}}
-  {{- $mongodbCredentialsSecretName := "" -}}
-
-  {{- if .Values.mongodb.auth.existingSecret -}}
-    {{- $mongodbCredentialsSecretName = .Values.mongodb.auth.existingSecret -}}
-  {{- else -}}
-    {{- $mongodbCredentialsSecretName = "mongodb-connection-creds" -}}
-  {{- end -}}
-
-  {{- printf "%s" (tpl $mongodbCredentialsSecretName $) -}}
-{{- end -}}
-
-{{/*
-Return the proper mongodb Atlas credentials Secret Name
-*/}}
-{{- define "mongodbAtlasCredentials.secretName.render" -}}
-  {{- $mongodbAtlasCredentialsSecretName := "" -}}
-
-  {{- if .Values.mongodb.auth.atlas.existingSecret -}}
-    {{- $mongodbAtlasCredentialsSecretName = .Values.mongodb.auth.atlas.existingSecret -}}
-  {{- else -}}
-    {{- $mongodbAtlasCredentialsSecretName = "mongodb-atlas-creds" -}}
-  {{- end -}}
-
-  {{- printf "%s" (tpl $mongodbAtlasCredentialsSecretName $) -}}
 {{- end -}}
 
 {{/*
@@ -580,6 +550,7 @@ Usage:
   (dict "name" "mfe-snapshots" "pathName" "snapshots" "values" .Values.mfeSnapshots "team" "dubnium")
   (dict "name" "mfe-toolkit" "pathName" "toolkit" "values" .Values.mfeToolkit "team" "gold")
   (dict "name" "mfe-contact-profiles" "pathName" "contact-profiles" "values" .Values.mfeContactProfiles "team" "gold")
+  (dict "name" "mfe-connections" "pathName" "connections" "values" .Values.mfeConnections "team" "aluminium")
   (dict "name" "mfe-packaging" "pathName" "packaging" "values" .Values.mfePackaging "team" "boron")
   (dict "name" "mfe-project-resources" "pathName" "project-resources" "values" .Values.mfeProjectResources "team" "alloy")
   (dict "name" "mfe-login-page" "pathName" "login-page" "values" .Values.mfeLoginPage "team" "boron")
@@ -590,7 +561,23 @@ Usage:
   (dict "name" "mfe-project-overview" "pathName" "project-overview" "values" .Values.mfeProjectOverview "team" "boron")
   (dict "name" "mfe-logs" "pathName" "logs" "values" .Values.mfeLogs "team" "gold")
   (dict "name" "mfe-playbooks" "pathName" "playbooks" "values" .Values.mfePlaybooks "team" "gold")
+  (dict "name" "mfe-functions" "pathName" "functions" "values" .Values.mfeFunctions "team" "aluminium")
 -}}
 {{- dict "items" $mfes | toJson -}}
 {{- end -}}
 
+
+{{/*
+Renders the regex of the RabbitMQ score queues consumed by a service-nlp-classifier-score deployment.
+The queue name is "nlp-classifier-score-<first two letters of the language>-v2" (see get_language_code in the services),
+one per language in LANGUAGES_TO_RUN, so the KEDA trigger follows the "languages" value of the service.
+Usage:
+{{ include "cognigy-ai.nlp.scoreQueueRegex" .Values.serviceNlpClassifierScoreXx.languages }}
+*/}}
+{{- define "cognigy-ai.nlp.scoreQueueRegex" -}}
+{{- $codes := list -}}
+{{- range splitList "," . -}}
+{{- $codes = append $codes (lower (substr 0 2 (trim .))) -}}
+{{- end -}}
+^nlp-classifier-score-({{ $codes | uniq | sortAlpha | join "|" }})-v2$
+{{- end -}}

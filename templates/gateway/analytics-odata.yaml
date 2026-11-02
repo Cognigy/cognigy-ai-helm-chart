@@ -1,0 +1,63 @@
+{{- if (.Values.ingress.serviceAnalyticsOdata.tls.enabled) }}
+{{- if not (.Values.ingress.serviceAnalyticsOdata.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceAnalyticsOdata.tls.crt) (.Values.ingress.serviceAnalyticsOdata.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-analytics-odata-tls
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.ingress.serviceAnalyticsOdata.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceAnalyticsOdata.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceAnalyticsOdata.tls is required!" .Values.ingress.serviceAnalyticsOdata.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceAnalyticsOdata.tls is required!" .Values.ingress.serviceAnalyticsOdata.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceAnalyticsOdata.tls is required!" .Values.ingress.serviceAnalyticsOdata.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if and .Values.traefik.enabled .Values.ingress.enabled .Values.ingress.gatewayApi.enabled }}
+#
+# Gateway for the analytics OData subdomain (ingress.serviceAnalyticsOdata.host).
+# All HTTPRoutes served on this subdomain attach to this Gateway.
+#
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: analytics-odata
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  gatewayClassName: {{ .Values.traefik.gatewayClass.name }}
+  listeners:
+    {{- if .Values.tls.enabled }}
+    - name: https
+      port: {{ .Values.traefik.ports.websecure.port }}
+      protocol: HTTPS
+      {{- with .Values.ingress.serviceAnalyticsOdata.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            {{- if .Values.ingress.serviceAnalyticsOdata.tls.enabled }}
+            name: {{ include "common.secretName.render" (dict "existingSecret" .Values.ingress.serviceAnalyticsOdata.tls.existingSecret "defaultSecret" "cognigy-service-analytics-odata-tls") | quote }}
+            {{- else }}
+            name: {{ tpl (include "common.secretName.render" (dict "existingSecret" .Values.tls.existingSecret "defaultSecret" "cognigy-traefik")) $ | quote }}
+            {{- end }}
+    {{- else }}
+    - name: http
+      port: {{ .Values.traefik.ports.web.port }}
+      protocol: HTTP
+      {{- with .Values.ingress.serviceAnalyticsOdata.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+    {{- end }}
+{{- end }}

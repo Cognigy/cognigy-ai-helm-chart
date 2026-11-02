@@ -1,0 +1,61 @@
+{{- if and (.Values.managementUi.enabled) (.Values.managementUi.ingress.enabled) (.Values.managementUi.ingress.tls.enabled) }}
+{{- if not (.Values.managementUi.ingress.tls.existingSecret) }}
+{{- if and (.Values.managementUi.ingress.tls.crt) (.Values.managementUi.ingress.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-management-ui-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # your base64 encoded tls certificate
+  tls.crt: {{ .Values.managementUi.ingress.tls.crt | b64enc | quote }}
+  # your base64 encoded private key
+  tls.key: {{ .Values.managementUi.ingress.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.managementUi.ingress.tls is required!" .Values.managementUi.ingress.tls.crt }}
+  {{ required "A valid value for .Values.managementUi.ingress.tls is required!" .Values.managementUi.ingress.tls.key }}
+  {{ required "A valid value for .Values.managementUi.ingress.tls is required!" .Values.managementUi.ingress.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if and .Values.traefik.enabled .Values.managementUi.enabled .Values.managementUi.ingress.enabled .Values.ingress.gatewayApi.enabled }}
+#
+# Gateway for the management UI subdomain (managementUi.ingress.host).
+# All HTTPRoutes served on this subdomain attach to this Gateway.
+#
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: management-ui
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  gatewayClassName: {{ .Values.traefik.gatewayClass.name }}
+  listeners:
+    {{- if .Values.tls.enabled }}
+    - name: https
+      port: {{ .Values.traefik.ports.websecure.port }}
+      protocol: HTTPS
+      {{- with .Values.managementUi.ingress.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            {{- if .Values.managementUi.ingress.tls.enabled }}
+            name: {{ include "common.secretName.render" (dict "existingSecret" .Values.managementUi.ingress.tls.existingSecret "defaultSecret" "cognigy-management-ui-tls") | quote }}
+            {{- else }}
+            name: {{ tpl (include "common.secretName.render" (dict "existingSecret" .Values.tls.existingSecret "defaultSecret" "cognigy-traefik")) $ | quote }}
+            {{- end }}
+    {{- else }}
+    - name: http
+      port: {{ .Values.traefik.ports.web.port }}
+      protocol: HTTP
+      {{- with .Values.managementUi.ingress.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+    {{- end }}
+{{- end }}

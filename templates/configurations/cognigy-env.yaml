@@ -1,133 +1,120 @@
-{{ $config := .Values.cognigyEnv }}
+{{- /* Keys derived from other chart values. They override cognigyEnv keys of the same name,
+except the FEATURE_* flags guarded by hasKey, where an explicit cognigyEnv value wins. */ -}}
+{{- $derived := dict }}
 
-{{- range $key, $value := $config }}
-{{- if kindIs "string" $value }}
-{{- $_ := set $config $key (include "common.tplvalues.render" (dict "value" $value "context" $)) }}
-{{- end }}
-{{- end }}
-
-# DNS names
+{{- /* DNS names */ -}}
 {{- if .Values.ingress.serviceUi.customServiceUrl }}
-{{- $_ := set $config "FRONTEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceUi.customServiceUrl) }}
+{{- $_ := set $derived "FRONTEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceUi.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "FRONTEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceUi.host) }}
+{{- $_ := set $derived "FRONTEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceUi.host) }}
 {{- end }}
 
 {{- if .Values.ingress.serviceApi.customServiceUrl }}
-{{- $_ := set $config "BACKEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceApi.customServiceUrl) }}
+{{- $_ := set $derived "BACKEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceApi.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "BACKEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceApi.host) }}
+{{- $_ := set $derived "BACKEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceApi.host) }}
+{{- end }}
+
+{{- /* vg-resources-api is reached via the service-api ingress (routePrefix /vg/resources, no trailing /v1). Can be overridden via cognigyEnv. */ -}}
+{{- if not (hasKey .Values.cognigyEnv "VG_RESOURCES_API_BASE_URL_WITH_PROTOCOL") }}
+{{- if .Values.ingress.serviceApi.customServiceUrl }}
+{{- $_ := set $derived "VG_RESOURCES_API_BASE_URL_WITH_PROTOCOL" (printf "https://%s/vg/resources" .Values.ingress.serviceApi.customServiceUrl) }}
+{{- else }}
+{{- $_ := set $derived "VG_RESOURCES_API_BASE_URL_WITH_PROTOCOL" (printf "https://%s/vg/resources" .Values.ingress.serviceApi.host) }}
+{{- end }}
 {{- end }}
 
 {{- if .Values.ingress.serviceInsightsApi.customServiceUrl }}
-{{- $_ := set $config "INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceInsightsApi.customServiceUrl) }}
+{{- $_ := set $derived "INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceInsightsApi.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceInsightsApi.host) }}
+{{- $_ := set $derived "INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceInsightsApi.host) }}
 {{- end }}
 
 {{- if .Values.ingress.serviceCollector.customServiceUrl }}
-{{- $_ := set $config "INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceCollector.customServiceUrl) }}
+{{- $_ := set $derived "INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceCollector.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceCollector.host) }}
+{{- $_ := set $derived "INSIGHTS_COLLECTOR_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceCollector.host) }}
 {{- end }}
 
 {{- if .Values.ingress.serviceEndpoint.customServiceUrl }}
-{{- $_ := set $config "ENDPOINT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceEndpoint.customServiceUrl) }}
+{{- $_ := set $derived "ENDPOINT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceEndpoint.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "ENDPOINT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceEndpoint.host) }}
+{{- $_ := set $derived "ENDPOINT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceEndpoint.host) }}
 {{- end }}
 
 {{- if .Values.ingress.serviceRuntimeFileManager.customServiceUrl }}
-{{- $_ := set $config "RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceRuntimeFileManager.customServiceUrl) }}
+{{- $_ := set $derived "RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceRuntimeFileManager.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceRuntimeFileManager.host) }}
+{{- $_ := set $derived "RUNTIME_FILE_MANAGER_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceRuntimeFileManager.host) }}
 {{- end }}
 
 {{- if .Values.ingress.serviceWebchat.customServiceUrl }}
-{{- $_ := set $config "WEBCHAT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceWebchat.customServiceUrl) }}
+{{- $_ := set $derived "WEBCHAT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceWebchat.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "WEBCHAT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceWebchat.host) }}
+{{- $_ := set $derived "WEBCHAT_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceWebchat.host) }}
 {{- end }}
 
 {{- if .Values.ingress.serviceAppSessionManager.customServiceUrl }}
-{{- $_ := set $config "APPS_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceAppSessionManager.customServiceUrl) }}
+{{- $_ := set $derived "APPS_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceAppSessionManager.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "APPS_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceAppSessionManager.host) }}
+{{- $_ := set $derived "APPS_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceAppSessionManager.host) }}
 {{- end }}
 
 {{- if .Values.ingress.agentAssistBackend.customServiceUrl }}
-{{- $_ := set $config "AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.agentAssistBackend.customServiceUrl) }}
+{{- $_ := set $derived "AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.agentAssistBackend.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.agentAssistBackend.host) }}
+{{- $_ := set $derived "AGENT_ASSIST_WORKSPACE_API_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.agentAssistBackend.host) }}
 {{- end }}
 
 {{- if .Values.ingress.agentAssistFrontend.customServiceUrl }}
-{{- $_ := set $config "AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.agentAssistFrontend.customServiceUrl) }}
+{{- $_ := set $derived "AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.agentAssistFrontend.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.agentAssistFrontend.host) }}
+{{- $_ := set $derived "AGENT_ASSIST_WORKSPACE_FRONTEND_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.agentAssistFrontend.host) }}
 {{- end }}
 
 {{- /* Platform Agent is deployed from its own chart/release (see the Cognigy/platform-agent repo),
 not from this chart. Point service-ui at it by setting cognigyEnv.PLATFORM_AGENT_BASE_URL_WITH_PROTOCOL
-directly (picked up by the generic passthrough at the top of this file). */ -}}
+directly; cognigyEnv keys are passed through by cognigy-common.cognigyEnv.configMaps. */ -}}
 
 {{- if .Values.ingress.serviceStaticFiles.customServiceUrl }}
-{{- $_ := set $config "STATIC_FILES_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceStaticFiles.customServiceUrl) }}
+{{- $_ := set $derived "STATIC_FILES_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceStaticFiles.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "STATIC_FILES_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceStaticFiles.host) }}
+{{- $_ := set $derived "STATIC_FILES_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceStaticFiles.host) }}
 {{- end }}
 
 {{- if .Values.ingress.serviceAnalyticsOdata.customServiceUrl }}
-{{- $_ := set $config "ODATA_HOSTNAME" (printf "%s" .Values.ingress.serviceAnalyticsOdata.customServiceUrl) }}
+{{- $_ := set $derived "ODATA_HOSTNAME" (printf "%s" .Values.ingress.serviceAnalyticsOdata.customServiceUrl) }}
 {{- else }}
-{{- $_ := set $config "ODATA_HOSTNAME" (printf "%s" .Values.ingress.serviceAnalyticsOdata.host) }}
+{{- $_ := set $derived "ODATA_HOSTNAME" (printf "%s" .Values.ingress.serviceAnalyticsOdata.host) }}
 {{- end }}
 
-{{- $_ := set $config "ODATA_PROTOCOL" "https" }}
+{{- $_ := set $derived "ODATA_PROTOCOL" "https" }}
 
 {{- if and ($.Values.goals.enabled) (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.serviceInsightsResources.enabled) (not (hasKey .Values.cognigyEnv "FEATURE_INSIGHTS_USE_GOALS_DASHBOARD")) }}
-{{- $_ := set $config "FEATURE_INSIGHTS_USE_GOALS_DASHBOARD" "true" }}
+{{- $_ := set $derived "FEATURE_INSIGHTS_USE_GOALS_DASHBOARD" "true" }}
 {{- end }}
 
 {{- if and ($.Values.goals.enabled) (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) ($.Values.serviceInsightsResources.enabled) (not (hasKey .Values.cognigyEnv "FEATURE_USE_GOALS")) }}
-{{- $_ := set $config "FEATURE_USE_GOALS" "true" }}
+{{- $_ := set $derived "FEATURE_USE_GOALS" "true" }}
 {{- end }}
 
 {{- if and (or ($.Values.cubejs.enabled) ($.Values.insights.postgresql.usePartitionedTables)) (include "cognigy-ai.insights.postgresql.enabled" $) (not (hasKey .Values.cognigyEnv "FEATURE_INSIGHTS_BUSINESS_DASHBOARD_DIRECT_POSTGRESQL")) }}
-{{- $_ := set $config "FEATURE_INSIGHTS_BUSINESS_DASHBOARD_DIRECT_POSTGRESQL" "true" }}
+{{- $_ := set $derived "FEATURE_INSIGHTS_BUSINESS_DASHBOARD_DIRECT_POSTGRESQL" "true" }}
 {{- end }}
 
 {{- if .Values.knowledgeSearch.enabled }}
-{{- $_ := set $config "FEATURE_ENABLE_KNOWLEDGE_SEARCH" "true" }}
+{{- $_ := set $derived "FEATURE_ENABLE_KNOWLEDGE_SEARCH" "true" }}
 {{- end }}
 
-{{- $_ := set $config "FEATURE_ENABLE_IN_PLATFORM_LLM" .Values.inPlatformLlm.enabled }}
+{{- $_ := set $derived "FEATURE_ENABLE_IN_PLATFORM_LLM" .Values.inPlatformLlm.enabled }}
+{{- $_ := set $derived "FEATURE_ENABLE_IN_PLATFORM_LLM_INTERNAL" .Values.inPlatformLlm.internal.enabled }}
+
+{{- $_ := set $derived "FEATURE_ENABLE_IN_PLATFORM_LLM_BILLING" .Values.inPlatformLlmBilling.enabled }}
 
 {{- if .Values.proactiveFollowup.enabled }}
 {{- $_ := required "cognigyEnv.PAIA_BASE_URL is required when proactiveFollowup.enabled is true" (index .Values.cognigyEnv "PAIA_BASE_URL") }}
 {{- $_ := required "cognigyEnv.PROACTIVE_AUTH_TOKEN_URL is required when proactiveFollowup.enabled is true" (index .Values.cognigyEnv "PROACTIVE_AUTH_TOKEN_URL") }}
-{{- $_ := set $config "FEATURE_ENABLE_PROACTIVE_FOLLOWUP" "true" }}
+{{- $_ := set $derived "FEATURE_ENABLE_PROACTIVE_FOLLOWUP" "true" }}
 {{- end }}
 
----
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cognigy-env
-  namespace: {{ $.Release.Namespace | quote }}
-data:
-  {{- range $key, $value := $config }}
-  {{ $key }}: {{ $value | quote }}
-  {{- end }}
-
----
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cognigy-env-reloadable
-  namespace: {{ $.Release.Namespace | quote }}
-data:
-  cognigy.yaml: |
-    {{- toYaml $config | nindent 4 -}}
+{{ include "cognigy-common.cognigyEnv.configMaps" (dict "context" $ "overrides" $derived "name" "cognigy-env") }}

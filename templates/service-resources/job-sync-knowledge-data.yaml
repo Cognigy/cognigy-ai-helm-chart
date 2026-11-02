@@ -46,7 +46,7 @@ spec:
               image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
               resources: {{- toYaml .resources | nindent 16 }}
               env:
-                {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 16 }}
+                {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 16 }}
                 - name: REDIS_ENABLE_RECONNECT
                   value: "true"
                 - name: RABBITMQ_ENABLE_RECONNECT

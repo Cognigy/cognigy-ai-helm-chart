@@ -1,3 +1,5 @@
+{{- $cognigySnapshotPackageEncryptionKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigySnapshotPackageEncryptionKey.existingSecret "defaultSecret" "cognigy-snapshot-package-encryption-key") }}
+{{- $cognigyConnectionFieldsEncryptionKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret "defaultSecret" "cognigy-connection-fields-encryption-key") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $redisPersistentHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisPersistentHa.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
@@ -7,29 +9,37 @@
 {{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
 {{- $cognigyInternalMigrationApiKey_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyInternalMigrationApiKey.existingSecret "defaultSecret" "cognigy-internal-migration-api-key") }}
 {{- $cognigyPaiaOauth2Credentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyPaiaOauth2Credentials.existingSecret "defaultSecret" "cognigy-paia-oauth2-credentials") }}
+{{- $serviceName := "service-resources" }}
 {{- with .Values.serviceResources }}
+---
+{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "ownerTeam" "boron" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-resources
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: boron
   annotations:
     "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
-    "cognigy.com/source-path": "services/service-resources"
+    "cognigy.com/source-path": "services/{{ $serviceName }}"
 spec:
   selector:
     matchLabels:
-      app: service-resources
+      app: {{ $serviceName }}
   {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceResources.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:
     metadata:
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
+        {{- if or $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token }}
+        checksum/cognigy-connection-fields-encryption-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyConnectionFieldsEncryptionKey_secret) }}{{ $cognigyConnectionFieldsEncryptionKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyConnectionFieldsEncryptionKey_secret).data | sha256sum }}{{ end }}
+        {{- end }}
+        {{- if or $.Values.commonSecrets.cognigySnapshotPackageEncryptionKey.existingSecret $.Values.commonSecrets.cognigySnapshotPackageEncryptionKey.token }}
+        checksum/cognigy-snapshot-package-encryption-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigySnapshotPackageEncryptionKey_secret) }}{{ $cognigySnapshotPackageEncryptionKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigySnapshotPackageEncryptionKey_secret).data | sha256sum }}{{ end }}
+        {{- end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
@@ -55,11 +65,9 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
       labels:
-        app: service-resources
+        app: {{ $serviceName }}
     spec:
-      {{- if .serviceAccountName }}
-      serviceAccountName: {{ .serviceAccountName }}
-      {{- end }}
+      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
@@ -85,11 +93,26 @@ spec:
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-resources
+        - name: {{ $serviceName }}
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           env:
-            {{- include "cognigy-ai.tracing.otel.render" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
+            {{- if or $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.existingSecret $.Values.commonSecrets.cognigyConnectionFieldsEncryptionKey.token }}
+            - name: CONNECTION_FIELDS_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigyConnectionFieldsEncryptionKey_secret }}
+                  key: key
+            {{- end }}
+            {{- if or $.Values.commonSecrets.cognigySnapshotPackageEncryptionKey.existingSecret $.Values.commonSecrets.cognigySnapshotPackageEncryptionKey.token }}
+            - name: SNAPSHOT_PACKAGE_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cognigySnapshotPackageEncryptionKey_secret }}
+                  key: key
+            {{- end }}
+            {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -168,19 +191,27 @@ spec:
                   name: {{ $cognigyPaiaOauth2Credentials_secret }}
                   key: client-secret
             {{- end }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OWNER_DEPLOYMENT
+              value: {{ $serviceName | quote }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           ports:
             - name: metrics
               containerPort: 8002
+          {{- if $.Values.platformProvidedLLM.whitelist }}
           envFrom:
             - configMapRef:
-                name: cognigy-env
-            {{- if $.Values.platformProvidedLLM.whitelist }}
-            - configMapRef:
                 name: cognigy-platform-provided-llm-config
-            {{- end }}
+          {{- end }}
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -226,6 +257,9 @@ spec:
             {{- end }}
             - name: inplatform-llm-config
               mountPath: /etc/cognigy/inplatform-llm
+              readOnly: true
+            - name: cognigy-env-reloadable
+              mountPath: /config/env
               readOnly: true
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
@@ -297,6 +331,12 @@ spec:
           configMap:
             name: inplatform-llm-config
             optional: true
+        - name: cognigy-env-reloadable
+          configMap:
+            name: cognigy-env-reloadable
+            items:
+              - key: cognigy.yaml
+                path: cognigy.yaml
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

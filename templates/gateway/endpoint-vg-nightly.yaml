@@ -1,0 +1,61 @@
+{{- if and (.Values.serviceEndpointVgNightly.enabled) (.Values.ingress.serviceEndpointVgNightly.tls.enabled) }}
+{{- if not (.Values.ingress.serviceEndpointVgNightly.tls.existingSecret) }}
+{{- if and (.Values.ingress.serviceEndpointVgNightly.tls.crt) (.Values.ingress.serviceEndpointVgNightly.tls.key) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cognigy-service-endpoint-vg-nightly-tls
+  namespace: {{ $.Release.Namespace | quote }}
+type: kubernetes.io/tls
+data:
+  # Your base64 encoded TLS certificate
+  tls.crt: {{ .Values.ingress.serviceEndpointVgNightly.tls.crt | b64enc | quote }}
+  # Your base64 encoded private key
+  tls.key: {{ .Values.ingress.serviceEndpointVgNightly.tls.key | b64enc | quote }}
+{{- else }}
+  {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.crt }}
+  {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.key }}
+  {{ required "A valid value for .Values.ingress.serviceEndpointVgNightly.tls is required!" .Values.ingress.serviceEndpointVgNightly.tls.existingSecret }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+---
+{{- if and .Values.traefik.enabled .Values.ingress.enabled .Values.serviceEndpointVgNightly.enabled .Values.ingress.gatewayApi.enabled }}
+#
+# Gateway for the VG nightly endpoint subdomain (ingress.serviceEndpointVgNightly.host).
+# All HTTPRoutes served on this subdomain attach to this Gateway.
+#
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: endpoint-vg-nightly
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  gatewayClassName: {{ .Values.traefik.gatewayClass.name }}
+  listeners:
+    {{- if .Values.tls.enabled }}
+    - name: https
+      port: {{ .Values.traefik.ports.websecure.port }}
+      protocol: HTTPS
+      {{- with .Values.ingress.serviceEndpointVgNightly.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            {{- if .Values.ingress.serviceEndpointVgNightly.tls.enabled }}
+            name: {{ include "common.secretName.render" (dict "existingSecret" .Values.ingress.serviceEndpointVgNightly.tls.existingSecret "defaultSecret" "cognigy-service-endpoint-vg-nightly-tls") | quote }}
+            {{- else }}
+            name: {{ tpl (include "common.secretName.render" (dict "existingSecret" .Values.tls.existingSecret "defaultSecret" "cognigy-traefik")) $ | quote }}
+            {{- end }}
+    {{- else }}
+    - name: http
+      port: {{ .Values.traefik.ports.web.port }}
+      protocol: HTTP
+      {{- with .Values.ingress.serviceEndpointVgNightly.host }}
+      hostname: {{ . | quote }}
+      {{- end }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,77 @@
+{{- if and .Values.ingress.enabled .Values.ingress.gatewayApi.enabled }}
+# The public logs paths (/v2.1/projects/{projectId}/logs...) live INSIDE service-api's
+# catch-all "/" route on the API subdomain and have a dynamic middle segment, so they are
+# carved out with a RegularExpression path match. No path rewrite: the internal path equals
+# the external path, so HAL self-link hrefs stay byte-identical.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-logs
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+spec:
+  parentRefs:
+    - name: api
+  rules:
+    # `logs(/|$)` anchors "logs" as a whole path segment so ONLY the log endpoints
+    # (/logs, /logs/tail, /logs/{id}) are peeled off to service-logs. A sibling like
+    # /projects/{id}/logsExport is NOT captured and falls through to service-api.
+    # Traefik ranks a RegularExpression match like a prefix of the same length
+    # (10000 + 100 * length), far above service-api's "/" catch-all.
+    #
+    # Deliberately scoped to v2.0/v2.1 only (not `v2\.\d+`): service-logs only mounts these
+    # two versions. Widening the regex ahead of the code would route a v2.2+ request here
+    # and 404 instead of falling through to service-api. Widen it together with the code.
+    - matches:
+        - path:
+            type: RegularExpression
+            value: '^/(new/)?v2\.[01]/projects/[^/]+/logs(/|$)'
+      # Filters are applied in the listed order
+      filters:
+        {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: ipwhitelistserviceapi
+        {{- end }}
+        {{- if .Values.serviceApi.serviceAuthGateway.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: auth-gateway-forward-auth
+        {{- end }}
+      backendRefs:
+        - name: service-logs
+          port: 8000
+    # The public OpenAPI reference for the logs API. It must be readable WITHOUT credentials,
+    # so auth-gateway-forward-auth is deliberately absent; the IP whitelist still applies.
+    # This is the same posture as service-api's own /openapi.
+    #
+    # These paths serve static, non-tenant documents, and service-logs mounts the docs router
+    # ahead of its own auth middleware while exposing only four fixed routes, so anything else
+    # reaching the service under this prefix still hits that middleware and 401s.
+    #
+    # PathPrefix matches whole path segments: /logs/openapi and /logs/openapi/... match,
+    # /logs/openapifoo and bare /logs do not.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /logs/openapi
+        - path:
+            type: PathPrefix
+            value: /new/logs/openapi
+      filters:
+        {{- if .Values.ingress.serviceApi.ipWhiteListMiddleware.enabled }}
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: ipwhitelistserviceapi
+        {{- end }}
+      backendRefs:
+        - name: service-logs
+          port: 8000
+{{- end }}

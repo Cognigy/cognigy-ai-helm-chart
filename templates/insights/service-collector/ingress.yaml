@@ -1,29 +1,4 @@
-{{- if (.Values.ingress.serviceCollector.tls.enabled) }}
-{{- if not (.Values.ingress.serviceCollector.tls.existingSecret) }}
-{{- if and (.Values.ingress.serviceCollector.tls.crt) (.Values.ingress.serviceCollector.tls.key) }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: cognigy-service-collector-tls
-  namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    owner-team: gold
-type: kubernetes.io/tls
-data:
-  # your base64 encoded tls certificate
-  tls.crt: {{ .Values.ingress.serviceCollector.tls.crt | b64enc | quote }}
-  # your base64 encoded private key
-  tls.key: {{ .Values.ingress.serviceCollector.tls.key | b64enc | quote }}
-{{- else }}
-  {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.crt }}
-  {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.key }}
-  {{ required "A valid value for .Values.ingress.serviceCollector.tls is required!" .Values.ingress.serviceCollector.tls.existingSecret }}
-{{- end }}
-{{- end }}
-{{- end }}
-
----
-{{- if .Values.ingress.enabled }}
+{{- if and .Values.ingress.enabled (not .Values.ingress.gatewayApi.enabled) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
