@@ -6,7 +6,7 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: service-cxone-aws-gateway
-    owner-team: boron
+    owner-team: {{ $.Values.serviceCxoneAwsGateway.ownerTeam }}
   {{- if .Values.service.serviceCxoneAwsGateway.annotations }}
   annotations:
     {{- toYaml .Values.service.serviceCxoneAwsGateway.annotations | nindent 4 }}

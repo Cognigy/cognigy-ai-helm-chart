@@ -37,7 +37,7 @@ data:
             job-type: bulk-analysis
         spec:
           restartPolicy: {{ .restartPolicy | default "Never" }}
-          serviceAccountName: {{ $.Values.serviceInsightsApi.serviceAccountName }}
+          serviceAccountName: {{ $.Values.serviceInsightsApi.conversationAnalyzer.jobsServiceAccountName }}
           {{- if .securityContext }}
           securityContext: {{- include "common.tplvalues.render" (dict "value" .securityContext "context" $) | nindent 12 }}
           {{- end }}
@@ -188,7 +188,7 @@ data:
             job-type: promote-suggested-topic
         spec:
           restartPolicy: {{ .restartPolicy | default "Never" }}
-          serviceAccountName: {{ $.Values.serviceInsightsApi.serviceAccountName }}
+          serviceAccountName: {{ $.Values.serviceInsightsApi.conversationAnalyzer.jobsServiceAccountName }}
           {{- if .securityContext }}
           securityContext: {{- include "common.tplvalues.render" (dict "value" .securityContext "context" $) | nindent 12 }}
           {{- end }}

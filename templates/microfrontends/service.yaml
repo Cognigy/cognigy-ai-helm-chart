@@ -1,5 +1,9 @@
 {{- range $mfe := (include "mfe.list" $ | fromJson).items }}
 {{- if and $mfe.values $mfe.values.enabled }}
+{{- $sticky := mergeOverwrite (dict) ($.Values.microfrontends.stickySessions | default dict) ($mfe.values.stickySessions | default dict) }}
+{{- $cookie := $sticky.cookie | default dict }}
+{{- $cookieSecure := ternary $cookie.secure $.Values.tls.enabled (hasKey $cookie "secure") }}
+{{- $cookieSameSite := $cookie.sameSite | default "lax" }}
 ---
 apiVersion: v1
 kind: Service
@@ -9,9 +13,21 @@ metadata:
   labels:
     app: {{ $mfe.name }}
     owner-team: {{ $mfe.team }}
-  {{- if $mfe.values.annotations }}
+  {{- if or $sticky.enabled $mfe.values.annotations }}
   annotations:
+    {{- if $sticky.enabled }}
+    # Keeps a browser on one pod, so remoteEntry.js and the chunks it lists come from the same
+    # version while old and new pods both serve. Ingress mode only: the Gateway provider ignores
+    # Service annotations (see the TraefikService in httproute.yaml).
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.httponly: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: {{ $cookieSameSite | quote }}
+    traefik.ingress.kubernetes.io/service.sticky.cookie.secure: {{ $cookieSecure | quote }}
+    traefik.ingress.kubernetes.io/service.sticky.cookie.path: /microfrontends/{{ $mfe.pathName }}
+    {{- end }}
+    {{- if $mfe.values.annotations }}
     {{- toYaml $mfe.values.annotations | nindent 4 }}
+    {{- end }}
   {{- end }}
 spec:
   ports:

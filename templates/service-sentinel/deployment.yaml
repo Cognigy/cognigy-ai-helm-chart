@@ -7,7 +7,7 @@
 {{- $serviceName := "service-sentinel" }}
 {{- with .Values.serviceSentinel }}
 ---
-{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" "service-sentinel" "ownerTeam" "gold" "context" $) }}
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" "service-sentinel" "ownerTeam" "gold" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -37,9 +37,12 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
-      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" "service-sentinel" "context" $) }}
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" "service-sentinel" "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
@@ -110,23 +113,12 @@ spec:
               value: "true"
             - name: DEFAULT_KUBE_PROM_STACK_CRD_CONFIG_VERSION
               value: "{{ $.Values.productFeature.opsCenter.defaultKubePromStackCrdConfigVersion }}"
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: OWNER_DEPLOYMENT
-              value: {{ $serviceName | quote }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           volumeMounts:
-            - name: cognigy-env-reloadable
-              mountPath: /config/env
-              readOnly: true
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
             #
             # This configuration will get reloaded on a regular basis
             # (default is 1 minute). So we don't need to compute a checksum
@@ -138,12 +130,7 @@ spec:
               mountPath: /var/run/secrets/internal-auth-gateway-jwt-public-key.pem
               subPath: internal-auth-gateway-jwt-public-key.pem
       volumes:
-        - name: cognigy-env-reloadable
-          configMap:
-            name: cognigy-env-reloadable
-            items:
-              - key: cognigy.yaml
-                path: cognigy.yaml
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
         - name: ai-ops-center-metrics-config-volume
           configMap:
             name: {{ default "ai-ops-center-metrics-config" .alternateMetricsConfigmap }}
@@ -164,7 +151,7 @@ spec:
 {{- $serviceName := "service-sentinel-crd-controller" }}
 {{- with .Values.serviceSentinel }}
 ---
-{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" "service-sentinel" "ownerTeam" "gold" "context" $) }}
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" "service-sentinel" "ownerTeam" "gold" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -193,7 +180,7 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
-      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" "service-sentinel" "context" $) }}
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" "service-sentinel" "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
@@ -260,32 +247,16 @@ spec:
               value: "{{ $.Values.productFeature.opsCenter.crdSyncIntervalSeconds }}"
             - name: METRICS_SERVER_HOST
               value: {{ $.Values.productFeature.opsCenter.metricsServerHost }}
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: OWNER_DEPLOYMENT
-              value: {{ $serviceName | quote }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           volumeMounts:
-            - name: cognigy-env-reloadable
-              mountPath: /config/env
-              readOnly: true
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
             - name: ops-center-kube-prom-crd-config-volume
               mountPath: /etc/kube-prom-crd-config
       volumes:
-        - name: cognigy-env-reloadable
-          configMap:
-            name: cognigy-env-reloadable
-            items:
-              - key: cognigy.yaml
-                path: cognigy.yaml
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
         - name: ops-center-kube-prom-crd-config-volume
           configMap:
             name: {{ default "ops-center-kube-prom-crd-config" .alternateKubePromCrdConfigmap }}

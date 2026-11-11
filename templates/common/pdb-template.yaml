@@ -1,0 +1,24 @@
+{{- if .Values.pdb.enabled }}
+  {{- range $pdb_key, $pdb_val := .Values.pdb.services }}
+    {{- if and (kindIs "map" $pdb_val) ($pdb_val.enabled) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $pdb_val.name | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+spec:
+  {{- if $pdb_val.maxUnavailable }}
+  maxUnavailable: {{ $pdb_val.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ $pdb_val.minAvailable }}
+  {{- end }}
+  {{- if $pdb_val.unhealthyPodEvictionPolicy }}
+  unhealthyPodEvictionPolicy: {{ $pdb_val.unhealthyPodEvictionPolicy }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ $pdb_val.name | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}

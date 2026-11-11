@@ -194,6 +194,22 @@
 			"$ref": "#/$defs/microfrontend",
 			"description": "Contact Profiles microfrontend"
 		},
+		"microfrontends": {
+			"description": "Defaults for every microfrontend; mfe<Name> blocks can override rollout and stickySessions",
+			"type": "object",
+			"properties": {
+				"rollout": { "$ref": "#/$defs/microfrontendRollout" },
+				"stickySessions": { "$ref": "#/$defs/microfrontendStickySessions" }
+			}
+		},
+		"serviceUi": {
+			"description": "The UI host (service-ui); rollout and stickySessions work as for microfrontends",
+			"type": "object",
+			"properties": {
+				"rollout": { "$ref": "#/$defs/microfrontendRollout" },
+				"stickySessions": { "$ref": "#/$defs/microfrontendStickySessions" }
+			}
+		},
 		"mfeConnections": {
 			"$ref": "#/$defs/microfrontend",
 			"description": "Connections microfrontend"
@@ -246,6 +262,10 @@
 			"$ref": "#/$defs/microfrontend",
 			"description": "Functions microfrontend"
 		},
+		"mfeProjectMembers": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Project Members microfrontend"
+		},
 		"proactiveFollowup": {
 			"type": "object",
 			"description": "Proactive Follow-up feature toggle",
@@ -297,6 +317,11 @@
 			"description": "One in-platform LLM entry, must match shared/interfaces/IInPlatformLlmConfigMap.ts inPlatformLlmEntrySchema",
 			"properties": {
 				"configSetPoolRef": { "type": "string", "minLength": 1 },
+				"isCrossRegion": {
+					"type": "boolean",
+					"description": "True when this in-platform LLM is NOT specific to the region it's being used in"
+				},
+				"modelTier": { "type": "string", "enum": ["included", "resell"] },
 				"useCases": {
 					"type": "array",
 					"items": { "type": "string" },
@@ -359,13 +384,58 @@
 				"priorityClassName": {
 					"description": "Priority class name for the pod",
 					"type": "string"
-				}
+				},
+				"topologySpreadConstraints": {
+					"description": "Pod topology spread constraints",
+					"type": "array"
+				},
+				"rollout": { "$ref": "#/$defs/microfrontendRollout" },
+				"stickySessions": { "$ref": "#/$defs/microfrontendStickySessions" }
 			},
 			"required": [
 				"enabled",
 				"image",
 				"replicaCount"
 			]
+		},
+		"microfrontendRollout": {
+			"description": "How a new MFE version replaces the old one; overrides microfrontends.rollout",
+			"type": "object",
+			"properties": {
+				"maxSurge": {
+					"description": "Extra pods started during a rollout (number or percentage)",
+					"type": ["integer", "string"]
+				},
+				"maxUnavailable": {
+					"description": "Pods that may be unavailable during a rollout (number or percentage)",
+					"type": ["integer", "string"]
+				},
+				"minReadySeconds": {
+					"description": "Seconds a new pod must be ready before it takes traffic",
+					"type": "integer",
+					"minimum": 0
+				},
+				"drainSeconds": {
+					"description": "Seconds a stopping pod keeps serving (preStop) while it is taken out of rotation",
+					"type": "integer",
+					"minimum": 0
+				}
+			}
+		},
+		"microfrontendStickySessions": {
+			"description": "Keep a browser on one MFE pod (Traefik cookie); overrides microfrontends.stickySessions",
+			"type": "object",
+			"properties": {
+				"enabled": { "type": "boolean" },
+				"cookie": {
+					"description": "Routing cookie attributes; secure defaults to tls.enabled, sameSite to lax",
+					"type": "object",
+					"properties": {
+						"secure": { "type": "boolean" },
+						"sameSite": { "type": "string", "enum": ["lax", "strict", "none"] }
+					}
+				}
+			}
 		}
 	},
 	"required": [

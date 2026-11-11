@@ -12,7 +12,7 @@ metadata:
   name: service-cxone-aws-gateway
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: boron
+    owner-team: {{ $.Values.serviceCxoneAwsGateway.ownerTeam }}
   annotations:
     "cognigy.com/source-code": "git@github.com:Cognigy/service-cxone-aws-gateway.git"
 spec:
@@ -40,6 +40,9 @@ spec:
       {{- end }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}

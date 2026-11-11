@@ -4,6 +4,8 @@
 {{- $cognigyServiceEndpointApiAccessToken_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceEndpointApiAccessToken.existingSecret "defaultSecret" "cognigy-service-endpoint-api-access-token") }}
 {{- $globalAzureDocumentIntelligenceEnabled := and $.Values.knowledgeSearch.enabled $.Values.knowledgeSearch.globalAzureDocumentIntelligenceConfig.enabled | default "false" | quote }}
 {{- with .Values.serviceUi }}
+{{- $rollout := .rollout | default dict }}
+{{- $drainSeconds := ternary $rollout.drainSeconds 10 (hasKey $rollout "drainSeconds") }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -20,6 +22,14 @@ spec:
     matchLabels:
       app: service-ui
   replicas: {{ .replicaCount }}
+  # Each pod only has its own build's hashed assets, so old and new versions must not serve one
+  # browser for long: start every new pod before any old one goes (one switch-over).
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ ternary $rollout.maxSurge "100%" (hasKey $rollout "maxSurge") }}
+      maxUnavailable: {{ ternary $rollout.maxUnavailable 0 (hasKey $rollout "maxUnavailable") }}
+  minReadySeconds: {{ ternary $rollout.minReadySeconds 10 (hasKey $rollout "minReadySeconds") }}
   template:
     metadata:
       annotations:
@@ -40,6 +50,9 @@ spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
+      {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
       {{- end }}
@@ -49,9 +62,16 @@ spec:
       {{- if .priorityClassName }}
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
+      terminationGracePeriodSeconds: {{ add $drainSeconds 20 }}
       containers:
         - name: service-ui
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
+          # A stopping pod keeps serving while Traefik takes it out of rotation, so browsers pinned
+          # to it (sticky sessions) move to a new pod instead of getting a 502/504.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ $drainSeconds }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
             - name: metrics

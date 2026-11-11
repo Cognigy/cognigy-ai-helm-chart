@@ -47,7 +47,17 @@ mongodb:
   ## db-init generator image
   ##
   dbinit:
-    image: cognigy.azurecr.io/mongodb:7.0.15-debian-12-r2
+    image: cognigybitnami.azurecr.io/mongodb:7.0.43-photon-5-r6
+    ## Registry for the db-init image only. Its registry part is replaced by this value, else by
+    ## global.imageRegistry, else kept as written (same key and order as the service-agents subchart),
+    ## e.g. to keep pulling from cognigybitnami.azurecr.io while global.imageRegistry points to another registry.
+    registry: ""
+    ## Additional imagePullSecrets for the db-init Job, appended to the ones from imageCredentials,
+    ## e.g. a secret with credentials for the registry above. Secret names or {name: ...} entries.
+    ## Example:
+    ## imagePullSecrets:
+    ##   - cognigybitnami-registry-token
+    imagePullSecrets: []
     helmHook:
       deletePolicy: "before-hook-creation,hook-succeeded"
     securityContext: {}
@@ -423,7 +433,7 @@ managementUi:
           - 0.0.0.0/0
         ipStrategy:
           depth: 0
-  image: cognigy.azurecr.io/management-ui:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/management-ui:release-0f67bcd540-1794317565
   replicaCount: 1
   resources:
     limits:
@@ -435,6 +445,7 @@ managementUi:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -765,6 +776,19 @@ commonSecrets:
     ## NOTE: When it's set the previous parameter "commonSecrets.cognigyConnectionFieldsEncryptionKey.token" is ignored.
     ##
     existingSecret: ""
+  ## Rotation keys for the connection encryption key (yearly rotation, CSA-108657). One Secret per
+  ## cluster with one entry per key: the entry name is the key ID (e.g. "frm1-2027"), the value is
+  ## base64 of 32 random bytes. Managed by the rotate-connection-key skill in the fleet repos; the
+  ## original key above stays the "legacy" key until a rotation retires it.
+  ##
+  ## The Secret is always mounted as a folder in service-resources and service-security (optional:
+  ## it may not exist yet) and re-read while they run, so adding or removing a key restarts nothing
+  ## (no checksum annotation, no subPath).
+  ##
+  connectionKeys:
+    ## Name of the Secret holding the rotation keys. Empty means "cognigy-connection-keys".
+    ##
+    existingSecret: ""
   ## AES-256 key that encrypts Snapshot exports. Package exports are not encrypted. Read by service-resources.
   ## Must be exactly 32 bytes (characters); it is used directly as the key, not hex/base64 decoded.
   ##
@@ -933,6 +957,23 @@ commonSecrets:
     ##
     existingSecret: ""
 
+## Connection-key rotation settings (CSA-108657), read by service-resources and service-security
+## from the "cognigy-connection-key-settings" ConfigMap, mounted as a folder and watched. Kept out
+## of cognigyEnv on purpose: a cognigyEnv change restarts every workload that checksums it, and a
+## rotation step must restart nothing. Empty means "not set": the services then use
+## CONNECTION_ACTIVE_KEY_ID / CONNECTION_REENCRYPTION_MODE from cognigyEnv, as before.
+## Managed by the rotate-connection-key skill in the fleet repos.
+##
+connectionKeyRotation:
+  ## Key ID new values are written with, e.g. "frm1-2027" (a key in commonSecrets.connectionKeys).
+  ## "legacy" switches back to commonSecrets.cognigyConnectionFieldsEncryptionKey.
+  ##
+  activeKeyId: ""
+  ## What the background re-encryption passes may do: off | count | migrate (default migrate;
+  ## they only ever rewrite values while a loaded rotation key is active).
+  ##
+  reencryptionMode: ""
+
 # NICE CX one Configurations.
 niceCXOne:
   enabled: false # True iff this is a CXOne-integrated environment
@@ -1030,6 +1071,28 @@ llmGateway:
 # credentials via commonSecrets.cognigyPaiaOauth2Credentials (or an existingSecret).
 proactiveFollowup:
   enabled: false
+
+# Voice-to-voice (V2V) agents on Voice Gateway
+# V2V is switched by cognigyEnv.FEATURE_ENABLE_V2V: "true" on, "false" off, unset follows
+# FEATURE_ENABLE_C26_MASTER_WHITELIST. With V2V on only via C26 and a setting missing, service-endpoint
+# and service-api log an error and keep V2V off; with "true" they refuse to start.
+# The chart wires the settings as follows:
+#   - service-endpoint gets V2V_BRIDGE_API_KEY, V2V_CALLBACK_SECRET and V2V_FLOW_TOOL_SECRET, and
+#     service-api gets V2V_CALLBACK_SECRET, from the Secret below (Secret key = env var name). The refs
+#     are optional, so the pods start without the Secret. A name already set in
+#     serviceEndpoint.extraEnvVars / serviceApi.extraEnvVars is not rendered a second time.
+#   - cognigy-env gets V2V_CALLBACK_BASE_URL (the service-api URL, as BACKEND_BASE_URL_WITH_PROTOCOL, when
+#     ingress.serviceApi.host or customServiceUrl is set) and,
+#     when cognigyEnv.COGNIGY_VOICE_GATEWAY_APP_BASE_URL_WITH_PROTOCOL is set, V2V_BRIDGE_URL
+#     (<that URL>/bridge). Setting either key in cognigyEnv overrides the derived value.
+v2v:
+  secretRefs:
+    ## Set to false to render none of the V2V secretKeyRef env vars
+    enabled: true
+  ## Name of the Secret (in the release namespace) holding the keys V2V_BRIDGE_API_KEY,
+  ## V2V_CALLBACK_SECRET and V2V_FLOW_TOOL_SECRET. The chart does not create it.
+  ## Defaults to "cognigy-v2v-secrets" when empty.
+  existingSecret: ""
 
 ## LLM Gateway subchart values.
 llmGatewayApp:
@@ -1425,6 +1488,8 @@ service:
   mfePlaybooks:
     annotations: {}
   mfeFunctions:
+    annotations: {}
+  mfeProjectMembers:
     annotations: {}
 
 cognigyEnv:
@@ -1856,6 +1921,7 @@ cognigyEnv:
   # Comma-separated list of OrgIDs for which VoiceGateway WebApp access has to be enabled. Use * to enable for all OrgIDs
   # VG_WEBAPP_ACCESS_WHITELIST:
   # The below URLs need to be set if the VoiceGateway WebApp is enabled and the value should be from VoiceGateway Cluster
+  # COGNIGY_VOICE_GATEWAY_APP_BASE_URL_WITH_PROTOCOL also derives V2V_BRIDGE_URL (see the v2v values).
   # COGNIGY_VOICE_GATEWAY_APP_BASE_URL_WITH_PROTOCOL:
   # COGNIGY_VOICE_GATEWAY_WEB_BASE_URL_WITH_PROTOCOL:
 
@@ -2149,6 +2215,10 @@ cognigyEnv:
 
   # URL to Microsoft Flow for Error Alerting
   # HSMWALERTURL:
+
+
+  # Enable Webchat background notifications. This will allow the webchat to send notifications to the browser when the tab is not active.
+  FEATURE_ENABLE_WEBCHAT_BACKGROUND_NOTIFICATIONS: "true"
 
   ### service-trainer env variables ###
   # connection details for the database
@@ -2641,8 +2711,9 @@ cognigyEnv:
   # "object-src" - string - it overrides the helmet default value
   # HEADERS_CSP_DIRECTIVES_OBJECT_SRC:
   # "style-src" - string - it overrides the helmet default value. When HEADERS_CSP_STYLE_SRC_STRICT
-  # is "true" or "report-only", the value is appended to the strict style policy instead, and any
-  # 'unsafe-inline' in it is dropped.
+  # is "true", the value is appended to the strict style policy instead, and any 'unsafe-inline'
+  # in it is dropped. With "report-only", the enforced (legacy) policy still uses it as a
+  # replacement for style-src; only the report-only header appends it.
   # HEADERS_CSP_DIRECTIVES_STYLE_SRC:
   # "form-action" - string - it overrides the helmet default value
   # HEADERS_CSP_DIRECTIVES_FORM_ACTION:
@@ -2665,9 +2736,11 @@ cognigyEnv:
   # With "true" and with "report-only", the Zendesk Classic help widget is not loaded (it needs
   # 'unsafe-inline'). The Help button opens the Webchat v3 support chat, or the support site
   # when that chat is unavailable.
-  # Pendo: when PENDO_KEY is set, the EU Pendo stylesheet hosts are allowed automatically. A
-  # Pendo subscription still on a legacy pendo-eu-static-<id>.storage.googleapis.com bucket
-  # needs that host in HEADERS_CSP_DIRECTIVES_STYLE_SRC.
+  # Pendo: when PENDO_KEY is set, the EU Pendo stylesheet hosts and Cognigy's legacy subscription
+  # bucket (pendo-eu-static-5641769971220480.storage.googleapis.com, Cognigy/cognigy#15922) are
+  # allowed automatically. Do not add them to HEADERS_CSP_DIRECTIVES_STYLE_SRC. Only a different
+  # Pendo subscription on its own legacy pendo-eu-static-<id>.storage.googleapis.com bucket needs
+  # that host there, and only with "true" (see the style-src note above).
   #
   # Runbook:
   # - Enable per environment: set the value under cognigyEnv in that environment's values override
@@ -3035,7 +3108,7 @@ rabbitmqOperator:
 
 ### Cognigy.AI components ###
 serviceAi:
-  image: cognigy.azurecr.io/service-ai:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-ai:release-0f67bcd540-1794317565
   replicaCount: 6
   resources:
     requests:
@@ -3088,6 +3161,21 @@ serviceAi:
   ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
   ##
   affinity: {}
+  ## Optionally specify topology spread constraints for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  ## Example:
+  ## topologySpreadConstraints:
+  ##   - maxSkew: 1
+  ##     topologyKey: topology.kubernetes.io/zone
+  ##     nodeTaintsPolicy: Honor
+  ##     whenUnsatisfiable: ScheduleAnyway
+  ##     labelSelector:
+  ##       matchLabels:
+  ##         app: service-ai
+  ##     matchLabelKeys:
+  ##       - pod-template-hash
+  ##
+  topologySpreadConstraints: []
   ## Optionally specify node labels for pod assignment
   ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
   ##
@@ -3143,7 +3231,7 @@ serviceAi:
   # Optional: Service Account name to use for this deployment
   serviceAccountName: ""
 serviceAlexaManagement:
-  image: cognigy.azurecr.io/service-alexa-management:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-alexa-management:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3155,11 +3243,12 @@ serviceAlexaManagement:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsCollector:
-  image: cognigy.azurecr.io/service-analytics-collector:release-dee95bf-1793119683
+  image: cognigy.azurecr.io/service-analytics-collector:release-b76e323-1793267397
   replicaCount: 3
   resources:
     requests:
@@ -3173,11 +3262,12 @@ serviceAnalyticsCollector:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsConversations:
-  image: cognigy.azurecr.io/service-analytics-conversations:release-3646745-1793119689
+  image: cognigy.azurecr.io/service-analytics-conversations:release-3243271-1793273593
   replicaCount: 3
   resources:
     requests:
@@ -3191,11 +3281,12 @@ serviceAnalyticsConversations:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceAnalyticsOdata:
-  image: cognigy.azurecr.io/service-analytics-odata:release-01cd79b-1793120084
+  image: cognigy.azurecr.io/service-analytics-odata:release-f8bd92a-1793033476
   replicaCount: 3
   resources:
     requests:
@@ -3207,6 +3298,25 @@ serviceAnalyticsOdata:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-analytics-odata
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-analytics-odata
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3216,7 +3326,7 @@ serviceAnalyticsOdata:
   ## Validate in a non-production environment first, and please report any issues you run into.
   useReadReplica: false
 serviceAnalyticsReporter:
-  image: cognigy.azurecr.io/service-analytics-reporter:release-8355a5a-1793119602
+  image: cognigy.azurecr.io/service-analytics-reporter:release-80ce537-1793267389
   replicaCount: 3
   resources:
     requests:
@@ -3228,11 +3338,12 @@ serviceAnalyticsReporter:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceApi:
-  image: cognigy.azurecr.io/service-api:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-api:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3252,6 +3363,30 @@ serviceApi:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-api
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-api
+      matchLabelKeys:
+        - pod-template-hash
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 25%
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3290,13 +3425,14 @@ serviceApi:
     extraEnvVars: []
     securityContext: {}
     affinity: {}
+    topologySpreadConstraints: []
     nodeSelector: {}
     tolerations: []
     priorityClassName: ""
     serviceAccountName: ""
 
 serviceAppSessionManager:
-  image: cognigy.azurecr.io/service-app-session-manager:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-app-session-manager:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3308,13 +3444,32 @@ serviceAppSessionManager:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-app-session-manager
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-app-session-manager
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 
 serviceCollaboration:
   enabled: true
-  image: cognigy.azurecr.io/service-collaboration:release-86ce716-1792145224
+  image: cognigy.azurecr.io/service-collaboration:release-14c235f-1792883887
   replicaCount: 3
   resources:
     requests:
@@ -3326,13 +3481,14 @@ serviceCollaboration:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 
 serviceToolkit:
   enabled: false
-  image: cognigy.azurecr.io/service-toolkit:release-9b9e14c-1792154646
+  image: cognigy.azurecr.io/service-toolkit:release-02ed5a5-1793269042
   replicaCount: 1
   resources:
     requests:
@@ -3344,6 +3500,7 @@ serviceToolkit:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3354,7 +3511,7 @@ serviceToolkit:
 #
 serviceSentinel:
   enabled: true
-  image: cognigy.azurecr.io/service-sentinel:release-a866ea3-1793118078
+  image: cognigy.azurecr.io/service-sentinel:release-105831d-1793269373
   replicaCount: 3
   ingress:
     paths:
@@ -3383,6 +3540,7 @@ serviceSentinel:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3398,7 +3556,7 @@ serviceSentinel:
 #
 serviceTesting:
   enabled: true
-  image: cognigy.azurecr.io/service-testing:release-cc79822-1793119694
+  image: cognigy.azurecr.io/service-testing:release-22c0556-1794224996
   replicaCount: 3
   resources:
     requests:
@@ -3411,6 +3569,7 @@ serviceTesting:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3471,7 +3630,7 @@ serviceTesting:
     priorityClassName: ""
 
 serviceCustomModules:
-  image: cognigy.azurecr.io/service-custom-modules:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-custom-modules:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3483,11 +3642,12 @@ serviceCustomModules:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceEndpoint:
-  image: cognigy.azurecr.io/service-endpoint:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-endpoint:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3499,12 +3659,31 @@ serviceEndpoint:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-endpoint
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-endpoint
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceEndpointVgNightly:
   enabled: false
-  image: cognigy.azurecr.io/service-endpoint:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-endpoint:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3516,11 +3695,12 @@ serviceEndpointVgNightly:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceFunctionExecution:
-  image: cognigy.azurecr.io/service-function-execution:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-function-execution:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3532,6 +3712,7 @@ serviceFunctionExecution:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3548,7 +3729,7 @@ serviceFunctionExecution:
             averageUtilization: 70
     behavior: {}
 serviceFunctionScheduler:
-  image: cognigy.azurecr.io/service-function-scheduler:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-function-scheduler:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3560,6 +3741,7 @@ serviceFunctionScheduler:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3576,7 +3758,7 @@ serviceFunctionScheduler:
             averageUtilization: 70
     behavior: {}
 serviceHandover:
-  image: cognigy.azurecr.io/service-handover:release-b22fc68-1793274094
+  image: cognigy.azurecr.io/service-handover:release-a6e9429-1793268351
   replicaCount: 3
   resources:
     requests:
@@ -3589,12 +3771,13 @@ serviceHandover:
   serviceAccountName: ""
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceHandoverInactivity:
   enabled: true
-  image: cognigy.azurecr.io/service-handover-inactivity:release-5400168-1793119888
+  image: cognigy.azurecr.io/service-handover-inactivity:release-779cbeb-1792149712
   replicaCount: 3
   resources:
     requests:
@@ -3606,6 +3789,7 @@ serviceHandoverInactivity:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3622,7 +3806,7 @@ serviceHandoverInactivity:
             averageUtilization: 70
     behavior: {}
 serviceHttp:
-  image: cognigy.azurecr.io/service-http:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-http:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3634,6 +3818,7 @@ serviceHttp:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3650,7 +3835,7 @@ serviceHttp:
             averageUtilization: 70
     behavior: {}
 serviceInsightsApi:
-  image: cognigy.azurecr.io/service-insights-api:release-9b93d35-1793119056
+  image: cognigy.azurecr.io/service-insights-api:release-586f1df-1793369521
   replicaCount: 3
   serviceAccountName: "service-insights-api"
   resources:
@@ -3665,6 +3850,25 @@ serviceInsightsApi:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-insights-api
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-insights-api
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3675,6 +3879,9 @@ serviceInsightsApi:
   useReadReplica: false
   conversationAnalyzer:
     enabled: true
+    # ServiceAccount for the analyzer CronJob and Jobs. It has no Role: the jobs do not call the
+    # Kubernetes API, and must not use serviceAccountName, which can spawn Jobs and restart the Deployment.
+    jobsServiceAccountName: "service-insights-api-analyzer-jobs"
     # LLM model reference ID used by the analyzer
     llmReferenceId: ""
     # TTL in days for analysis results before expiration
@@ -3757,7 +3964,7 @@ serviceInsightsApi:
       priorityClassName: ""
 serviceInsightsResources:
   enabled: false
-  image: cognigy.azurecr.io/service-insights-resources:release-0810ff8-1793119584
+  image: cognigy.azurecr.io/service-insights-resources:release-f8644ce-1793274930
   replicaCount: 3
   resources:
     requests:
@@ -3771,6 +3978,7 @@ serviceInsightsResources:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3781,7 +3989,7 @@ serviceInsightsResources:
   useReadReplica: false
 serviceInsightsForwarder:
   enabled: false
-  image: cognigy.azurecr.io/service-insights-forwarder:release-8936a40-1793119590
+  image: cognigy.azurecr.io/service-insights-forwarder:release-d3912e4-1793274923
   serviceAccountName: ""
   replicaCount: 3
   resources:
@@ -3798,6 +4006,7 @@ serviceInsightsForwarder:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3841,7 +4050,7 @@ serviceInsightsForwarder:
     cxOneGoalTrackingEnabled: false
     cxOneGoalDefinitionEnabled: false
 serviceCollector:
-  image: cognigy.azurecr.io/service-collector:release-ed5cb5a-1793120089
+  image: cognigy.azurecr.io/service-collector:release-0c0c7f6-1793273586
   replicaCount: 3
   resources:
     requests:
@@ -3857,6 +4066,25 @@ serviceCollector:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-collector
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-collector
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3866,7 +4094,7 @@ serviceCollector:
   ## Validate in a non-production environment first, and please report any issues you run into.
   useReadReplica: false
 serviceInsightsUi:
-  image: cognigy.azurecr.io/service-insights-ui:release-e98f821-1793120078
+  image: cognigy.azurecr.io/service-insights-ui:release-9ebee6b-1794216132
   replicaCount: 3
   resources:
     requests:
@@ -3880,11 +4108,12 @@ serviceInsightsUi:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceLogs:
-  image: cognigy.azurecr.io/service-logs:release-fc03186-1793119049
+  image: cognigy.azurecr.io/service-logs:release-3e47c60-1793090029
   replicaCount: 3
   resources:
     requests:
@@ -3898,12 +4127,13 @@ serviceLogs:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceUsage:
   enabled: false
-  image: cognigy.azurecr.io/service-usage:release-359178d-1793119037
+  image: cognigy.azurecr.io/service-usage:release-04077db-1793033476
   replicaCount: 1
   resources:
     requests:
@@ -3929,6 +4159,7 @@ serviceUsage:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -3968,7 +4199,7 @@ serviceUsage:
     tolerations: []
     priorityClassName: ""
 serviceNlpMatcher:
-  image: cognigy.azurecr.io/service-nlp-matcher:release-bc3448c9a3-1787079367
+  image: cognigy.azurecr.io/service-nlp-matcher:release-c0a98ffe41-1792484150
   replicaCount: 3
   resources:
     requests:
@@ -3980,11 +4211,12 @@ serviceNlpMatcher:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpNer:
-  image: cognigy.azurecr.io/service-nlp-ner:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-nlp-ner:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -3996,6 +4228,7 @@ serviceNlpNer:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -4012,7 +4245,7 @@ serviceNlpNer:
             averageUtilization: 70
     behavior: {}
 serviceParser:
-  image: cognigy.azurecr.io/service-parser:release-bc3448c9a3-1787079367
+  image: cognigy.azurecr.io/service-parser:release-67319733cf-1793369527
   replicaCount: 3
   resources:
     requests:
@@ -4024,11 +4257,12 @@ serviceParser:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 servicePlaybookExecution:
-  image: cognigy.azurecr.io/service-playbook-execution:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-playbook-execution:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4043,11 +4277,12 @@ servicePlaybookExecution:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceProfiles:
-  image: cognigy.azurecr.io/service-profiles:release-ecd9a51-1793120165
+  image: cognigy.azurecr.io/service-profiles:release-0efd84a-1793274936
   replicaCount: 3
   # Temporary workaround for CGY-38909: keep disabled to route profiles API requests through service-api.
   # Set to true after cleanup to restore the dedicated service-profiles ingress.
@@ -4066,6 +4301,7 @@ serviceProfiles:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -4082,7 +4318,7 @@ serviceProfiles:
             averageUtilization: 70
     behavior: {}
 serviceResources:
-  image: cognigy.azurecr.io/service-resources:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-resources:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4094,12 +4330,13 @@ serviceResources:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
   serviceAccountName: ""
 serviceRuntimeFileManager:
-  image: cognigy.azurecr.io/service-runtime-file-manager:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-runtime-file-manager:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4111,6 +4348,25 @@ serviceRuntimeFileManager:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-runtime-file-manager
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-runtime-file-manager
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -4127,7 +4383,7 @@ serviceRuntimeFileManager:
             averageUtilization: 70
     behavior: {}
 serviceSecurity:
-  image: cognigy.azurecr.io/service-security:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-security:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4141,6 +4397,7 @@ serviceSecurity:
   extraVolumeMounts: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -4226,7 +4483,7 @@ serviceSecurity:
     priorityClassName: ""
 
 serviceSessionStateManager:
-  image: cognigy.azurecr.io/service-session-state-manager:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-session-state-manager:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4238,6 +4495,7 @@ serviceSessionStateManager:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -4254,7 +4512,7 @@ serviceSessionStateManager:
             averageUtilization: 70
     behavior: {}
 serviceStaticFiles:
-  image: cognigy.azurecr.io/service-static-files:release-0481549038-1791297379
+  image: cognigy.azurecr.io/service-static-files:release-a612902057-1792748281
   replicaCount: 3
   resources:
     requests:
@@ -4266,11 +4524,30 @@ serviceStaticFiles:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-static-files
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-static-files
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceTaskManager:
-  image: cognigy.azurecr.io/service-task-manager:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-task-manager:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4282,11 +4559,12 @@ serviceTaskManager:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceTrainer:
-  image: cognigy.azurecr.io/service-trainer:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-trainer:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4298,12 +4576,34 @@ serviceTrainer:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-ui:release-41329246b2-1794328403
   replicaCount: 3
+  ## Old and new versions must not serve one browser at the same time: each pod only has its own
+  ## build's hashed assets, so mixing them breaks the page (same rule as `microfrontends`).
+  rollout:
+    ## Start every new pod before any old one goes, so versions mix for one switch-over.
+    maxSurge: 100%
+    maxUnavailable: 0
+    ## A new pod only takes traffic after it has been ready this long.
+    minReadySeconds: 10
+    ## A stopping pod keeps serving this long (preStop) while Traefik takes it out of rotation.
+    drainSeconds: 10
+  stickySessions:
+    ## Traefik keeps a browser on one pod (cookie), so index.html and its assets come from the
+    ## same version during a switch-over.
+    enabled: true
+    ## The routing cookie's attributes. It only names a backend pod and holds no user data.
+    ## secure: defaults to tls.enabled, so plain-HTTP installs get a cookie the browser sends back.
+    ##   Set it to true when HTTPS ends before Traefik (e.g. at a cloud load balancer).
+    ## sameSite: lax by default; none also needs secure: true, or browsers drop the cookie.
+    cookie: {}
+    #   secure: true
+    #   sameSite: lax
   resources:
     requests:
       cpu: "0.1"
@@ -4313,14 +4613,35 @@ serviceUi:
       memory: 150M
   extraVolumes: []
   extraVolumeMounts: []
-  extraEnvVars: []
+  extraEnvVars:
+    - name: FEATURE_ENABLE_LOGIN_PAGE_MFE
+      value: "true"
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-ui
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-ui
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceWebchat:
-  image: cognigy.azurecr.io/service-webchat:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-webchat:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4332,12 +4653,58 @@ serviceWebchat:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-webchat
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: service-webchat
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
+## Defaults for every microfrontend (mfe* blocks below); any mfe<Name> block can override
+## `rollout` and `stickySessions` the same way.
+## Old and new versions of an MFE must not serve one browser at the same time: each pod only has
+## its own build's hashed chunks, so mixing them 404s (see service-ui's
+## docs/microfrontends/production-readiness.md, rule 6).
+microfrontends:
+  rollout:
+    ## Start every new pod before any old one goes, so versions mix for one switch-over
+    ## instead of a pod-by-pod rollout.
+    maxSurge: 100%
+    maxUnavailable: 0
+    ## A new pod only takes traffic after it has been ready this long.
+    minReadySeconds: 10
+    ## A stopping pod keeps serving this long while Traefik takes it out of rotation (preStop), so
+    ## browsers pinned to it move to a new pod instead of getting a 502/504.
+    drainSeconds: 10
+  stickySessions:
+    ## Traefik keeps a browser on one pod (cookie), so remoteEntry.js and its chunks come from the
+    ## same version during a switch-over.
+    enabled: true
+    ## The routing cookie's attributes. It only names a backend pod and holds no user data.
+    ## secure: defaults to tls.enabled, so plain-HTTP installs get a cookie the browser sends back.
+    ##   Set it to true when HTTPS ends before Traefik (e.g. at a cloud load balancer).
+    ## sameSite: lax by default; none also needs secure: true, or browsers drop the cookie.
+    cookie: {}
+    #   secure: true
+    #   sameSite: lax
 mfeSimulator:
   enabled: false
-  image: cognigy.azurecr.io/mfe-simulator:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-simulator:release-5d21dfedad-1793914433
   replicaCount: 3
   resources:
     requests:
@@ -4348,12 +4715,32 @@ mfeSimulator:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-simulator
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-simulator
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
+  ## Spread and PDB default on when this MFE is HPA-managed (hpa.enabled + hpa.services.<mfe>.enabled).
 mfeInteractionPanel:
   enabled: false
-  image: cognigy.azurecr.io/mfe-interaction-panel:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/mfe-interaction-panel:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4364,12 +4751,31 @@ mfeInteractionPanel:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-interaction-panel
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-interaction-panel
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeSidebar:
   enabled: false
-  image: cognigy.azurecr.io/mfe-sidebar:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-sidebar:release-5d21dfedad-1793914433
   replicaCount: 3
   resources:
     requests:
@@ -4380,12 +4786,31 @@ mfeSidebar:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-sidebar
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-sidebar
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeGlobalToolbar:
   enabled: false
-  image: cognigy.azurecr.io/mfe-global-toolbar:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-global-toolbar:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4396,12 +4821,31 @@ mfeGlobalToolbar:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-global-toolbar
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-global-toolbar
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeKnowledgeStore:
   enabled: false
-  image: cognigy.azurecr.io/mfe-knowledge-store:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-knowledge-store:release-fb3b4fcfe0-1794244025
   replicaCount: 3
   resources:
     requests:
@@ -4412,12 +4856,31 @@ mfeKnowledgeStore:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-knowledge-store
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-knowledge-store
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeExample:
   enabled: false
-  image: cognigy.azurecr.io/mfe-example:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-example:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4428,12 +4891,31 @@ mfeExample:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-example
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-example
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeEndpoints:
   enabled: false
-  image: cognigy.azurecr.io/mfe-endpoints:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-endpoints:release-fb3b4fcfe0-1794244025
   replicaCount: 3
   resources:
     requests:
@@ -4444,12 +4926,31 @@ mfeEndpoints:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-endpoints
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-endpoints
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeProjectSettings:
   enabled: false
-  image: cognigy.azurecr.io/mfe-project-settings:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/mfe-project-settings:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4460,12 +4961,31 @@ mfeProjectSettings:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-project-settings
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-project-settings
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeToolkit:
   enabled: false
-  image: cognigy.azurecr.io/mfe-toolkit:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-toolkit:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4476,12 +4996,31 @@ mfeToolkit:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-toolkit
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-toolkit
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeContactProfiles:
   enabled: false
-  image: cognigy.azurecr.io/mfe-contact-profiles:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-contact-profiles:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4492,12 +5031,31 @@ mfeContactProfiles:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-contact-profiles
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-contact-profiles
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeConnections:
   enabled: false
-  image: cognigy.azurecr.io/mfe-connections:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-connections:release-5d21dfedad-1793914433
   replicaCount: 3
   resources:
     requests:
@@ -4508,12 +5066,31 @@ mfeConnections:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-connections
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-connections
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfePackaging:
   enabled: false
-  image: cognigy.azurecr.io/mfe-packaging:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/mfe-packaging:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4524,12 +5101,31 @@ mfePackaging:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-packaging
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-packaging
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeProjectResources:
   enabled: false
-  image: cognigy.azurecr.io/mfe-project-resources:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/mfe-project-resources:release-0f67bcd540-1794317565
   replicaCount: 3
   resources:
     requests:
@@ -4540,12 +5136,31 @@ mfeProjectResources:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-project-resources
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-project-resources
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeSnapshots:
   enabled: false
-  image: cognigy.azurecr.io/mfe-snapshots:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-snapshots:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4556,12 +5171,31 @@ mfeSnapshots:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-snapshots
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-snapshots
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeLoginPage:
   enabled: false
-  image: cognigy.azurecr.io/mfe-login-page:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-login-page:release-5da7c595d9-1793782090
   replicaCount: 3
   resources:
     requests:
@@ -4572,12 +5206,31 @@ mfeLoginPage:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-login-page
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-login-page
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeNluConnectors:
   enabled: false
-  image: cognigy.azurecr.io/mfe-nlu-connectors:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-nlu-connectors:release-fb3b4fcfe0-1794244025
   replicaCount: 3
   resources:
     requests:
@@ -4588,12 +5241,31 @@ mfeNluConnectors:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-nlu-connectors
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-nlu-connectors
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeLexicons:
   enabled: false
-  image: cognigy.azurecr.io/mfe-lexicons:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-lexicons:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4604,12 +5276,31 @@ mfeLexicons:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-lexicons
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-lexicons
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeGoals:
   enabled: false
-  image: cognigy.azurecr.io/mfe-goals:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-goals:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4620,12 +5311,31 @@ mfeGoals:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-goals
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-goals
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeIntentTrainer:
   enabled: false
-  image: cognigy.azurecr.io/mfe-intent-trainer:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-intent-trainer:release-2d091eb5f1-1793612343
   replicaCount: 3
   resources:
     requests:
@@ -4636,12 +5346,31 @@ mfeIntentTrainer:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-intent-trainer
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-intent-trainer
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeProjectOverview:
   enabled: false
-  image: cognigy.azurecr.io/mfe-project-overview:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-project-overview:release-f908be293b-1793611136
   replicaCount: 3
   resources:
     requests:
@@ -4652,12 +5381,31 @@ mfeProjectOverview:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-project-overview
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-project-overview
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeLogs:
   enabled: false
-  image: cognigy.azurecr.io/mfe-logs:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-logs:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4668,12 +5416,31 @@ mfeLogs:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-logs
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-logs
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfePlaybooks:
   enabled: false
-  image: cognigy.azurecr.io/mfe-playbooks:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-playbooks:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4684,12 +5451,31 @@ mfePlaybooks:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-playbooks
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-playbooks
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 mfeFunctions:
   enabled: false
-  image: cognigy.azurecr.io/mfe-functions:release-0193a9ddc1-1793119031
+  image: cognigy.azurecr.io/mfe-functions:release-d32b7e2b1c-1793610133
   replicaCount: 3
   resources:
     requests:
@@ -4700,12 +5486,66 @@ mfeFunctions:
       memory: 64Mi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-functions
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-functions
+      matchLabelKeys:
+        - pod-template-hash
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
+mfeProjectMembers:
+  enabled: false
+  image: cognigy.azurecr.io/mfe-project-members:release-5d21dfedad-1793914433
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: "50m"
+      memory: 32Mi
+    limits:
+      cpu: "100m"
+      memory: 64Mi
+  securityContext: {}
+  affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-project-members
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-project-members
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpEmbeddingEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-embedding-en:release-6db0f32c3c-1792422965
+  image: cognigy.azurecr.io/service-nlp-embedding-en:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4716,12 +5556,13 @@ serviceNlpEmbeddingEn:
       memory: 3Gi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpEmbeddingXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-embedding-xx:release-6db0f32c3c-1792422965
+  image: cognigy.azurecr.io/service-nlp-embedding-xx:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4732,12 +5573,13 @@ serviceNlpEmbeddingXx:
       memory: 2Gi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpEmbeddingGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-embedding-ge:release-6db0f32c3c-1792422965
+  image: cognigy.azurecr.io/service-nlp-embedding-ge:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4748,6 +5590,7 @@ serviceNlpEmbeddingGe:
       memory: 4Gi
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -4757,7 +5600,7 @@ serviceNlpClassifierScoreEn:
   ## and the KEDA trigger (hpa.services.serviceNlpClassifierScoreEn) is derived from this value.
   ## Override this value instead of setting LANGUAGES_TO_RUN via extraEnvVars, otherwise the KEDA trigger will not follow.
   languages: en-US,en-AU,en-CA,en-IN,en-GB
-  image: cognigy.azurecr.io/service-nlp-classifier-en:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier-en:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4771,12 +5614,13 @@ serviceNlpClassifierScoreEn:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierTrainEn:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-en:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier-en:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4790,12 +5634,13 @@ serviceNlpClassifierTrainEn:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpOrchestrator:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-orchestrator:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-orchestrator:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4809,12 +5654,13 @@ serviceNlpOrchestrator:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierScoreGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ge:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier-ge:release-9fd93c6adb-1793610105
   ## Languages (LANGUAGES_TO_RUN) served by this deployment. One RabbitMQ score queue is consumed per language code,
   ## and the KEDA trigger (hpa.services.serviceNlpClassifierScoreGe) is derived from this value.
   ## Override this value instead of setting LANGUAGES_TO_RUN via extraEnvVars, otherwise the KEDA trigger will not follow.
@@ -4832,12 +5678,13 @@ serviceNlpClassifierScoreGe:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierTrainGe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ge:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier-ge:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4851,12 +5698,13 @@ serviceNlpClassifierTrainGe:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierScoreDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier:release-9fd93c6adb-1793610105
   ## Languages (LANGUAGES_TO_RUN) served by this deployment. One RabbitMQ score queue is consumed per language code,
   ## and the KEDA trigger (hpa.services.serviceNlpClassifierScoreDe) is derived from this value.
   ## Override this value instead of setting LANGUAGES_TO_RUN via extraEnvVars, otherwise the KEDA trigger will not follow.
@@ -4874,12 +5722,13 @@ serviceNlpClassifierScoreDe:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierTrainDe:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4893,12 +5742,13 @@ serviceNlpClassifierTrainDe:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierScoreJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ja:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier-ja:release-9fd93c6adb-1793610105
   ## Languages (LANGUAGES_TO_RUN) served by this deployment. One RabbitMQ score queue is consumed per language code,
   ## and the KEDA trigger (hpa.services.serviceNlpClassifierScoreJa) is derived from this value.
   ## Override this value instead of setting LANGUAGES_TO_RUN via extraEnvVars, otherwise the KEDA trigger will not follow.
@@ -4916,12 +5766,13 @@ serviceNlpClassifierScoreJa:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierTrainJa:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ja:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier-ja:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4935,12 +5786,13 @@ serviceNlpClassifierTrainJa:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierScoreKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ko:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier-ko:release-9fd93c6adb-1793610105
   ## Languages (LANGUAGES_TO_RUN) served by this deployment. One RabbitMQ score queue is consumed per language code,
   ## and the KEDA trigger (hpa.services.serviceNlpClassifierScoreKo) is derived from this value.
   ## Override this value instead of setting LANGUAGES_TO_RUN via extraEnvVars, otherwise the KEDA trigger will not follow.
@@ -4958,12 +5810,13 @@ serviceNlpClassifierScoreKo:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierTrainKo:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier-ko:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier-ko:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -4977,12 +5830,13 @@ serviceNlpClassifierTrainKo:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierScoreXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier:release-9fd93c6adb-1793610105
   ## Languages (LANGUAGES_TO_RUN) served by this deployment. One RabbitMQ score queue is consumed per language code,
   ## and the KEDA trigger (hpa.services.serviceNlpClassifierScoreXx) is derived from this value.
   ## Override this value instead of setting LANGUAGES_TO_RUN via extraEnvVars, otherwise the KEDA trigger will not follow.
@@ -5000,12 +5854,13 @@ serviceNlpClassifierScoreXx:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceNlpClassifierTrainXx:
   enabled: false
-  image: cognigy.azurecr.io/service-nlp-classifier:release-037ccd8fa2-1792070346
+  image: cognigy.azurecr.io/service-nlp-classifier:release-9fd93c6adb-1793610105
   replicaCount: 2
   resources:
     requests:
@@ -5019,11 +5874,12 @@ serviceNlpClassifierTrainXx:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
 serviceSearchOrchestrator:
-  image: cognigy.azurecr.io/service-search-orchestrator:release-541c631-1792070364
+  image: cognigy.azurecr.io/service-search-orchestrator:release-949f25b-1793610112
   replicaCount: 3
   resources:
     requests:
@@ -5035,6 +5891,7 @@ serviceSearchOrchestrator:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -5042,8 +5899,8 @@ serviceSearchOrchestrator:
 
 serviceCxoneAwsGateway:
   enabled: false
-  ownerTeam: boron
-  image: cognigy.azurecr.io/service-cxone-aws-gateway:release-8c825b5-1793119043
+  ownerTeam: zinc
+  image: cognigy.azurecr.io/service-cxone-aws-gateway:release-4591c2a-1793033475
   replicaCount: 1
   internalApiIngress:
     enabled: false
@@ -5066,6 +5923,7 @@ serviceCxoneAwsGateway:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -5084,6 +5942,25 @@ agentAssistBackend:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: agent-assist-backend
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: agent-assist-backend
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -5100,6 +5977,25 @@ agentAssistFrontend:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: agent-assist-frontend
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: agent-assist-frontend
+      matchLabelKeys:
+        - pod-template-hash
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -5116,6 +6012,7 @@ agentAssistGenesysNotificationsForwarder:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -5136,7 +6033,7 @@ migration:
 ### Configuration for Kubernetes jobs that sync data between mongodb and the vector database ###
 jobSyncKnowledgeData:
   enabled: false
-  image: cognigy.azurecr.io/job-sync-knowledge-data:release-5d26ca7-1793119572
+  image: cognigy.azurecr.io/job-sync-knowledge-data:release-7e24896-1793369515
   resources:
     requests:
       cpu: "0.3"
@@ -5164,7 +6061,7 @@ jobSyncKnowledgeData:
   priorityClassName: ""
 
 taskProcessKnowledgeSourceFile:
-  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-adbec99-1793120176
+  image: cognigy.azurecr.io/task-process-knowledge-source-file:release-1006a16-1793369503
   resources:
     requests:
       cpu: "0.1"
@@ -5184,7 +6081,7 @@ taskProcessKnowledgeSourceFile:
   tolerations: []
   priorityClassName: ""
 taskProcessKnowledgeSourceUrl:
-  image: cognigy.azurecr.io/task-process-knowledge-source-url:release-46620ed-1793119578
+  image: cognigy.azurecr.io/task-process-knowledge-source-url:release-63807b3-1793369510
   resources:
     requests:
       cpu: "0.1"
@@ -5203,7 +6100,7 @@ taskProcessKnowledgeSourceUrl:
   tolerations: []
   priorityClassName: ""
 taskIngestKnowledgeChunks:
-  image: cognigy.azurecr.io/task-ingest-knowledge-chunks:release-337cdb7-1793119566
+  image: cognigy.azurecr.io/task-ingest-knowledge-chunks:release-e9e46ff-1793091954
   resources:
     requests:
       cpu: "0.1"
@@ -5222,7 +6119,7 @@ taskIngestKnowledgeChunks:
   tolerations: []
   priorityClassName: ""
 taskRunKnowledgeExtension:
-  image: cognigy.azurecr.io/task-run-knowledge-extension:release-72bc042-1793120171
+  image: cognigy.azurecr.io/task-run-knowledge-extension:release-f9cdd57-1793034742
   resources:
     requests:
       cpu: "0.1"
@@ -5246,7 +6143,7 @@ taskRunKnowledgeExtension:
     concurrencyPolicy: Forbid
 
 taskCreatePackageNfs:
-  image: cognigy.azurecr.io/service-resources:release-c68d86a7ab-1793371045
+  image: cognigy.azurecr.io/service-resources:release-0f67bcd540-1794317565
   resources:
     requests:
       cpu: "1"
@@ -5284,6 +6181,8 @@ inPlatformLlm:
   # In-platform LLM config. Populate in your environment-specific values file.
   # inPlatformLLM: fields for "In-Platform LLM" (prompt/chat models)
   # inPlatformLLMEmbedding: fields for "In-Platform LLM (Embedding)" (embedding models)
+  # modelTier: optional — "included" (default) or "resell" (needs the per-organisation resell toggle in Management UI,
+  #   default from env ORG_LEVEL_RESELL_LLM_DEFAULT on service-security via serviceSecurity.extraEnvVars). Internal entries are always "included".
   # useCases: optional — omit to fall back to every use case supported by the model's modelGroup.
   # defaultUseCases: optional — use cases this LLM is pre-assigned as the default model for;
   #   falls back to useCases (and its modelGroup default) when omitted. Never applied to the LLM object.
@@ -5322,7 +6221,9 @@ inPlatformLlm:
       configSetPoolRef: sonnet-4-6-askai-pool
       orgWhitelist: [] # set to "*" per environment
       internal: true
-      displayName: "Ask AI (Included by NiCE Cognigy)"
+      displayName: "AI Assist (Included by NiCE Cognigy)"
+      description: "This model is only available for AI Assist and cannot be used for
+        production within the included price"
       useCases: [ "askAi" ]
 
 jobSyncInPlatformLlms:
@@ -5335,7 +6236,7 @@ jobSyncInPlatformLlms:
       cpu: "0.3"
       memory: 500M
   schedule: "0 * * * *" # every hour
-  backoffLimit: 0
+  backoffLimit: 1
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   activeDeadlineSeconds: 3600 # 60 minutes max run time
@@ -5348,10 +6249,10 @@ jobSyncInPlatformLlms:
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
-  restartPolicy: OnFailure
+  restartPolicy: Never
 
 cronNfsCleanup:
-  image: cognigy.azurecr.io/cron-nfs-cleanup:release-a0cdf45-1793118062
+  image: cognigy.azurecr.io/cron-nfs-cleanup:release-4011703-1793033475
   resources:
     requests:
       cpu: "0.1"
@@ -5381,7 +6282,7 @@ cronNfsCleanup:
   priorityClassName: ""
 
 cronNfsCleanupTranscripts:
-  image: cognigy.azurecr.io/cron-nfs-cleanup-transcripts:release-1a62f7d-1790769901
+  image: cognigy.azurecr.io/cron-nfs-cleanup-transcripts:release-5e6d42c-1792684627
   resources:
     requests:
       cpu: "0.1"
@@ -6096,6 +6997,29 @@ hpa:
               type: Utilization
               averageUtilization: 50
       behavior: {}
+    serviceSearchOrchestrator:
+      name: service-search-orchestrator
+      enabled: true
+      ## enable KEDA for the service
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 30
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
     serviceNlpOrchestrator:
       name: service-nlp-orchestrator
       enabled: false
@@ -6468,6 +7392,907 @@ hpa:
               type: Utilization
               averageUtilization: 70
       behavior: {}
+    ## Microfrontends: keep each "enabled" in sync with the matching mfe*.enabled, otherwise an HPA is created
+    ## for a Deployment that does not exist.
+    mfeSimulator:
+      name: mfe-simulator
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeInteractionPanel:
+      name: mfe-interaction-panel
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeSidebar:
+      name: mfe-sidebar
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeGlobalToolbar:
+      name: mfe-global-toolbar
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeKnowledgeStore:
+      name: mfe-knowledge-store
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeEndpoints:
+      name: mfe-endpoints
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeExample:
+      name: mfe-example
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeProjectSettings:
+      name: mfe-project-settings
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeSnapshots:
+      name: mfe-snapshots
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeToolkit:
+      name: mfe-toolkit
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeContactProfiles:
+      name: mfe-contact-profiles
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeConnections:
+      name: mfe-connections
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfePackaging:
+      name: mfe-packaging
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeProjectResources:
+      name: mfe-project-resources
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeLoginPage:
+      name: mfe-login-page
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeNluConnectors:
+      name: mfe-nlu-connectors
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeLexicons:
+      name: mfe-lexicons
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeIntentTrainer:
+      name: mfe-intent-trainer
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeGoals:
+      name: mfe-goals
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeProjectOverview:
+      name: mfe-project-overview
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeLogs:
+      name: mfe-logs
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfePlaybooks:
+      name: mfe-playbooks
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeFunctions:
+      name: mfe-functions
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeProjectMembers:
+      name: mfe-project-members
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+
+## PodDisruptionBudgets for voluntary evictions (node drain, cluster-autoscaler scale-down); maxUnavailable wins over minAvailable.
+pdb:
+  enabled: true
+  services:
+    serviceApi:
+      enabled: true
+      name: service-api
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceAi:
+      enabled: false
+      name: service-ai
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceAlexaManagement:
+      enabled: false
+      name: service-alexa-management
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceAnalyticsCollector:
+      enabled: false
+      name: service-analytics-collector
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceAnalyticsConversations:
+      enabled: false
+      name: service-analytics-conversations
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceAnalyticsOdata:
+      enabled: false
+      name: service-analytics-odata
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceAnalyticsReporter:
+      enabled: false
+      name: service-analytics-reporter
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceAppSessionManager:
+      enabled: false
+      name: service-app-session-manager
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceAuthGateway:
+      enabled: false
+      name: service-auth-gateway
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceCollaboration:
+      enabled: false
+      name: service-collaboration
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceCollector:
+      enabled: false
+      name: service-collector
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceCustomModules:
+      enabled: false
+      name: service-custom-modules
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceEndpoint:
+      enabled: false
+      name: service-endpoint
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceFunctionExecution:
+      enabled: false
+      name: service-function-execution
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceFunctionScheduler:
+      enabled: false
+      name: service-function-scheduler
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceHandover:
+      enabled: false
+      name: service-handover
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceHandoverInactivity:
+      enabled: false
+      name: service-handover-inactivity
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceHttp:
+      enabled: false
+      name: service-http
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceInsightsApi:
+      enabled: false
+      name: service-insights-api
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceInsightsUi:
+      enabled: false
+      name: service-insights-ui
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceLogs:
+      enabled: false
+      name: service-logs
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceNlpMatcher:
+      enabled: false
+      name: service-nlp-matcher
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceNlpNer:
+      enabled: false
+      name: service-nlp-ner
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceParser:
+      enabled: false
+      name: service-parser
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    servicePlaybookExecution:
+      enabled: false
+      name: service-playbook-execution
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceProfiles:
+      enabled: false
+      name: service-profiles
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceResources:
+      enabled: false
+      name: service-resources
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceRuntimeFileManager:
+      enabled: false
+      name: service-runtime-file-manager
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceSecurity:
+      enabled: false
+      name: service-security
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceSentinel:
+      enabled: false
+      name: service-sentinel
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceSessionStateManager:
+      enabled: false
+      name: service-session-state-manager
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceStaticFiles:
+      enabled: false
+      name: service-static-files
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceTaskManager:
+      enabled: false
+      name: service-task-manager
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceTesting:
+      enabled: false
+      name: service-testing
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceTrainer:
+      enabled: false
+      name: service-trainer
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceUi:
+      enabled: false
+      name: service-ui
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    serviceWebchat:
+      enabled: false
+      name: service-webchat
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeSimulator:
+      enabled: false
+      name: mfe-simulator
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeInteractionPanel:
+      enabled: false
+      name: mfe-interaction-panel
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeSidebar:
+      enabled: false
+      name: mfe-sidebar
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeGlobalToolbar:
+      enabled: false
+      name: mfe-global-toolbar
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeKnowledgeStore:
+      enabled: false
+      name: mfe-knowledge-store
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeEndpoints:
+      enabled: false
+      name: mfe-endpoints
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeExample:
+      enabled: false
+      name: mfe-example
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeProjectSettings:
+      enabled: false
+      name: mfe-project-settings
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeSnapshots:
+      enabled: false
+      name: mfe-snapshots
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeToolkit:
+      enabled: false
+      name: mfe-toolkit
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeContactProfiles:
+      enabled: false
+      name: mfe-contact-profiles
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeConnections:
+      enabled: false
+      name: mfe-connections
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfePackaging:
+      enabled: false
+      name: mfe-packaging
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeProjectResources:
+      enabled: false
+      name: mfe-project-resources
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeLoginPage:
+      enabled: false
+      name: mfe-login-page
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeNluConnectors:
+      enabled: false
+      name: mfe-nlu-connectors
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeLexicons:
+      enabled: false
+      name: mfe-lexicons
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeIntentTrainer:
+      enabled: false
+      name: mfe-intent-trainer
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeGoals:
+      enabled: false
+      name: mfe-goals
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeProjectOverview:
+      enabled: false
+      name: mfe-project-overview
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeLogs:
+      enabled: false
+      name: mfe-logs
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfePlaybooks:
+      enabled: false
+      name: mfe-playbooks
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeFunctions:
+      enabled: false
+      name: mfe-functions
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeProjectMembers:
+      enabled: false
+      name: mfe-project-members
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
 
 ## PriorityClass(es) for services
 ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass
@@ -6728,6 +8553,7 @@ clamd:
   extraEnvVars: []
   securityContext: {}
   affinity: {}
+  topologySpreadConstraints: []
   nodeSelector: {}
   tolerations: []
   priorityClassName: ""
@@ -6796,6 +8622,11 @@ tracing:
     ## Do NOT set OTEL_RESOURCE_ATTRIBUTES here: it silently drops service.version in
     ## the 8 reloadable-config services. See shared/observability/otel.ts:80-103.
     extraEnvVars: []
+    ## Tracing of the Triton-based service-nlp-embedding-{en,ge,xx} (--trace-config args),
+    ## on top of enabled above. Off by default: with tracing on, Triton 24.10 segfaulted
+    ## under load and hung until its liveness probe killed it, failing NLU for minutes.
+    triton:
+      enabled: false
 
 ## Extra objects to deploy with the release. Accepts a list of resource manifests
 ## Example:
@@ -6828,7 +8659,11 @@ traefik:
     imagePullSecrets:
       - name: cognigy-registry-token
     replicas: 3
-    podAnnotations: {}
+    ## Istio ambient: inbound traffic from the cloud LB bypasses ztunnel, whose inbound capture drops long-lived
+    ## websocket connections arriving from node/LB source IPs. In-mesh callers still connect via HBONE (mTLS) and
+    ## outbound traffic to the backends stays in the mesh. No effect when the namespace isn't enrolled in ambient.
+    podAnnotations:
+      ambient.istio.io/bypass-inbound-capture: "true"
     podLabels:
       uniquezone: "set"
   logs:
@@ -7344,7 +9179,7 @@ insights:
   ## Cleanup/Expiration jobs for Insights (NodeJS image)
   jobDataCleanup:
     enabled: true
-    image: "cognigy.azurecr.io/insights-cleanup-jobs:release-bf4c30c-1793119062"
+    image: "cognigy.azurecr.io/insights-cleanup-jobs:release-518de68-1793033476"
     schedule: "*/15 * * * *"
     concurrencyPolicy: Forbid
     successfulJobsHistoryLimit: 3
@@ -8173,3 +10008,9 @@ marketplace:
   #      host: "" #same as the ingress.serviceUi.host
   #marketplaceFrontend:
   #  enabled: true
+
+  ## AI Agents v2 (service-agents) subchart. Do not enable it in production.
+aiAgentsV2:
+  enabled: false
+  fullnameOverride: service-agents
+  nameOverride: service-agents

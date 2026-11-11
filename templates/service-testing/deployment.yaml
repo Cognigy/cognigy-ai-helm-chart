@@ -6,7 +6,9 @@
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
+{{- $serviceName := "service-testing" }}
 {{- with .Values.serviceTesting }}
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" "service-testing" "ownerTeam" "gold" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,7 +29,6 @@ spec:
       labels:
         app: service-testing
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceTesting_dbSecret) }}{{ $serviceTesting_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceTesting_dbSecret).data | sha256sum }}{{ end }}
         checksum/billing-secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceTestingBilling_dbSecret) }}{{ $serviceTestingBilling_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceTestingBilling_dbSecret).data | sha256sum }}{{ end }}
         checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
@@ -38,8 +39,12 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" "service-testing" "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
@@ -71,13 +76,10 @@ spec:
             initialDelaySeconds: 90
             periodSeconds: 60
             timeoutSeconds: 10
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           env:
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
-            - name: NODE_ENV
-              value: "{{ include "cognigy-common.cognigyEnv.value" (dict "context" $ "key" "NODE_ENV") }}"
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: TESTING_JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -136,10 +138,12 @@ spec:
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           volumeMounts:
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
             - name: auth-gateway-public-key
               mountPath: /var/run/secrets/internal-auth-gateway-jwt-public-key.pem
               subPath: internal-auth-gateway-jwt-public-key.pem
       volumes:
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
         - name: auth-gateway-public-key
           secret:
             secretName: {{ $jwtPublicKey }}

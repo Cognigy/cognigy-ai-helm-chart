@@ -8,12 +8,15 @@
 {{- $jwtIssuer_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyServiceHandoverJwtIssuer.existingSecret "defaultSecret" "cognigy-service-handover-jwt-issuer") }}
 {{- $niceCxOneT0UserCredentials_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.niceCXoneAWSLambdaCredentials.existingSecret "defaultSecret" "cognigy-nice-cxone-aws-lambda-credentials") }}
 {{- $niceCxOneOAuthClient_secret := include "common.secretName.render" ( dict "existingSecret" ((($.Values.niceCXOne).handoverService).oAuthClient).existingSecret "defaultSecret" "cognigy-service-handover-nice-cxone-oauth-client" )}}
+{{- $serviceName := "service-handover" }}
 {{- with .Values.serviceHandover }}
+---
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "ownerTeam" "iron" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-handover
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: iron
@@ -22,16 +25,15 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: service-handover
+      app: {{ $serviceName }}
   {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceHandover.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:
     metadata:
       labels:
-        app: service-handover
+        app: {{ $serviceName }}
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceHandover_dbSecret) }}{{ $serviceHandover_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceHandover_dbSecret).data | sha256sum }}{{ end }}
@@ -50,11 +52,12 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
-      {{- if .serviceAccountName }}
-      serviceAccountName: {{ .serviceAccountName | quote }}
-      {{- end }}
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceHandover.enabled))}}
       nodeSelector:
@@ -78,7 +81,7 @@ spec:
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-handover
+        - name: {{ $serviceName }}
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
@@ -96,11 +99,10 @@ spec:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
           env:
             {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: COGNIGY_LIVE_AGENT_PLATFORM_TOKEN
@@ -194,6 +196,7 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -221,6 +224,7 @@ spec:
             items:
               - key: connection-string
                 path: mongodbConnectionString
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

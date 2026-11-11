@@ -1,11 +1,15 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $redisPersistentHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisPersistentHa.auth.existingSecret "defaultSecret" "cognigy-redis-persistent-password") }}
+{{- $serviceName := "service-playbook-execution" }}
 {{- with .Values.servicePlaybookExecution }}
+---
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "gold" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-playbook-execution
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
@@ -22,9 +26,9 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
+        checksum/redis-persistent: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret) }}{{ $redisPersistentHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisPersistentHa_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.llmGateway.enabled }}
         checksum/llm-gateway-caller: {{ if not (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-playbook-execution") }}{{"llm-gateway-caller-service-playbook-execution" | sha256sum}}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace "llm-gateway-caller-service-playbook-execution").data | sha256sum }}{{ end }}
         {{- end }}
@@ -34,8 +38,12 @@ spec:
       labels:
         app: service-playbook-execution
     spec:
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.servicePlaybookExecution.enabled))}}
       nodeSelector:
@@ -64,6 +72,7 @@ spec:
           resources: {{- toYaml .resources | nindent 12 }}
           env:
             {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -102,22 +111,24 @@ spec:
             {{- with .nodeOptions }}
             {{- include "cognigy-ai.common.nodeOptions.render" (dict "value" . "context" $) | nindent 12 }}
             {{- end }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           ports:
             - name: metrics
               containerPort: 8002
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           volumeMounts:
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
               subPath: rabbitmqConnectionString
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
               subPath: redis-password.conf
+            - name: redis-persistent-password
+              mountPath: /var/run/secrets/redis-persistent-password.conf
+              subPath: redis-persistent-password.conf
             {{- if $.Values.commonConfigs.cognigyRollout }}
             - name: cognigy-rollout
               mountPath: /config/rollout
@@ -131,6 +142,7 @@ spec:
               path: /health/liveness
               port: 8001			  
       volumes:
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
         - name: rabbitmq-connection-string
           secret:
             secretName: {{ $statefulRabbitMq_secret }}
@@ -140,6 +152,9 @@ spec:
         - name: redis-password
           secret:
             secretName: {{ $redisHa_secret }}
+        - name: redis-persistent-password
+          secret:
+            secretName: {{ $redisPersistentHa_secret }}
         {{- if $.Values.commonConfigs.cognigyRollout }}
         - name: cognigy-rollout
           configMap:

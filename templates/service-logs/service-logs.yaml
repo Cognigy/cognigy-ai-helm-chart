@@ -2,12 +2,15 @@
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceLogs_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceLogs.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceLogs.serviceName)) }}
 {{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
+{{- $serviceName := "service-logs" }}
 {{- with .Values.serviceLogs }}
+---
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "gold" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-logs
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
@@ -25,7 +28,6 @@ spec:
       labels:
         app: service-logs
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceLogs_dbSecret) }}{{ $serviceLogs_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceLogs_dbSecret).data | sha256sum }}{{ end }}
@@ -34,8 +36,12 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceLogs.enabled))}}
       nodeSelector:
@@ -69,10 +75,8 @@ spec:
               containerPort: 8001
             - name: metrics
               containerPort: 8002
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           env:
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
@@ -82,8 +86,6 @@ spec:
               value: "8000"
             - name: AUTH_GATEWAY_JWT_PUBLIC_KEY_PATH_AND_FILENAME
               value: "/var/run/secrets/internal-auth-gateway-jwt-public-key.pem"
-            - name: FEATURE_USE_NEW_PAGINATION_PLUGIN
-              value: 'true'
             - name: TRACING_ENABLED
               value: {{ $.Values.tracing.sentry.ide.enabled | quote }}
             - name: TRACING_BASE_URL_WITH_PROTOCOL
@@ -109,6 +111,7 @@ spec:
             {{- with .nodeOptions }}
             {{- include "cognigy-ai.common.nodeOptions.render" (dict "value" . "context" $) | nindent 12 }}
             {{- end }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -134,6 +137,7 @@ spec:
             - name: cognigy-rollout
               mountPath: /config/rollout
             {{- end }}
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -177,6 +181,7 @@ spec:
           configMap:
             name: cognigy-rollout
         {{- end }}
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}

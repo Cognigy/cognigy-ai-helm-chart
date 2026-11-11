@@ -4,7 +4,7 @@
 {{- $serviceName := "service-custom-modules" }}
 {{- with .Values.serviceCustomModules }}
 ---
-{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "aluminium" "context" $) }}
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "aluminium" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -35,6 +35,9 @@ spec:
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
@@ -83,16 +86,7 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: OWNER_DEPLOYMENT
-              value: {{ $serviceName | quote }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -119,9 +113,7 @@ spec:
             - name: cognigy-rollout
               mountPath: /config/rollout
             {{- end }}
-            - name: cognigy-env-reloadable
-              mountPath: /config/env
-              readOnly: true
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -165,14 +157,9 @@ spec:
           configMap:
             name: cognigy-rollout
         {{- end }}
-        - name: cognigy-env-reloadable
-          configMap:
-            name: cognigy-env-reloadable
-            items:
-              - key: cognigy.yaml
-                path: cognigy.yaml
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
-      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

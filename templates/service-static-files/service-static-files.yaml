@@ -6,7 +6,7 @@ metadata:
   name: service-static-files
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: iron
+    owner-team: boron
   annotations:
     "cognigy.com/source-code": "git@github.com:Cognigy/cognigy.git"
     "cognigy.com/source-path": "services/service-static-files"
@@ -27,6 +27,9 @@ spec:
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}

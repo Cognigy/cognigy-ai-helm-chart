@@ -56,11 +56,16 @@
   )
 )) }}
 
+{{- $dbinitPullSecrets := (include "image.pullSecretsCognigy" $ | fromYaml).imagePullSecrets | default list }}
+{{- range .Values.mongodb.dbinit.imagePullSecrets }}
+{{- $dbinitPullSecrets = append $dbinitPullSecrets (kindIs "map" . | ternary . (dict "name" .)) }}
+{{- end }}
+
 {{- include "cognigy-common.mongodb.dbinit" (dict
   "context" $
   "name" "cognigy-ai"
-  "image" (include "common.image.render" (dict "global" $.Values.global "image" .Values.mongodb.dbinit.image))
-  "imagePullSecrets" (include "image.pullSecretsCognigy" $ | fromYaml).imagePullSecrets
+  "image" (include "common.image.render" (dict "global" (dict "imageRegistry" (.Values.mongodb.dbinit.registry | default $.Values.global.imageRegistry)) "image" .Values.mongodb.dbinit.image))
+  "imagePullSecrets" ($dbinitPullSecrets | uniq)
   "secrets" $secrets
   "customRoles" $customRoles
   "labels" (dict "owner-team" "sre")

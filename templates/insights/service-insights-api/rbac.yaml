@@ -37,3 +37,14 @@ roleRef:
   name: service-insights-api-jobs-admin
   apiGroup: rbac.authorization.k8s.io
 {{- end }}
+{{- if and .Values.serviceInsightsApi.conversationAnalyzer.enabled .Values.serviceInsightsApi.conversationAnalyzer.jobsServiceAccountName }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.serviceInsightsApi.conversationAnalyzer.jobsServiceAccountName }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: gold
+automountServiceAccountToken: false
+{{- end }}

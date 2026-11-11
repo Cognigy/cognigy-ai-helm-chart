@@ -39,6 +39,9 @@ spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
       {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
+      {{- end }}
       {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceNlpClassifierScoreKo.enabled))}}
       nodeSelector:
         {{- if .nodeSelector }}

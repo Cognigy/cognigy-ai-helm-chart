@@ -1,6 +1,9 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
+{{- $serviceName := "service-webchat" }}
 {{- with .Values.serviceWebchat }}
+---
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "boron" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -20,7 +23,6 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
@@ -31,6 +33,9 @@ spec:
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
@@ -80,12 +85,10 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           volumeMounts:
             - name: redis-password
               mountPath: /var/run/secrets/redis-password.conf
@@ -93,6 +96,7 @@ spec:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
               subPath: rabbitmqConnectionString
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -115,7 +119,9 @@ spec:
             items:
               - key: connection-string
                 path: rabbitmqConnectionString
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

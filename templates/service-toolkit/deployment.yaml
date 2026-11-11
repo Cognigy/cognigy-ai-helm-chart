@@ -3,12 +3,15 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $cognigyAuthJwt_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.cognigyAuthJwt.existingSecret "defaultSecret" "cognigy-auth-jwt") }}
 {{- $jwtPublicKey := include "common.secretName.render" ( dict "existingSecret" $.Values.commonSecrets.authGatewayKeyPair.existingPublicKeySecret "defaultSecret" "auth-gateway-public-key") }}
+{{- $serviceName := "service-toolkit" }}
 {{- with .Values.serviceToolkit }}
+---
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "gold" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-toolkit
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
@@ -24,7 +27,6 @@ spec:
       labels:
         app: service-toolkit
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceToolkit_dbSecret) }}{{ $serviceToolkit_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceToolkit_dbSecret).data | sha256sum }}{{ end }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-auth-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret) }}{{ $cognigyAuthJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyAuthJwt_secret).data | sha256sum }}{{ end }}
@@ -33,8 +35,12 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
@@ -56,11 +62,9 @@ spec:
               containerPort: 8001
             - name: metrics
               containerPort: 8002
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           env:
             {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: MONGODB_URI_PATH
               value: /var/run/secrets/mongodbConnectionString
             - name: MONGODB_URI
@@ -99,10 +103,12 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           volumeMounts:
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
             - name: mongodb-connection-string
               mountPath: /var/run/secrets/mongodbConnectionString
               subPath: mongodbConnectionString
@@ -127,6 +133,7 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
         - name: mongodb-connection-string
           secret:
             secretName: {{ $serviceToolkit_dbSecret }}

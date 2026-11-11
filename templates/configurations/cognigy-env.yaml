@@ -24,6 +24,21 @@ except the FEATURE_* flags guarded by hasKey, where an explicit cognigyEnv value
 {{- end }}
 {{- end }}
 
+{{- /* V2V (voice-to-voice): the bridge on Voice Gateway posts its callbacks to service-api (service-endpoint
+appends /v2.0/v2v/callback), and serves its Session API at /bridge on the Voice Gateway api host (the VG
+chart's ingress.realtimeBridge.routePrefix default). Both can be overridden via cognigyEnv. Each is derived
+only from a set host: V2V_CALLBACK_BASE_URL from the service-api ingress host, V2V_BRIDGE_URL from
+cognigyEnv.COGNIGY_VOICE_GATEWAY_APP_BASE_URL_WITH_PROTOCOL. */ -}}
+{{- if and (not (hasKey .Values.cognigyEnv "V2V_CALLBACK_BASE_URL")) (or .Values.ingress.serviceApi.customServiceUrl .Values.ingress.serviceApi.host) }}
+{{- $_ := set $derived "V2V_CALLBACK_BASE_URL" (get $derived "BACKEND_BASE_URL_WITH_PROTOCOL") }}
+{{- end }}
+{{- if not (hasKey .Values.cognigyEnv "V2V_BRIDGE_URL") }}
+{{- $vgAppBaseUrl := include "cognigy-common.cognigyEnv.value" (dict "context" $ "key" "COGNIGY_VOICE_GATEWAY_APP_BASE_URL_WITH_PROTOCOL") | trim | trimSuffix "/" }}
+{{- if $vgAppBaseUrl }}
+{{- $_ := set $derived "V2V_BRIDGE_URL" (printf "%s/bridge" $vgAppBaseUrl) }}
+{{- end }}
+{{- end }}
+
 {{- if .Values.ingress.serviceInsightsApi.customServiceUrl }}
 {{- $_ := set $derived "INSIGHTS_BACKEND_BASE_URL_WITH_PROTOCOL" (printf "https://%s" .Values.ingress.serviceInsightsApi.customServiceUrl) }}
 {{- else }}

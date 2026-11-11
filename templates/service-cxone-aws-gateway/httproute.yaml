@@ -5,7 +5,7 @@ metadata:
   name: service-cxone-aws-gateway-api
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: boron
+    owner-team: {{ $.Values.serviceCxoneAwsGateway.ownerTeam }}
 spec:
   parentRefs:
     - name: api

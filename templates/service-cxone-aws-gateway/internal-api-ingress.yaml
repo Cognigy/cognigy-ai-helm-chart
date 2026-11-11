@@ -8,7 +8,7 @@ metadata:
   name: service-cxone-aws-gateway-api
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: boron
+    owner-team: {{ $.Values.serviceCxoneAwsGateway.ownerTeam }}
   annotations:
     {{- if .Values.tls.enabled }}
     traefik.ingress.kubernetes.io/router.entrypoints: websecure

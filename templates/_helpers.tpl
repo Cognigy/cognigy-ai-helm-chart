@@ -539,29 +539,30 @@ Usage:
 
 {{- define "mfe.list" -}}
 {{- $mfes := list
-  (dict "name" "mfe-simulator" "pathName" "simulator" "values" .Values.mfeSimulator "team" "gold")
-  (dict "name" "mfe-interaction-panel" "pathName" "interaction-panel" "values" .Values.mfeInteractionPanel "team" "aluminium")
-  (dict "name" "mfe-sidebar" "pathName" "sidebar" "values" .Values.mfeSidebar "team" "aluminium")
-  (dict "name" "mfe-global-toolbar" "pathName" "global-toolbar" "values" .Values.mfeGlobalToolbar "team" "aluminium")
-  (dict "name" "mfe-knowledge-store" "pathName" "knowledge-store" "values" .Values.mfeKnowledgeStore "team" "carbon")
-  (dict "name" "mfe-endpoints" "pathName" "endpoints" "values" .Values.mfeEndpoints "team" "dubnium")
-  (dict "name" "mfe-example" "pathName" "example" "values" .Values.mfeExample "team" "aluminium")
-  (dict "name" "mfe-project-settings" "pathName" "project-settings" "values" .Values.mfeProjectSettings "team" "boron")
-  (dict "name" "mfe-snapshots" "pathName" "snapshots" "values" .Values.mfeSnapshots "team" "dubnium")
-  (dict "name" "mfe-toolkit" "pathName" "toolkit" "values" .Values.mfeToolkit "team" "gold")
-  (dict "name" "mfe-contact-profiles" "pathName" "contact-profiles" "values" .Values.mfeContactProfiles "team" "gold")
-  (dict "name" "mfe-connections" "pathName" "connections" "values" .Values.mfeConnections "team" "aluminium")
-  (dict "name" "mfe-packaging" "pathName" "packaging" "values" .Values.mfePackaging "team" "boron")
-  (dict "name" "mfe-project-resources" "pathName" "project-resources" "values" .Values.mfeProjectResources "team" "alloy")
-  (dict "name" "mfe-login-page" "pathName" "login-page" "values" .Values.mfeLoginPage "team" "boron")
-  (dict "name" "mfe-nlu-connectors" "pathName" "nlu-connectors" "values" .Values.mfeNluConnectors "team" "carbon")
-  (dict "name" "mfe-lexicons" "pathName" "lexicons" "values" .Values.mfeLexicons "team" "carbon")
-  (dict "name" "mfe-intent-trainer" "pathName" "intent-trainer" "values" .Values.mfeIntentTrainer "team" "carbon")
-  (dict "name" "mfe-goals" "pathName" "goals" "values" .Values.mfeGoals "team" "gold")
-  (dict "name" "mfe-project-overview" "pathName" "project-overview" "values" .Values.mfeProjectOverview "team" "boron")
-  (dict "name" "mfe-logs" "pathName" "logs" "values" .Values.mfeLogs "team" "gold")
-  (dict "name" "mfe-playbooks" "pathName" "playbooks" "values" .Values.mfePlaybooks "team" "gold")
-  (dict "name" "mfe-functions" "pathName" "functions" "values" .Values.mfeFunctions "team" "aluminium")
+  (dict "name" "mfe-simulator" "pathName" "simulator" "values" .Values.mfeSimulator "valuesKey" "mfeSimulator" "team" "gold")
+  (dict "name" "mfe-interaction-panel" "pathName" "interaction-panel" "values" .Values.mfeInteractionPanel "valuesKey" "mfeInteractionPanel" "team" "aluminium")
+  (dict "name" "mfe-sidebar" "pathName" "sidebar" "values" .Values.mfeSidebar "valuesKey" "mfeSidebar" "team" "aluminium")
+  (dict "name" "mfe-global-toolbar" "pathName" "global-toolbar" "values" .Values.mfeGlobalToolbar "valuesKey" "mfeGlobalToolbar" "team" "aluminium")
+  (dict "name" "mfe-knowledge-store" "pathName" "knowledge-store" "values" .Values.mfeKnowledgeStore "valuesKey" "mfeKnowledgeStore" "team" "carbon")
+  (dict "name" "mfe-endpoints" "pathName" "endpoints" "values" .Values.mfeEndpoints "valuesKey" "mfeEndpoints" "team" "dubnium")
+  (dict "name" "mfe-example" "pathName" "example" "values" .Values.mfeExample "valuesKey" "mfeExample" "team" "aluminium")
+  (dict "name" "mfe-project-settings" "pathName" "project-settings" "values" .Values.mfeProjectSettings "valuesKey" "mfeProjectSettings" "team" "boron")
+  (dict "name" "mfe-snapshots" "pathName" "snapshots" "values" .Values.mfeSnapshots "valuesKey" "mfeSnapshots" "team" "boron")
+  (dict "name" "mfe-toolkit" "pathName" "toolkit" "values" .Values.mfeToolkit "valuesKey" "mfeToolkit" "team" "gold")
+  (dict "name" "mfe-contact-profiles" "pathName" "contact-profiles" "values" .Values.mfeContactProfiles "valuesKey" "mfeContactProfiles" "team" "gold")
+  (dict "name" "mfe-connections" "pathName" "connections" "values" .Values.mfeConnections "valuesKey" "mfeConnections" "team" "aluminium")
+  (dict "name" "mfe-packaging" "pathName" "packaging" "values" .Values.mfePackaging "valuesKey" "mfePackaging" "team" "boron")
+  (dict "name" "mfe-project-resources" "pathName" "project-resources" "values" .Values.mfeProjectResources "valuesKey" "mfeProjectResources" "team" "alloy")
+  (dict "name" "mfe-login-page" "pathName" "login-page" "values" .Values.mfeLoginPage "valuesKey" "mfeLoginPage" "team" "boron")
+  (dict "name" "mfe-nlu-connectors" "pathName" "nlu-connectors" "values" .Values.mfeNluConnectors "valuesKey" "mfeNluConnectors" "team" "carbon")
+  (dict "name" "mfe-lexicons" "pathName" "lexicons" "values" .Values.mfeLexicons "valuesKey" "mfeLexicons" "team" "carbon")
+  (dict "name" "mfe-intent-trainer" "pathName" "intent-trainer" "values" .Values.mfeIntentTrainer "valuesKey" "mfeIntentTrainer" "team" "carbon")
+  (dict "name" "mfe-goals" "pathName" "goals" "values" .Values.mfeGoals "valuesKey" "mfeGoals" "team" "gold")
+  (dict "name" "mfe-project-overview" "pathName" "project-overview" "values" .Values.mfeProjectOverview "valuesKey" "mfeProjectOverview" "team" "boron")
+  (dict "name" "mfe-logs" "pathName" "logs" "values" .Values.mfeLogs "valuesKey" "mfeLogs" "team" "gold")
+  (dict "name" "mfe-playbooks" "pathName" "playbooks" "values" .Values.mfePlaybooks "valuesKey" "mfePlaybooks" "team" "gold")
+  (dict "name" "mfe-functions" "pathName" "functions" "values" .Values.mfeFunctions "valuesKey" "mfeFunctions" "team" "aluminium")
+  (dict "name" "mfe-project-members" "pathName" "project-members" "values" .Values.mfeProjectMembers "valuesKey" "mfeProjectMembers" "team" "boron")
 -}}
 {{- dict "items" $mfes | toJson -}}
 {{- end -}}
@@ -580,4 +581,51 @@ Usage:
 {{- $codes = append $codes (lower (substr 0 2 (trim .))) -}}
 {{- end -}}
 ^nlp-classifier-score-({{ $codes | uniq | sortAlpha | join "|" }})-v2$
+{{- end -}}
+
+{{/*
+Renders the env vars a service reads from the V2V (voice-to-voice) Secret, as secretKeyRef entries with
+optional: true, so a cluster without the Secret still starts its pods (V2V then counts as unconfigured).
+The env var name is also the Secret key. A name the service's extraEnvVars already sets is skipped, so
+clusters that wire the same names by hand get no duplicate env entry. Renders nothing when
+v2v.secretRefs.enabled is false.
+Usage:
+{{- include "cognigy-ai.v2v.secretEnv" (dict "context" $ "keys" (list "V2V_CALLBACK_SECRET") "extraEnvVars" .extraEnvVars) | nindent 12 }}
+*/}}
+{{- define "cognigy-ai.v2v.secretEnv" -}}
+{{- $ctx := .context -}}
+{{- if (($ctx.Values.v2v).secretRefs).enabled -}}
+{{- $secretName := include "common.secretName.render" (dict "existingSecret" $ctx.Values.v2v.existingSecret "defaultSecret" "cognigy-v2v-secrets") -}}
+{{- $taken := dict -}}
+{{- if .extraEnvVars -}}
+{{- range (include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $ctx) | fromYamlArray) -}}
+{{- if and (kindIs "map" .) (hasKey . "name") -}}
+{{- $_ := set $taken (toString .name) true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $env := list -}}
+{{- range .keys -}}
+{{- if not (hasKey $taken .) -}}
+{{- $env = append $env (dict "name" . "valueFrom" (dict "secretKeyRef" (dict "name" $secretName "key" . "optional" true))) -}}
+{{- end -}}
+{{- end -}}
+{{- if $env -}}
+{{- toYaml $env -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Pod annotation that rolls a deployment when the V2V Secret changes, like the other checksum/* annotations.
+Renders nothing when v2v.secretRefs.enabled is false.
+Usage:
+{{- include "cognigy-ai.v2v.secretChecksum" $ | nindent 8 }}
+*/}}
+{{- define "cognigy-ai.v2v.secretChecksum" -}}
+{{- if ((.Values.v2v).secretRefs).enabled -}}
+{{- $secretName := include "common.secretName.render" (dict "existingSecret" .Values.v2v.existingSecret "defaultSecret" "cognigy-v2v-secrets") -}}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace $secretName -}}
+checksum/cognigy-v2v-secrets: {{ if not $secret }}{{ $secretName | sha256sum }}{{ else }}{{ toYaml $secret.data | sha256sum }}{{ end }}
+{{- end -}}
 {{- end -}}

@@ -31,8 +31,8 @@ spec:
           securityContext:
             {{- toYaml .securityContext | nindent 12 }}
           restartPolicy: OnFailure
-          {{- if $.Values.serviceInsightsApi.serviceAccountName }}
-          serviceAccountName: {{ $.Values.serviceInsightsApi.serviceAccountName }}
+          {{- if $.Values.serviceInsightsApi.conversationAnalyzer.jobsServiceAccountName }}
+          serviceAccountName: {{ $.Values.serviceInsightsApi.conversationAnalyzer.jobsServiceAccountName }}
           {{- end }}
           {{- if .affinity }}
           affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 12 }}

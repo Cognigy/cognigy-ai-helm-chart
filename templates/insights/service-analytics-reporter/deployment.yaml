@@ -1,12 +1,15 @@
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $redisHa_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.redisHa.auth.existingSecret "defaultSecret" "cognigy-redis-password") }}
 {{- $serviceAnalyticsCollector_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceAnalyticsCollector.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceAnalyticsCollector.serviceName)) }}
+{{- $serviceName := "service-analytics-reporter" }}
 {{- with .Values.serviceAnalyticsReporter }}
+---
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "gold" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-analytics-reporter
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: gold
@@ -22,7 +25,6 @@ spec:
       labels:
         app: service-analytics-reporter
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/redis: {{ if not (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret) }}{{ $redisHa_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $redisHa_secret).data | sha256sum }}{{ end }}
         checksum/service-analytics-collector: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsCollector_dbSecret) }}{{ $serviceAnalyticsCollector_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceAnalyticsCollector_dbSecret).data | sha256sum }}{{ end }}
@@ -30,8 +32,12 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
@@ -51,6 +57,7 @@ spec:
               containerPort: 8002
           env:
             {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: REDIS_ENABLE_RECONNECT
               value: "true"
             - name: RABBITMQ_ENABLE_RECONNECT
@@ -73,13 +80,12 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           volumeMounts:
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
               subPath: rabbitmqConnectionString
@@ -102,6 +108,7 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
         - name: rabbitmq-connection-string
           secret:
             secretName: {{ $statefulRabbitMq_secret }}

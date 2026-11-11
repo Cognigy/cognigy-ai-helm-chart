@@ -13,7 +13,7 @@
 {{- $serviceName := "service-endpoint" }}
 {{- with .Values.serviceEndpoint }}
 ---
-{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "dubnium" "context" $) }}
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "ownerTeam" "dubnium" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -45,6 +45,7 @@ spec:
         checksum/cognigy-jwt: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret) }}{{ $cognigyJwt_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyJwt_secret).data | sha256sum }}{{ end }}
         checksum/insights-collector-api-key: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret) }}{{ $cognigyInsightsCollectorApiKey_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyInsightsCollectorApiKey_secret).data | sha256sum }}{{ end }}
         checksum/cognigy-live-agent-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret) }}{{ $cognigyLiveAgentCredentials_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $cognigyLiveAgentCredentials_secret).data | sha256sum }}{{ end }}
+        {{- include "cognigy-ai.v2v.secretChecksum" $ | nindent 8 }}
         {{- if $.Values.cognigyAgentAssist.enabled }}
         checksum/cognigy-agent-assist-credentials: {{ if not (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret) }}{{ $agentAssistBackendApiAccessToken_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $agentAssistBackendApiAccessToken_secret).data | sha256sum }}{{ end }}
         {{- end }}
@@ -57,6 +58,9 @@ spec:
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .nodeSelector "context" $) | nindent 8 }}
@@ -155,16 +159,8 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: OWNER_DEPLOYMENT
-              value: {{ $serviceName | quote }}
+            {{- include "cognigy-ai.v2v.secretEnv" (dict "context" $ "keys" (list "V2V_BRIDGE_API_KEY" "V2V_CALLBACK_SECRET" "V2V_FLOW_TOOL_SECRET") "extraEnvVars" .extraEnvVars) | nindent 12 }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}			  
@@ -186,9 +182,7 @@ spec:
               mountPath: /var/run/secrets/natsInternalPassword
               subPath: natsInternalPassword
             {{- end }}
-            - name: cognigy-env-reloadable
-              mountPath: /config/env
-              readOnly: true
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
           startupProbe:
             httpGet:
               path: /health/startup
@@ -228,14 +222,9 @@ spec:
               - key: password
                 path: natsInternalPassword
         {{- end }}
-        - name: cognigy-env-reloadable
-          configMap:
-            name: cognigy-env-reloadable
-            items:
-              - key: cognigy.yaml
-                path: cognigy.yaml
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
       {{- include "image.pullSecretsCognigy" $ | nindent 6 }}
-      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "context" $) }}
       securityContext:
         {{- toYaml .securityContext | nindent 8 }}
 {{- end }}

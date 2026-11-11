@@ -5,7 +5,7 @@ metadata:
   name: ipwhitelistinternalapiservicecxone
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: boron
+    owner-team: {{ $.Values.serviceCxoneAwsGateway.ownerTeam }}
 spec:
   ipAllowList: {{- toYaml .Values.serviceCxoneAwsGateway.internalApiIngress.ipWhiteListMiddleware.ipWhiteList | nindent 4 }}
 {{- end }}

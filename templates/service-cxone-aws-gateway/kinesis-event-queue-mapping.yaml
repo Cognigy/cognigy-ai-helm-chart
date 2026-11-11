@@ -6,7 +6,7 @@ metadata:
   name: cxone-integration-kinesis-event-queue-mapping
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: boron
+    owner-team: {{ $.Values.serviceCxoneAwsGateway.ownerTeam }}
 data:
   event-mapping.json: |
     {

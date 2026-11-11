@@ -1,4 +1,31 @@
 {{- if and .Values.ingress.enabled .Values.ingress.gatewayApi.enabled }}
+{{- $sticky := .Values.serviceUi.stickySessions | default dict }}
+{{- $cookie := $sticky.cookie | default dict }}
+{{- $cookieSecure := ternary $cookie.secure .Values.tls.enabled (hasKey $cookie "secure") }}
+{{- $cookieSameSite := $cookie.sameSite | default "lax" }}
+{{- if $sticky.enabled }}
+# Keeps a browser on one pod, so index.html and the hashed assets it references come from the
+# same version while old and new pods both serve. Sticky sessions are configured on a
+# TraefikService, as the Gateway provider ignores Service annotations.
+apiVersion: traefik.io/v1alpha1
+kind: TraefikService
+metadata:
+  name: service-ui
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: boron
+spec:
+  weighted:
+    services:
+      - name: service-ui
+        port: 8000
+        sticky:
+          cookie:
+            httpOnly: true
+            sameSite: {{ $cookieSameSite }}
+            secure: {{ $cookieSecure }}
+---
+{{- end }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -21,6 +48,12 @@ spec:
             name: ipwhitelistserviceui
         {{- end }}
       backendRefs:
+        {{- if $sticky.enabled }}
+        - group: traefik.io
+          kind: TraefikService
+          name: service-ui
+        {{- else }}
         - name: service-ui
           port: 8000
+        {{- end }}
 {{- end }}

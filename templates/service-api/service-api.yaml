@@ -22,7 +22,7 @@
 {{- $serviceName := "service-api" }}
 {{- with .Values.serviceApi }}
 ---
-{{ include "cognigy-ai.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "ownerTeam" "boron" "context" $) }}
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "ownerTeam" "boron" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -40,6 +40,9 @@ spec:
       app: {{ $serviceName }}
   {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceApi.enabled)) }}
   replicas: {{ .replicaCount }}
+  {{- end }}
+  {{- if .strategy }}
+  strategy: {{- include "common.tplvalues.render" (dict "value" .strategy "context" $) | nindent 4 }}
   {{- end }}
   template:
     metadata:
@@ -82,13 +85,17 @@ spec:
         {{- if $.Values.serviceUsage.enabled }}
         checksum/service-usage-api-keys: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceUsage_apiKeysSecret) }}{{ $serviceUsage_apiKeysSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceUsage_apiKeysSecret).data | sha256sum }}{{ end }}
         {{- end }}
+        {{- include "cognigy-ai.v2v.secretChecksum" $ | nindent 8 }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
-      serviceAccountName: {{ include "cognigy-ai.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "context" $) }}
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceApi.enabled))}}
       nodeSelector:
@@ -328,16 +335,8 @@ spec:
             - name: FEATURE_PACKAGE_LOGS
               value: "true"
             {{- end }}
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: OWNER_DEPLOYMENT
-              value: {{ $serviceName | quote }}
+            {{- include "cognigy-ai.v2v.secretEnv" (dict "context" $ "keys" (list "V2V_CALLBACK_SECRET") "extraEnvVars" .extraEnvVars) | nindent 12 }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -385,9 +384,7 @@ spec:
             - name: cognigy-rollout
               mountPath: /config/rollout
             {{- end }}
-            - name: cognigy-env-reloadable
-              mountPath: /config/env
-              readOnly: true
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -454,12 +451,7 @@ spec:
           configMap:
             name: cognigy-rollout
         {{- end }}
-        - name: cognigy-env-reloadable
-          configMap:
-            name: cognigy-env-reloadable
-            items:
-              - key: cognigy.yaml
-                path: cognigy.yaml
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

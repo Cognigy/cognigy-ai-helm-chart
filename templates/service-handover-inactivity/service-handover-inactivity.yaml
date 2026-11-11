@@ -1,12 +1,15 @@
 {{- if .Values.serviceHandoverInactivity.enabled }}
 {{- $statefulRabbitMq_secret := include "common.secretName.render" ( dict "existingSecret" $.Values.statefulRabbitMq.auth.existingSecret "defaultSecret" $.Values.rabbitmq.defaultSecret) }}
 {{- $serviceHandoverInactivity_dbSecret := include "common.secretName.render" ( dict "existingSecret" $.Values.dbConnectionString.services.serviceHandoverInactivity.auth.existingSecret "defaultSecret" (printf "cognigy-%s" $.Values.dbConnectionString.services.serviceHandoverInactivity.serviceName)) }}
+{{- $serviceName := "service-handover-inactivity" }}
 {{- with .Values.serviceHandoverInactivity }}
+---
+{{ include "cognigy-common.reloadableConfig.restartCoordinator.rbac" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "ownerTeam" "iron" "context" $) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-handover-inactivity
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     owner-team: iron
@@ -15,24 +18,27 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: service-handover-inactivity
+      app: {{ $serviceName }}
   {{- if not (and ($.Values.hpa.enabled) ($.Values.hpa.removeReplicas) ($.Values.hpa.services.serviceHandoverInactivity.enabled)) }}
   replicas: {{ .replicaCount }}
   {{- end }}
   template:
     metadata:
       labels:
-        app: service-handover-inactivity
+        app: {{ $serviceName }}
       annotations:
-        checksum/cognigy-env: {{ include (print $.Template.BasePath "/configurations/cognigy-env.yaml") $ | sha256sum }}
         checksum/rabbitmq: {{ if not (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret) }}{{ $statefulRabbitMq_secret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $statefulRabbitMq_secret).data | sha256sum }}{{ end }}
         checksum/secret: {{ if not (lookup "v1" "Secret" $.Release.Namespace $serviceHandoverInactivity_dbSecret) }}{{ $serviceHandoverInactivity_dbSecret | sha256sum }}{{ else }}{{ toYaml (lookup "v1" "Secret" $.Release.Namespace $serviceHandoverInactivity_dbSecret).data | sha256sum }}{{ end }}
         {{- if $.Values.cognigyCommonPodAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.cognigyCommonPodAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
+      serviceAccountName: {{ include "cognigy-common.reloadableConfig.restartCoordinator.serviceAccountName" (dict "serviceName" $serviceName "existingServiceAccount" .serviceAccountName "context" $) }}
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if or (.nodeSelector) (and ($.Values.hpa.enabled) ($.Values.hpa.useHpaNodeSelector) ($.Values.hpa.services.serviceHandoverInactivity.enabled))}}
       nodeSelector:
@@ -56,7 +62,7 @@ spec:
       priorityClassName: {{ .priorityClassName }}
       {{- end }}
       containers:
-        - name: service-handover-inactivity
+        - name: {{ $serviceName }}
           image: {{ include "common.image.render" (dict "global" $.Values.global "image" .image) }}
           resources: {{- toYaml .resources | nindent 12 }}
           ports:
@@ -64,6 +70,7 @@ spec:
               containerPort: 8002
           env:
             {{- include "cognigy-common.telemetry.otel.env" (dict "context" $) | nindent 12 }}
+            {{- include "cognigy-ai.common.nodeEnv.render" (dict "context" $) | nindent 12 }}
             - name: RABBITMQ_ENABLE_RECONNECT
               value: "true"
             - name: COGNIGY_AI_RELEASE_VERSION
@@ -72,12 +79,10 @@ spec:
             - name: LOG_REDACTION_ENABLED
               value: "true"
             {{- end }}
+            {{- include "cognigy-common.reloadableConfig.identityEnvs" (dict "serviceName" $serviceName) | nindent 12 }}
             {{- if .extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
-          envFrom:
-            - configMapRef:
-                name: cognigy-env
           volumeMounts:
             - name: rabbitmq-connection-string
               mountPath: /var/run/secrets/rabbitmqConnectionString
@@ -88,6 +93,7 @@ spec:
             - name: rabbitmq-api-connection-string
               mountPath: /var/run/secrets/rabbitmqAPIConnectionString
               subPath: rabbitmqAPIConnectionString
+            {{- include "cognigy-common.reloadableConfig.volumeMount" (dict) | nindent 12 }}
             {{- if .extraVolumeMounts }}
             {{- include "common.tplvalues.render" ( dict "value" .extraVolumeMounts "context" $ ) | nindent 12 }}
             {{- end }}
@@ -122,6 +128,7 @@ spec:
             items:
               - key: connection-string-api
                 path: rabbitmqAPIConnectionString
+        {{- include "cognigy-common.reloadableConfig.volume" (dict) | nindent 8 }}
         {{- if .extraVolumes }}
         {{- include "common.tplvalues.render" ( dict "value" .extraVolumes "context" $ ) | nindent 8 }}
         {{- end }}

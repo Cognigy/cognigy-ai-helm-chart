@@ -1,0 +1,16 @@
+{{- /*
+Connection-key rotation settings (CSA-108657). Its own template and values on purpose: the
+deployments checksum cognigy-env.yaml, so anything rendered there restarts them on change. This
+ConfigMap is mounted as a folder in service-resources and service-security, without a checksum
+annotation, and they re-read it while running. One file per setting; empty means "not set".
+*/}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cognigy-connection-key-settings
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    owner-team: alloy
+data:
+  activeKeyId: {{ .Values.connectionKeyRotation.activeKeyId | default "" | quote }}
+  reencryptionMode: {{ .Values.connectionKeyRotation.reencryptionMode | default "" | quote }}

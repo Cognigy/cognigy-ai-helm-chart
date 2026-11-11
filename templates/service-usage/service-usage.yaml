@@ -12,7 +12,7 @@ metadata:
   name: service-usage
   namespace: {{ $.Release.Namespace | quote }}
   labels:
-    owner-team: carbon
+    owner-team: zinc
   annotations:
     "cognigy.com/source-code": "git@github.com:Cognigy/service-usage.git"
     "cognigy.com/source-path": "/"
@@ -40,6 +40,9 @@ spec:
     spec:
       {{- if .affinity }}
       affinity: {{- include "common.tplvalues.render" (dict "value" .affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       {{- if .nodeSelector }}
       nodeSelector:
@@ -194,7 +197,7 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     app: service-usage
-    owner-team: carbon
+    owner-team: zinc
 spec:
   type: ClusterIP
   ports:

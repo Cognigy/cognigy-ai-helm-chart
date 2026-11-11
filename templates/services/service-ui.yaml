@@ -1,3 +1,7 @@
+{{- $sticky := .Values.serviceUi.stickySessions | default dict }}
+{{- $cookie := $sticky.cookie | default dict }}
+{{- $cookieSecure := ternary $cookie.secure .Values.tls.enabled (hasKey $cookie "secure") }}
+{{- $cookieSameSite := $cookie.sameSite | default "lax" }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,6 +10,15 @@ metadata:
   labels:
     app: service-ui
   annotations:
+  {{- if $sticky.enabled }}
+    # Keeps a browser on one pod, so index.html and the hashed assets it references come from the
+    # same version while old and new pods both serve. Ingress mode only: the Gateway provider
+    # ignores Service annotations (see the TraefikService in service-ui/httproute.yaml).
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.httponly: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: {{ $cookieSameSite | quote }}
+    traefik.ingress.kubernetes.io/service.sticky.cookie.secure: {{ $cookieSecure | quote }}
+  {{- end }}
   {{- if .Values.service.serviceUi.annotations }}
     {{- toYaml .Values.service.serviceUi.annotations | nindent 4 }}
   {{- end }}
