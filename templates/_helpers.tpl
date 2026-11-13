@@ -563,6 +563,8 @@ Usage:
   (dict "name" "mfe-playbooks" "pathName" "playbooks" "values" .Values.mfePlaybooks "valuesKey" "mfePlaybooks" "team" "gold")
   (dict "name" "mfe-functions" "pathName" "functions" "values" .Values.mfeFunctions "valuesKey" "mfeFunctions" "team" "aluminium")
   (dict "name" "mfe-project-members" "pathName" "project-members" "values" .Values.mfeProjectMembers "valuesKey" "mfeProjectMembers" "team" "boron")
+  (dict "name" "mfe-tokens" "pathName" "tokens" "values" .Values.mfeTokens "valuesKey" "mfeTokens" "team" "carbon")
+  (dict "name" "mfe-locales" "pathName" "locales" "values" .Values.mfeLocales "valuesKey" "mfeLocales" "team" "carbon")
 -}}
 {{- dict "items" $mfes | toJson -}}
 {{- end -}}

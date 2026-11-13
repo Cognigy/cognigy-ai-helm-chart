@@ -266,6 +266,14 @@
 			"$ref": "#/$defs/microfrontend",
 			"description": "Project Members microfrontend"
 		},
+		"mfeTokens": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Tokens microfrontend"
+		},
+		"mfeLocales": {
+			"$ref": "#/$defs/microfrontend",
+			"description": "Localization (Locales) microfrontend"
+		},
 		"proactiveFollowup": {
 			"type": "object",
 			"description": "Proactive Follow-up feature toggle",

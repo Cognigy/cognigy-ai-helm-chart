@@ -1491,6 +1491,10 @@ service:
     annotations: {}
   mfeProjectMembers:
     annotations: {}
+  mfeTokens:
+    annotations: {}
+  mfeLocales:
+    annotations: {}
 
 cognigyEnv:
   NODE_ENV: production
@@ -4581,7 +4585,7 @@ serviceTrainer:
   tolerations: []
   priorityClassName: ""
 serviceUi:
-  image: cognigy.azurecr.io/service-ui:release-41329246b2-1794328403
+  image: cognigy.azurecr.io/service-ui:release-e4a9fe8a13-1794503694
   replicaCount: 3
   ## Old and new versions must not serve one browser at the same time: each pod only has its own
   ## build's hashed assets, so mixing them breaks the page (same rule as `microfrontends`).
@@ -5125,7 +5129,7 @@ mfePackaging:
   priorityClassName: ""
 mfeProjectResources:
   enabled: false
-  image: cognigy.azurecr.io/mfe-project-resources:release-0f67bcd540-1794317565
+  image: cognigy.azurecr.io/mfe-project-resources:release-b438fbd922-1794413283
   replicaCount: 3
   resources:
     requests:
@@ -5538,6 +5542,76 @@ mfeProjectMembers:
       labelSelector:
         matchLabels:
           app: mfe-project-members
+      matchLabelKeys:
+        - pod-template-hash
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
+mfeTokens:
+  enabled: false
+  image: cognigy.azurecr.io/mfe-tokens:release-e4a9fe8a13-1794503694
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: "50m"
+      memory: 32Mi
+    limits:
+      cpu: "100m"
+      memory: 64Mi
+  securityContext: {}
+  affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-tokens
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-tokens
+      matchLabelKeys:
+        - pod-template-hash
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: ""
+mfeLocales:
+  enabled: false
+  image: cognigy.azurecr.io/mfe-locales:release-e4a9fe8a13-1794503694
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: "50m"
+      memory: 32Mi
+    limits:
+      cpu: "100m"
+      memory: 64Mi
+  securityContext: {}
+  affinity: {}
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-locales
+      matchLabelKeys:
+        - pod-template-hash
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      nodeTaintsPolicy: Honor
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: mfe-locales
       matchLabelKeys:
         - pod-template-hash
   nodeSelector: {}
@@ -7922,6 +7996,50 @@ hpa:
       behavior:
         scaleDown:
           stabilizationWindowSeconds: 900
+    mfeTokens:
+      name: mfe-tokens
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
+    mfeLocales:
+      name: mfe-locales
+      enabled: false
+      keda:
+        enabled: true
+        triggers:
+          - type: cpu
+            metricType: Utilization
+            metadata:
+              value: "50"
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 900
 
 ## PodDisruptionBudgets for voluntary evictions (node drain, cluster-autoscaler scale-down); maxUnavailable wins over minAvailable.
 pdb:
@@ -8290,6 +8408,18 @@ pdb:
     mfeProjectMembers:
       enabled: false
       name: mfe-project-members
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeTokens:
+      enabled: false
+      name: mfe-tokens
+      minAvailable: ""
+      maxUnavailable: "66%"
+      unhealthyPodEvictionPolicy: AlwaysAllow
+    mfeLocales:
+      enabled: false
+      name: mfe-locales
       minAvailable: ""
       maxUnavailable: "66%"
       unhealthyPodEvictionPolicy: AlwaysAllow
